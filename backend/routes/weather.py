@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from services.location_service import search_location
-from services.weather_service import get_weather
+from services.external.location_service import search_location
+from services.external.weather_service import get_weather
 
 router = APIRouter(
     prefix="/weather",
@@ -14,7 +14,7 @@ async def weather(place: str):
     if not result:
         return {"message": "Location not found"}
 
-    location = result[0]
+    location = result
 
     weather = await get_weather(
         float(location["lat"]),

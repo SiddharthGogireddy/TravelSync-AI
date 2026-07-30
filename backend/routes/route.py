@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from services.location_service import search_location
-from services.route_service import get_route as get_route_data
+from services.external.location_service import search_location
+from services.external.route_service import get_route as get_route_data
 
 router = APIRouter(prefix="/route", tags=["Route"])
 
@@ -27,7 +27,7 @@ async def get_route(source: str, destination: str):
     if "routes" not in route_data or not route_data["routes"]:
         return {"message": "No route found", "details": route_data}
 
-    route = route_data["routes"][0]
+    route = route_data["routes"]
 
     return {
         "source": source,

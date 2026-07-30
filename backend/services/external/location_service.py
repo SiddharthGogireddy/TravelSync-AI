@@ -20,4 +20,9 @@ async def search_location(place: str):
             headers=HEADERS
         )
 
-    return response.json()
+    data = response.json()
+
+    if not data:
+        return None
+
+    return data[0]

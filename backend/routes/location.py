@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from services.location_service import search_location
+from services.external.place_service import get_places
+from services.external.location_service import search_location
 
 router = APIRouter(
     prefix="/location",
@@ -11,6 +12,12 @@ async def get_location(place: str):
     result = await search_location(place)
 
     if not result:
-        return {"message": "Location not found"}
+        return {"error": "Location not found"}
 
-    return result[0]
+    location = result
+
+    places = await get_places(
+        float(location["lat"]),
+        float(location["lon"])
+    )
+    return result
