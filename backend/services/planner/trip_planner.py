@@ -4,7 +4,12 @@ from services.external.weather_service import get_weather
 from services.external.place_service import get_places
 from services.ai.itinerary_generator import generate_itinerary
 
-async def build_trip(source: str, destination: str):
+async def build_trip(request):
+    source = request.source
+    destination = request.destination
+    days = request.days
+    travelers = request.travelers
+
     # Search locations
     source_location = await search_location(source)
     destination_location = await search_location(destination)
@@ -60,6 +65,8 @@ async def build_trip(source: str, destination: str):
     trip_data= {
         "source": source,
         "destination": destination,
+        "days": days,
+        "travelers": [traveler.dict() for traveler in travelers],
         "route": {
             "distance_km": round(route["routes"][0]["distance"] / 1000, 2),
             "duration_hours": round(route["routes"][0]["duration"] / 3600, 2)
