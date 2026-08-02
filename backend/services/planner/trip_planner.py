@@ -3,7 +3,8 @@ from services.external.route_service import get_route
 from services.external.weather_service import get_weather
 from services.external.place_service import get_places
 from services.ai.itinerary_generator import generate_itinerary
-
+from services.planner.attraction_ranker import rank_places
+from services.planner.preference_matcher import match_preferences
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -60,6 +61,14 @@ async def build_trip(request):
             "category": place.get("kinds", "").split(",")[0].replace("_", " ").title(),
             "distance_km": round(place.get("dist", 0) / 1000, 2)
         })
+        ranked_places = rank_places(
+    place_list,
+    [traveler.dict() for traveler in travelers]
+)
+    matched_places = match_preferences(
+    ranked_places,
+    [traveler.dict() for traveler in travelers]
+)
 
     # Combined response
     trip_data= {
@@ -72,7 +81,8 @@ async def build_trip(request):
             "duration_hours": round(route["routes"][0]["duration"] / 3600, 2)
         },
         "weather": weather_summary,
-        "places": place_list
+        "places": matched_places[:10]
+        
     }
     itinerary = await generate_itinerary(trip_data)
 
