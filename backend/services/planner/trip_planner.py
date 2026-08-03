@@ -5,11 +5,17 @@ from services.external.place_service import get_places
 from services.ai.itinerary_generator import generate_itinerary
 from services.planner.attraction_ranker import rank_places
 from services.planner.preference_matcher import match_preferences
+from services.planner.mandatory_scheduler import schedule_mandatory_visits
 async def build_trip(request):
     source = request.source
     destination = request.destination
     days = request.days
     travelers = request.travelers
+    mandatory_visits = request.mandatory_visits
+    mandatory_schedule = schedule_mandatory_visits(
+    days,
+    [visit.dict() for visit in mandatory_visits]
+)
 
     # Search locations
     source_location = await search_location(source)
@@ -76,6 +82,8 @@ async def build_trip(request):
         "destination": destination,
         "days": days,
         "travelers": [traveler.dict() for traveler in travelers],
+        "mandatory_visits": [visit.dict() for visit in mandatory_visits],
+        "mandatory_schedule": mandatory_schedule,
         "route": {
             "distance_km": round(route["routes"][0]["distance"] / 1000, 2),
             "duration_hours": round(route["routes"][0]["duration"] / 3600, 2)
