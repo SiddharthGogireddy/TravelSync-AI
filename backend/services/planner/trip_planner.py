@@ -8,11 +8,23 @@ from services.planner.preference_matcher import match_preferences
 from services.planner.mandatory_scheduler import schedule_mandatory_visits
 from services.planner.travel_mode import get_mode_rules
 from services.planner.route_attractions import get_route_attractions
+from services.planner.budget_engine import get_budget_rules
 async def build_trip(request):
     source = request.source
     destination = request.destination
     days = request.days
     travelers = request.travelers
+    traveler_profiles = []
+
+    for traveler in travelers:
+
+        profile = traveler.dict()
+
+        profile["budget_rules"] = get_budget_rules(
+        traveler.budget
+        )
+
+        traveler_profiles.append(profile)
     travel_mode = request.travel_mode
     mode_rules = get_mode_rules(travel_mode)
     mandatory_visits = request.mandatory_visits
@@ -90,7 +102,8 @@ async def build_trip(request):
         "source": source,
         "destination": destination,
         "days": days,
-        "travelers": [traveler.dict() for traveler in travelers],
+        "travelers": traveler_profiles,
+        
         "mandatory_visits": [visit.dict() for visit in mandatory_visits],
         "mandatory_schedule": mandatory_schedule,
         "route": {
