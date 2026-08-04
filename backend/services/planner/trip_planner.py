@@ -6,11 +6,15 @@ from services.ai.itinerary_generator import generate_itinerary
 from services.planner.attraction_ranker import rank_places
 from services.planner.preference_matcher import match_preferences
 from services.planner.mandatory_scheduler import schedule_mandatory_visits
+from services.planner.travel_mode import get_mode_rules
+from services.planner.route_attractions import get_route_attractions
 async def build_trip(request):
     source = request.source
     destination = request.destination
     days = request.days
     travelers = request.travelers
+    travel_mode = request.travel_mode
+    mode_rules = get_mode_rules(travel_mode)
     mandatory_visits = request.mandatory_visits
     mandatory_schedule = schedule_mandatory_visits(
     days,
@@ -75,6 +79,11 @@ async def build_trip(request):
     ranked_places,
     [traveler.dict() for traveler in travelers]
 )
+    place_list = await get_route_attractions(
+    route,
+    place_list,
+    travel_mode
+)
 
     # Combined response
     trip_data= {
@@ -88,6 +97,8 @@ async def build_trip(request):
             "distance_km": round(route["routes"][0]["distance"] / 1000, 2),
             "duration_hours": round(route["routes"][0]["duration"] / 3600, 2)
         },
+        "travel_mode": travel_mode,
+        "travel_mode_rules": mode_rules,
         "weather": weather_summary,
         "places": matched_places[:10]
         

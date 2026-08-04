@@ -19,5 +19,3 @@ async def generate(prompt: str):
     return response.text
 
 
-for model in client.models.list():
-    print(model.name)
