@@ -1,158 +1,213 @@
-
-
-
 def build_prompt(trip_data):
     route = trip_data["route"]
     weather = trip_data["weather"]
     places = trip_data["places"]
-    place_text = ""
+
+    hotels = trip_data.get("hotels", [])
+    restaurants = trip_data.get("restaurants", [])
+    day_schedule = trip_data.get("day_schedule", {})
+    mandatory_schedule = trip_data.get("mandatory_schedule", {})
+
     travel_mode = trip_data.get("travel_mode", "car")
-    mode_rules = trip_data.get("travel_mode_rules")
+    mode_rules = trip_data.get("travel_mode_rules", {})
+
+    hotel_names = ", ".join(
+        hotel["name"]
+        for hotel in hotels[:10]
+    )
+    hotel_list = []
+
+    for hotel in hotels:
+        if not hotel.get("name"):
+            continue
+
+        hotel_list.append({
+            "name": hotel["name"],
+            "distance_km": round(hotel["distance"] / 1000, 2)
+        })
+
+    restaurant_names = ", ".join(
+        restaurant["name"]
+        for restaurant in restaurants[:10]
+    )
+
+    weather_text = ""
+
+    for day in weather[:trip_data["days"]]:
+        weather_text += (
+            f"{day['date']} : "
+            f"{day['min_temp']}°C - "
+            f"{day['max_temp']}°C "
+            f"(Code {day['weather_code']})\n"
+        )
+
     traveler_text = ""
+
     for traveler in trip_data["travelers"]:
-
         traveler_text += f"""
+Traveler: {traveler['name']}
+Budget: {traveler['budget']}
+Interests: {", ".join(traveler['interests'])}
+Travel Pace: {traveler['pace']}
+"""
 
-Traveler:
-{traveler['name']}
+    place_text = ""
 
-Budget:
-{traveler['budget']}
-IMPORTANT:
-The itinerary MUST strictly follow the budget rules.
-
-If the budget is Luxury:
-- Recommend only 5-star resorts.
-- Recommend premium restaurants.
-- Recommend private taxis or chauffeur-driven cars.
-- Recommend premium experiences.
-- Never recommend budget hotels, hostels, cheap restaurants, or affordable options.
-
-If the budget is Medium:
-- Recommend 3-4 star hotels.
-- Recommend mid-range restaurants.
-- Recommend rental cars or taxis.
-
-If the budget is Budget:
-- Recommend hostels or budget hotels.
-- Recommend buses, trains, or shared transport.
-- Recommend affordable restaurants and free attractions.
+    for place in places:
+        place_text += f"""
+Name: {place["name"]}
+Category: {place["category"]}
+Recommended For: {", ".join(place["matched_travelers"])}
+Satisfies: {place["match_count"]} traveler(s)
 
 """
-    mode_instruction = ""
-    if mode_rules["scenic"]:
-        mode_instruction += (
-        "- Suggest scenic stops while travelling.\n"
-    )
 
-    if mode_rules["station"]:
-        mode_instruction += (
-        "- Suggest attractions near railway stations.\n"
-    )
+    schedule_text = ""
 
-    if mode_rules["bus_stop"]:
-        mode_instruction += (
-        "- Suggest attractions near major bus terminals.\n"
-    )
+    for day, day_places in day_schedule.items():
 
-    if mode_rules["airport"]:
-        mode_instruction += (
-        "- Suggest airport transfer options and nearby attractions.\n"
-    )
-    for place in places:
+        schedule_text += f"\nDay {day}\n"
 
-        place_text += f"""
-    Name: {place["name"]}
-    Category: {place["category"]}
-    Recommended For: {", ".join(place["matched_travelers"])}
-    Satisfies: {place["match_count"]} traveler(s)
+        for place in day_places:
+            schedule_text += f"- {place['name']}\n"
 
-    """
     mandatory_text = ""
 
-    for day, visits in trip_data["mandatory_schedule"].items():
+    for day, visits in mandatory_schedule.items():
 
         mandatory_text += f"""
-    Day {day}
-
-    Mandatory Visits:
-
-    {", ".join(visits)}
+Day {day}
+Mandatory Visits:
+{", ".join(visits)}
 
 """
-    
+
+    mode_instruction = ""
+
+    if mode_rules.get("scenic"):
+        mode_instruction += "- Suggest scenic stops while travelling.\n"
+
+    if mode_rules.get("route_stops"):
+        mode_instruction += "- Include useful rest stops on the journey.\n"
+
+    if mode_rules.get("station"):
+        mode_instruction += "- Suggest attractions near railway stations.\n"
+
+    if mode_rules.get("bus_stop"):
+        mode_instruction += "- Suggest attractions near major bus terminals.\n"
+
+    if mode_rules.get("airport"):
+        mode_instruction += "- Suggest airport transfers and nearby attractions.\n"
+
     prompt = f"""
 You are an expert travel planner.
 
-Create a detailed travel itinerary.
-Travel Mode: {travel_mode.upper()}
-Special Instructions:
-{mode_instruction}
+Create a HIGH QUALITY travel itinerary.
+
+Trip Details
+
 Source:
 {trip_data["source"]}
 
 Destination:
 {trip_data["destination"]}
 
-Travel Distance:
+Duration:
+{trip_data["days"]} days
+
+Travel Mode:
+{travel_mode.upper()}
+
+Distance:
 {route["distance_km"]} km
 
 Estimated Travel Time:
 {route["duration_hours"]} hours
 
-Weather:
-{weather}
+Weather Forecast:
+{weather_text}
+
+Nearby Hotels:
+{hotel_names}
+
+Nearby Restaurants:
+{restaurant_names}
+
+Travelers:
+{traveler_text}
 
 Recommended Attractions:
 {place_text}
 
+Suggested Attractions Per Day:
+{schedule_text}
+
 Mandatory Schedule:
-
 {mandatory_text}
-Travel Mode: {travel_mode.upper()}
-Use the recommended attractions naturally across the itinerary.
 
-Do not place every attraction on the same day.
+Travel Mode Instructions:
+{mode_instruction}
 
-Balance sightseeing across all travel days.
+Budget Rules
 
-Avoid repeating attractions.
-Follow each traveler's budget.
+Luxury:
+- Recommend only luxury hotels.
+- Recommend premium restaurants.
+- Recommend premium experiences.
+- Recommend private transport.
 
-Recommend hotels matching their budget.
+Medium:
+- Recommend 3-4 star hotels.
+- Recommend mid-range restaurants.
+- Recommend rental cars or taxis.
 
-Recommend restaurants matching their budget.
+Budget:
+- Recommend hostels or budget hotels.
+- Recommend affordable restaurants.
+- Recommend buses or trains where applicable.
 
-Recommend activities matching their budget.
+Rules
 
-Do not suggest luxury experiences to budget travelers.
+1. Generate EXACTLY {trip_data["days"]} days.
+2. Do not generate extra days.
+3. Every mandatory visit must appear on the assigned day.
+4. Use the suggested attractions naturally.
+5. Do not repeat attractions.
+6. Balance attractions across days.
+7. Respect weather.
+8. Respect travel mode.
+9. Respect every traveler's budget.
+10. Recommend hotels from the Nearby Hotels list.
+11. Recommend restaurants from the Nearby Restaurants list.
+12. Keep travel efficient.
+13. Avoid unnecessary backtracking.
 
-If the travel mode is CAR, include attractions while travelling whenever appropriate.
-Generate:
-1. Morning activities
-2. Afternoon activities
-3. Evening activities
-4. Food recommendations
-5. Travel tips
-IMPORTANT:
-Generate exactly {trip_data["days"]} days.
+For EACH day include:
 
-Do not add extra days.
+- Morning
+- Afternoon
+- Evening
+- Recommended Hotel
+- Food Recommendations
+- Travel Tips
+-Only recommend hotels from the Nearby Hotels list.
 
-Do not omit any day.
-Rules:
+-If the list is empty, say:
+"No nearby hotel information available."
+-Use ONLY restaurants from the Nearby Restaurants list.
+-Higher scored attractions are more important.
 
-1. Every mandatory visit MUST appear on specified days.
-2. Travelers' budgets MUST be respected.
-3. Build the remaining itinerary around them.
-4. Optimize travel time.
-5. Respect traveler preferences.
-6. Avoid suggesting attractions that are too far from the route.
-7. Weather conditions must be considered when suggesting outdoor activities.
-8. Travel mode rules must be followed.
-9. Generate a well-structured itinerary with clear headings for each day, including morning, afternoon, and evening activities, food recommendations, and travel tips.
-10. Generate exactly {trip_data["days"]} days. Do not add extra days or omit any day.
-Return a well-structured itinerary.
+Prioritize higher scored attractions.
+-Generate exactly {trip_data["days"]} travel days.
+-Choose hotels ONLY from the Nearby Hotels list.
+
+If no hotel satisfies the budget, mention that no suitable hotel was found.
+
+Do not invent hotels.
+Do not automatically include the return journey unless explicitly requested.
+Only use low scored attractions if time remains.
+Do not invent restaurant names.
+Return a beautifully formatted itinerary using Markdown headings.
 """
 
     return prompt

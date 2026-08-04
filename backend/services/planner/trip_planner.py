@@ -8,14 +8,16 @@ from services.planner.preference_matcher import match_preferences
 from services.planner.mandatory_scheduler import schedule_mandatory_visits
 from services.planner.travel_mode import get_mode_rules
 from services.planner.route_attractions import get_route_attractions
-from services.planner.budget_engine import get_budget_rules
+from services.planner.budget_engine import get_budget_rules 
+from services.external.hotel_service import get_hotels
+from services.planner.day_planner import plan_days
 async def build_trip(request):
     source = request.source
     destination = request.destination
     days = request.days
     travelers = request.travelers
     traveler_profiles = []
-
+    
     for traveler in travelers:
 
         profile = traveler.dict()
@@ -86,17 +88,35 @@ async def build_trip(request):
         ranked_places = rank_places(
     place_list,
     [traveler.dict() for traveler in travelers]
-)
+    )
     matched_places = match_preferences(
     ranked_places,
     [traveler.dict() for traveler in travelers]
-)
+    )
     place_list = await get_route_attractions(
     route,
     place_list,
     travel_mode
+    )
+    day_schedule = plan_days(
+    place_list,
+    days
 )
+    hotels = await get_hotels(
+        float(destination_location["lat"]),
+        float(destination_location["lon"])
+    )
+    hotel_list = []
 
+    for hotel in hotels:
+
+        if not hotel.get("name"):
+            continue
+
+    hotel_list.append({
+        "name": hotel["name"],
+        "distance_km": round(hotel.get("dist", 0) / 1000, 2)
+    })
     # Combined response
     trip_data= {
         "source": source,
@@ -110,6 +130,8 @@ async def build_trip(request):
             "distance_km": round(route["routes"][0]["distance"] / 1000, 2),
             "duration_hours": round(route["routes"][0]["duration"] / 3600, 2)
         },
+        "day_schedule": day_schedule,
+        "hotels": hotel_list,
         "travel_mode": travel_mode,
         "travel_mode_rules": mode_rules,
         "weather": weather_summary,
