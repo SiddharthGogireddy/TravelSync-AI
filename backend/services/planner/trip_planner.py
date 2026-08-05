@@ -11,6 +11,7 @@ from services.planner.route_attractions import get_route_attractions
 from services.planner.budget_engine import get_budget_rules 
 from services.external.hotel_service import get_hotels
 from services.planner.day_planner import plan_days
+from services.planner.trip_optimizer import optimize_trip
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -83,25 +84,30 @@ async def build_trip(request):
         place_list.append({
             "name": place["name"],
             "category": place.get("kinds", "").split(",")[0].replace("_", " ").title(),
-            "distance_km": round(place.get("dist", 0) / 1000, 2)
+            "distance_km": round(place.get("dist", 0) / 1000, 2),
+            "lat": place.get("point", {}).get("lat"),
+            "lon": place.get("point", {}).get("lon"),
+            
         })
-        ranked_places = rank_places(
-    place_list,
-    [traveler.dict() for traveler in travelers]
+    ranked_places = rank_places(
+        place_list,
+        [traveler.dict() for traveler in travelers]
     )
     matched_places = match_preferences(
-    ranked_places,
-    [traveler.dict() for traveler in travelers]
+        ranked_places,
+        [traveler.dict() for traveler in travelers]
     )
-    place_list = await get_route_attractions(
-    route,
-    place_list,
-    travel_mode
+  
+    matched_places = await get_route_attractions(
+        route,
+        place_list,
+        travel_mode
     )
     day_schedule = plan_days(
-    place_list,
-    days
-)
+        matched_places,
+        days,
+        mandatory_schedule
+    )
     hotels = await get_hotels(
         float(destination_location["lat"]),
         float(destination_location["lon"])
@@ -113,10 +119,10 @@ async def build_trip(request):
         if not hotel.get("name"):
             continue
 
-    hotel_list.append({
-        "name": hotel["name"],
-        "distance_km": round(hotel.get("dist", 0) / 1000, 2)
-    })
+        hotel_list.append({
+            "name": hotel["name"],
+            "distance_km": round(hotel.get("dist", 0) / 1000, 2)
+        })
     # Combined response
     trip_data= {
         "source": source,
@@ -135,8 +141,8 @@ async def build_trip(request):
         "travel_mode": travel_mode,
         "travel_mode_rules": mode_rules,
         "weather": weather_summary,
-        "places": matched_places[:10]
-        
+        "places": matched_places,
+        "day_schedule": day_schedule
     }
     itinerary = await generate_itinerary(trip_data)
 
