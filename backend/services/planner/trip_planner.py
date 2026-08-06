@@ -12,13 +12,14 @@ from services.planner.budget_engine import get_budget_rules
 from services.external.hotel_service import get_hotels
 from services.planner.day_planner import plan_days
 from services.planner.trip_optimizer import optimize_trip
+from services.planner.trip_summary import build_summary
 async def build_trip(request):
     source = request.source
     destination = request.destination
     days = request.days
     travelers = request.travelers
     traveler_profiles = []
-    
+    summary = build_summary(trip_data)  # Assuming trip_data is defined elsewhere in your code
     for traveler in travelers:
 
         profile = traveler.dict()
@@ -108,10 +109,14 @@ async def build_trip(request):
         days,
         mandatory_schedule
     )
-    hotels = await get_hotels(
-        float(destination_location["lat"]),
-        float(destination_location["lon"])
-    )
+    try:
+        hotels = await get_hotels(
+            float(destination_location["lat"]),
+            float(destination_location["lon"])
+        )
+    except Exception as e:
+        print(f"Error fetching hotels: {e}")
+        hotels = []
     hotel_list = []
 
     for hotel in hotels:
@@ -129,7 +134,7 @@ async def build_trip(request):
         "destination": destination,
         "days": days,
         "travelers": traveler_profiles,
-        
+        "summary": summary,
         "mandatory_visits": [visit.dict() for visit in mandatory_visits],
         "mandatory_schedule": mandatory_schedule,
         "route": {

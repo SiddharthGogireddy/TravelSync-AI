@@ -2,20 +2,19 @@
 backend/venv/
 __pycache__/
 *.pyc
+.env
 
 # Node
+node_modules/
 frontend/node_modules/
 
-# Environment
-.env
-.env.local
-
-# Vite
+# Build
 dist/
+build/
 
-# VS Code
+# IDE
 .vscode/
+.idea/
 
 # OS
 .DS_Store
-Thumbs.db
