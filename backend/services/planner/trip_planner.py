@@ -13,6 +13,7 @@ from services.external.hotel_service import get_hotels
 from services.planner.day_planner import plan_days
 from services.planner.trip_optimizer import optimize_trip
 from services.planner.trip_summary import build_summary
+from services.planner.budget_tracker import calculate_budget
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -149,6 +150,15 @@ async def build_trip(request):
         "places": matched_places,
         "day_schedule": day_schedule
     }
+    budget = calculate_budget(
+        traveler_profiles,
+        days,
+        travel_mode,
+        hotel_list,
+        matched_places,
+    )
+
+    trip_data["budget"] = budget
     itinerary = await generate_itinerary(trip_data)
 
     return {
