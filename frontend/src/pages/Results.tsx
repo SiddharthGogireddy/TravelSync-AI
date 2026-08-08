@@ -1,15 +1,19 @@
-import ReactMarkdown from "react-markdown";
-import SummaryCard from "../components/SummaryCard";
-import HotelCard from "../components/HotelCard";
-import WeatherCard from "../components/WeatherCard";
-import DayCard from "../components/DayCard";
-import type { Summary, Place, Weather, Hotel, Budget } from "../types/trip";
+import Dashboard from "../components/Dashboard";
 import BudgetCard from "../components/BudgetCard";
+
+import type {
+    Dashboard as DashboardType,
+    Summary,
+    Budget,
+    Weather,
+    Hotel,
+    Place
+} from "../types/trip";
 
 interface Props {
     data: {
         summary: Summary;
-        
+        dashboard: DashboardType;
         trip: {
             budget: Budget;
             weather: Weather[];
@@ -22,69 +26,63 @@ interface Props {
     };
 }
 
-export default function Result({ data }: Props) {
+export default function Results({ data }: Props) {
 
-    if (!data) {
-        return <h2>No itinerary found.</h2>;
-    }
-    
+    if (!data) return <div>Loading...</div>;
 
-    const { summary, trip, itinerary } = data;
-    
+    const { dashboard, trip, itinerary } = data;
+
     return (
-        
+        <div style={{ padding: 20 }}>
 
-        <div className="result">
+            {/* Dashboard */}
+            {dashboard && (
+                <Dashboard dashboard={dashboard} />
+            )}
 
-            <SummaryCard summary={summary} />
-            <BudgetCard
+            {/* Budget */}
+            {trip?.budget && (
+                <BudgetCard budget={trip.budget} />
+            )}
 
-budget={trip.budget}
-
-/>
+            {/* Weather */}
             <h2>Weather</h2>
-
-          {trip.weather.map((day: Weather, index: number) => (
-            
-    <WeatherCard
-        key={index}
-        weather={day}
-    />
-    
-))
-}
-            <h2>Hotels</h2>
-            {trip.hotels.map((hotel: Hotel, index: number) => (
-                <HotelCard
-                    key={index}
-                    hotel={hotel}
-                />
+            {trip.weather.map((day: Weather, index: number) => (
+                <div key={index}>
+                    {day.date} — {day.max_temp}°C / {day.min_temp}°C
+                </div>
             ))}
 
-            <h2>Daily Attractions</h2>
+            {/* Hotels */}
+            <h2>Hotels</h2>
+            {trip.hotels.map((hotel: Hotel, index: number) => (
+                <div key={index}>
+                    {hotel.name} — {hotel.distance_km} km
+                </div>
+            ))}
 
+            {/* Day Schedule */}
+            <h2>Daily Plan</h2>
             {Object.entries(trip.day_schedule).map(
                 ([day, places]: [string, Place[]]) => (
+                    <div key={day}>
+                        <h3>Day {day}</h3>
 
-                    <DayCard
-                        key={day}
-                        day={day}
-                        places={places}
-                    />
-
+                        {places.map((place: Place, i: number) => (
+                            <div key={i}>
+                                {place.name} ({place.category})
+                            </div>
+                        ))}
+                    </div>
                 )
             )}
 
+            {/* Itinerary */}
             <h2>AI Itinerary</h2>
-
-            <ReactMarkdown>
-
+            <pre style={{ whiteSpace: "pre-wrap" }}>
                 {itinerary.itinerary}
-
-            </ReactMarkdown>
+            </pre>
 
         </div>
-
     );
-
 }

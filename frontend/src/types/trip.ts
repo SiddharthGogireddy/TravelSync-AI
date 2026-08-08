@@ -5,12 +5,40 @@ export interface Summary {
     hotel_count: number;
     place_count: number;
 }
-
+export interface Dashboard {
+    source: string;
+    destination: string;
+    days: number;
+    travel_mode: string;
+    hotel_count: number;
+    attraction_count: number;
+    mandatory_count: number;
+    distance: number;
+    duration: number;
+    budget: number;
+}
 export interface Hotel {
     name: string;
     distance_km: number;
 }
+export interface TripRequest {
+    source: string;
+    destination: string;
+    days: number;
 
+    travelers: {
+        name: string;
+        interests: string[];
+        budget: string;
+        pace: string;
+    }[];
+
+    mandatory_visits: {
+        name: string;
+        day: number;
+    }[];
+    travel_mode: string;
+}
 export interface Weather {
     date: string;
     description: string;

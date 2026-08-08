@@ -14,6 +14,7 @@ from services.planner.day_planner import plan_days
 from services.planner.trip_optimizer import optimize_trip
 from services.planner.trip_summary import build_summary
 from services.planner.budget_tracker import calculate_budget
+from services.planner.dashboard import build_dashboard
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -146,6 +147,7 @@ async def build_trip(request):
         "hotels": hotel_list,
         "travel_mode": travel_mode,
         "travel_mode_rules": mode_rules,
+        "dashboard": build_dashboard(trip_data),
         "weather": weather_summary,
         "places": matched_places,
         "day_schedule": day_schedule
