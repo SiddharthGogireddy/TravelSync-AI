@@ -2,9 +2,9 @@ import { useState } from "react";
 import type { TripRequest } from "../types/trip";
 export default function TripForm({ onSubmit }: { onSubmit: (data: TripRequest) => void }) {
 
-    const [source, setSource] = useState("");
-    const [destination, setDestination] = useState("");
-    const [days, setDays] = useState(3);
+    const [source, setSource] = useState<string>("");
+    const [destination, setDestination] = useState<string>("");
+    const [days, setDays] = useState<number>(3);
 
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -27,30 +27,39 @@ export default function TripForm({ onSubmit }: { onSubmit: (data: TripRequest) =
     };
 
     return (
-        <form onSubmit={handleSubmit}>
+       <form className="card" onSubmit={handleSubmit}>
 
-            <input
-                placeholder="Source"
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-            />
+    <h2>Plan Your Trip</h2>
 
-            <input
-                placeholder="Destination"
-                value={destination}
-                onChange={(e) => setDestination(e.target.value)}
-            />
+    <input
+        placeholder="Source"
+        value={source}
+        onChange={(e) => setSource(e.target.value)}
+    />
+    <input
+        placeholder="Destination"
+        value={destination}
+        onChange={(e) => setDestination(e.target.value)}
+    />
+    <input
+        type="number"
+        placeholder="Number of Days"
+        value={days}
+        onChange={(e) => setDays(Number(e.target.value))}
+    />
 
-            <input
-                type="number"
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-            />
+    <button style={{
+        marginTop: 10,
+        padding: 10,
+        background: "#4caf50",
+        color: "white",
+        border: "none",
+        borderRadius: 6
+    }}>
+        Plan Trip
+    </button>
 
-            <button type="submit">
-                Plan Trip
-            </button>
-
-        </form>
+</form>
+        
     );
 }

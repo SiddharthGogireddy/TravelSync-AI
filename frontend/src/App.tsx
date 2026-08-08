@@ -32,9 +32,19 @@ export default function App() {
     };
 
     return (
-        <div style={{ padding: 20 }}>
+        <div style={{ 
+          maxWidth: "1100px",
+            margin: "auto",
+            padding: "20px",
+            fontFamily: "Arial"
+         }}>
 
-            <h1>TravelSync AI</h1>
+            <h1 style={{
+                textAlign: "center",
+                marginBottom: "20px"
+            }}>
+                TravelSync AI
+            </h1>
 
             <TripForm onSubmit={handleSubmit} />
 

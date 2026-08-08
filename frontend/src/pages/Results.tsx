@@ -79,9 +79,12 @@ export default function Results({ data }: Props) {
 
             {/* Itinerary */}
             <h2>AI Itinerary</h2>
-            <pre style={{ whiteSpace: "pre-wrap" }}>
-                {itinerary.itinerary}
-            </pre>
+            <div style={{
+    whiteSpace: "pre-wrap",
+    lineHeight: 1.6
+}}>
+    {itinerary.itinerary}
+</div>
 
         </div>
     );

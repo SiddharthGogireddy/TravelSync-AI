@@ -1,4 +1,5 @@
 import type { Place } from "../types/trip";
+import "../styles/card.css";
 interface Props {
 
     day: string;

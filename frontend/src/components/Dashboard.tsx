@@ -1,5 +1,5 @@
 import type { Dashboard as DashboardType } from "../types/trip";
-
+import "../styles/card.css";
 interface Props {
     dashboard: DashboardType;
 }
@@ -7,28 +7,32 @@ interface Props {
 export default function Dashboard({ dashboard }: Props) {
     return (
         <div className="dashboard">
+           
+              
+    <div className="card">
 
-            <h2>Trip Dashboard</h2>
+    <h2>Trip Dashboard</h2>
 
-            <p>
-                 {dashboard.source} → {dashboard.destination}
-            </p>
+    <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gap: "10px"
+    }}>
 
-            <p> {dashboard.days} Days</p>
+        <div>📍 {dashboard.source} → {dashboard.destination}</div>
+        <div>📅 {dashboard.days} Days</div>
+        <div>🚗 {dashboard.travel_mode}</div>
+        <div>🏨 {dashboard.hotel_count} Hotels</div>
+        <div>📍 {dashboard.attraction_count} Attractions</div>
+        <div>⭐ {dashboard.mandatory_count} Mandatory</div>
+        <div>🛣 {dashboard.distance} km</div>
+        <div>⏱ {dashboard.duration} hrs</div>
+        <div>💰 ₹{dashboard.budget}</div>
 
-            <p> {dashboard.travel_mode}</p>
+    </div>
 
-            <p> {dashboard.hotel_count} Hotels</p>
-
-            <p> {dashboard.attraction_count} Attractions</p>
-
-            <p> {dashboard.mandatory_count} Mandatory Stops</p>
-
-            <p> {dashboard.distance} km</p>
-
-            <p> {dashboard.duration} hrs</p>
-
-            <p> ₹{dashboard.budget}</p>
+</div> 
+            
 
         </div>
     );

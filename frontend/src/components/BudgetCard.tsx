@@ -1,5 +1,6 @@
 import type { Budget } from "../types/trip";
 import ProgressBar from "./ProgressBar";
+import "../styles/card.css";
 interface Props{
 
     budget:Budget;
@@ -28,9 +29,17 @@ export default function BudgetCard({
             borderRadius:10
         }}
         >
+            <h2 style={{ marginBottom: 10 }}>Budget Summary</h2>
 
-        <h2>Budget Summary</h2>
+<div style={{ fontSize: 18, fontWeight: "bold" }}>
+    ₹{budget.estimated_cost}
+</div>
 
+<div style={{ color: "green" }}>
+    Remaining: ₹{budget.remaining}
+</div>
+        <h2 style={{ marginBottom: 10 }}>Budget Summary</h2>
+        <div className="card"></div>
         <p>
             Hotel :
             ₹{budget.categories.hotel}
@@ -88,15 +97,17 @@ export default function BudgetCard({
     value={budget.categories.emergency}
     max={max}
 />
-        Estimated :
-        ₹{budget.estimated_cost}
+        <div style={{ fontSize: 18, fontWeight: "bold" }}>
+    ₹{budget.estimated_cost}
+</div>
 
         </h3>
 
         <h3>
 
-        Remaining :
-        ₹{budget.remaining}
+        <div style={{ color: "green" }}>
+    Remaining: ₹{budget.remaining}
+</div>
 
         </h3>
 
