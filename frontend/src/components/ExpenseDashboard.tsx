@@ -1,31 +1,43 @@
 import type { Expense } from "../types/expense";
-import { calculateSettlement } from "../services/expenseService";
+
+interface TravelerBudget {
+    name: string;
+    amount: number;
+}
 
 interface Props {
     expenses: Expense[];
+    budgets: TravelerBudget[];
 }
 
-export default function ExpenseDashboard({ expenses }: Props) {
+export default function ExpenseDashboard({ expenses, budgets }: Props) {
 
-    const settlements = calculateSettlement(expenses);
+    // ✅ calculate spent per traveler
+    const spent: Record<string, number> = {};
+
+    expenses.forEach((e) => {
+        spent[e.traveler] =
+            (spent[e.traveler] || 0) + e.amount;
+    });
 
     return (
-        <div className="card">
-            <h2>Expense Summary</h2>
+        <div>
+            <h3>Expense Summary</h3>
 
-            {expenses.map((e) => (
-                <div key={e.id}>
-                    {e.title} — ₹{e.amount} ({e.paidBy})
-                </div>
-            ))}
+            {budgets.map((b) => {
+                const used = spent[b.name] || 0;
+                const remaining = b.amount - used;
 
-            <h3>Settlements</h3>
-
-            {settlements.map((s, i) => (
-                <div key={i}>
-                    {s.from} pays {s.to} ₹{s.amount}
-                </div>
-            ))}
+                return (
+                    <div key={b.name}>
+                        <b>{b.name}</b> <br />
+                        Budget: ₹{b.amount} <br />
+                        Spent: ₹{used} <br />
+                        Remaining: ₹{remaining}
+                        <hr />
+                    </div>
+                );
+            })}
         </div>
     );
 }

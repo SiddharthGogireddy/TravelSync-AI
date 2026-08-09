@@ -7,56 +7,54 @@ interface Props {
 }
 
 export default function ExpenseForm({ travelers, onAdd }: Props) {
+    const [traveler, setTraveler] = useState(travelers[0] || "");
+    const [amount, setAmount] = useState(0);
+    const [category, setCategory] = useState("food");
 
-    const [title, setTitle] = useState<string>("");
-    const [amount, setAmount] = useState<number>(0);
-    const [paidBy, setPaidBy] = useState<string>(travelers[0]);
-
-    const handleSubmit = (e: React.FormEvent) => {
+    function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
 
-        const expense: Expense = {
-            id: Date.now().toString(),
-            title,
+        onAdd({
+            traveler,
             amount,
-            paidBy,
-            splitBetween: travelers,
-            category: "other"
-        };
+            category,
+        });
 
-        onAdd(expense);
-
-        setTitle("");
         setAmount(0);
-    };
+    }
 
     return (
-        <form onSubmit={handleSubmit} className="card">
+        <form onSubmit={handleSubmit}>
             <h3>Add Expense</h3>
 
-            <input
-                placeholder="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-            />
+            <select
+                value={traveler}
+                onChange={(e) => setTraveler(e.target.value)}
+            >
+                {travelers.map((t) => (
+                    <option key={t} value={t}>
+                        {t}
+                    </option>
+                ))}
+            </select>
 
             <input
                 type="number"
-                placeholder="Amount"
                 value={amount}
                 onChange={(e) => setAmount(Number(e.target.value))}
             />
 
             <select
-                value={paidBy}
-                onChange={(e) => setPaidBy(e.target.value)}
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
             >
-                {travelers.map((t) => (
-                    <option key={t}>{t}</option>
-                ))}
+                <option value="food">Food</option>
+                <option value="transport">Transport</option>
+                <option value="hotel">Hotel</option>
+                <option value="activities">Activities</option>
             </select>
 
-            <button>Add</button>
+            <button type="submit">Add</button>
         </form>
     );
 }

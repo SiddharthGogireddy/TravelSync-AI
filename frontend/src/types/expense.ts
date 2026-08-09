@@ -1,10 +1,8 @@
 export interface Expense {
-    id: string;
-    title: string;
+    traveler: string;
     amount: number;
-    paidBy: string;
-    splitBetween: string[];
-    category: "hotel" | "food" | "transport" | "activity" | "other";
+    category: string;
+    note?: string;
 }
 
 export interface Settlement {
