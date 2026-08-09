@@ -1,3 +1,6 @@
+from backend import services
+from backend.services.planner import best_time_suggester
+from backend.services.planner.best_time_suggester import suggest_best_days
 from services.external.location_service import search_location
 from services.external.route_service import get_route
 from services.external.weather_service import get_weather
@@ -15,6 +18,9 @@ from services.planner.trip_optimizer import optimize_trip
 from services.planner.trip_summary import build_summary
 from services.planner.budget_tracker import calculate_budget
 from services.planner.dashboard import build_dashboard
+from services.planner.best_time_suggester import suggest_best_days
+from services.storage.trip_store import save_trip
+
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -71,6 +77,7 @@ async def build_trip(request):
             "weather_code": daily["weathercode"][i]
         })
 
+    best_days = suggest_best_days(weather_summary)
     # Nearby places
     places = await get_places(
         float(destination_location["lat"]),
@@ -130,6 +137,7 @@ async def build_trip(request):
             "name": hotel["name"],
             "distance_km": round(hotel.get("dist", 0) / 1000, 2)
         })
+        best_time = suggest_best_days(weather_summary)
     # Combined response
     trip_data= {
         "source": source,
@@ -145,12 +153,13 @@ async def build_trip(request):
         },
         "day_schedule": day_schedule,
         "hotels": hotel_list,
+        "best_time": best_time,
         "travel_mode": travel_mode,
         "travel_mode_rules": mode_rules,
         "dashboard": build_dashboard(trip_data),
         "weather": weather_summary,
         "places": matched_places,
-        "day_schedule": day_schedule
+        
     }
     budget = calculate_budget(
         traveler_profiles,
@@ -162,8 +171,12 @@ async def build_trip(request):
 
     trip_data["budget"] = budget
     itinerary = await generate_itinerary(trip_data)
-
+    trip_id = save_trip({
+    "trip": trip_data,
+    "itinerary": itinerary
+})
     return {
         "trip": trip_data,
-        "itinerary": itinerary
+        "itinerary": itinerary,
+        "trip_id": trip_id
     }

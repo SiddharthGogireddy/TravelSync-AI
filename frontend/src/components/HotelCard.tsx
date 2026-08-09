@@ -1,4 +1,4 @@
-import type{ Hotel } from "../types/trip";
+import type{ Hotel } from "../types/api";
 import "../styles/card.css";
 
 interface Props {
@@ -13,7 +13,7 @@ export default function HotelCard({ hotel }: Props) {
 
             <h3>{hotel.name}</h3>
 
-            <p>{hotel.distance_km} km away</p>
+            <p>{hotel.distance} km away</p>
 
         </div>
 

@@ -1,4 +1,4 @@
-import type { Place } from "../types/trip";
+import type { Place } from "../types/api";
 import "../styles/card.css";
 interface Props {
 

@@ -1,7 +1,7 @@
-import type { Dashboard as DashboardType } from "../types/trip";
+import type { Dashboard as Dashboard } from "../types/trip";
 import "../styles/card.css";
 interface Props {
-    dashboard: DashboardType;
+    dashboard: Dashboard;
 }
 
 export default function Dashboard({ dashboard }: Props) {

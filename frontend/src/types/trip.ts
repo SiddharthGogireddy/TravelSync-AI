@@ -1,6 +1,8 @@
+
+
 export interface Summary {
     days: number;
-    distance: number;
+    distance_km: number;
     travel_time: number;
     hotel_count: number;
     place_count: number;
@@ -17,56 +19,25 @@ export interface Dashboard {
     duration: number;
     budget: number;
 }
-export interface Hotel {
-    name: string;
-    distance_km: number;
-}
+
 export interface TripRequest {
     source: string;
     destination: string;
     days: number;
 
-    travelers: {
-        name: string;
-        interests: string[];
-        budget: string;
-        pace: string;
-    }[];
+    travelers: number;
 
-    mandatory_visits: {
-        name: string;
-        day: number;
-    }[];
-    travel_mode: string;
-}
-export interface Weather {
-    date: string;
-    description: string;
-    min_temp: number;
-    max_temp: number;
+    budget: number;
 }
 
-export interface Place {
-    name: string;
-    category: string;
-}
 
-export interface Trip {
-    weather: Weather[];
-    hotels: Hotel[];
-    day_schedule: Record<string, Place[]>;
-    budget: Budget;
-}
+
 
 export interface Itinerary {
     itinerary: string;
 }
 
-export interface PlannerResponse {
-    summary: Summary;
-    trip: Trip;
-    itinerary: Itinerary;
-}
+
 export interface BudgetCategory {
 
     hotel:number;
@@ -94,4 +65,8 @@ export interface Budget{
 
     per_person:BudgetPerson[];
 
+}
+export interface BestTime {
+    best_days: string[];
+    reason: string;
 }

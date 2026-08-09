@@ -1,4 +1,4 @@
-import type { Weather } from "../types/trip";
+import type { Weather } from "../types/api";
 
 
 interface Props {

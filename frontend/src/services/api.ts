@@ -1,7 +1,13 @@
-import type { TripRequest  } from "../types/trip";
-const API = "http://127.0.0.1:8000";
+import type { TripRequest } from "../types/trip";
+import type { TripApiResponse } from "../types/api";
 
-export async function generateTrip(data: TripRequest) {
+// Base API URL for the frontend service layer.
+// Falls back to a local development server if no Vite env URL is configured.
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+
+export async function generateTrip(
+    data: TripRequest
+): Promise<TripApiResponse> {
 
     const res = await fetch(`${API}/planner`, {
         method: "POST",

@@ -1,91 +1,83 @@
-import Dashboard from "../components/Dashboard";
-import BudgetCard from "../components/BudgetCard";
 
-import type {
-    Dashboard as DashboardType,
-    Summary,
-    Budget,
-    Weather,
-    Hotel,
-    Place
-} from "../types/trip";
+import Dashboard from "../components/Dashboard";
+
+import type { TripApiResponse, Place } from "../types/api";
+
 
 interface Props {
-    data: {
-        summary: Summary;
-        dashboard: DashboardType;
-        trip: {
-            budget: Budget;
-            weather: Weather[];
-            hotels: Hotel[];
-            day_schedule: Record<string, Place[]>;
-        };
-        itinerary: {
-            itinerary: string;
-        };
-    };
+    data: TripApiResponse;
 }
 
 export default function Results({ data }: Props) {
+    
 
-    if (!data) return <div>Loading...</div>;
+    const dashboard = data.dashboard;
+    const trip = data.trip;
+    const itinerary = data.itinerary;
 
-    const { dashboard, trip, itinerary } = data;
+    // ✅ SAFE fallback (trip_id may not exist)
+    const shareUrl = `${window.location.origin}/trip/demo`;
+
+    // ✅ SAFE schedule typing
+    const schedule: Record<string, Place[]> =
+        trip?.day_schedule ?? {};
 
     return (
         <div style={{ padding: 20 }}>
 
             {/* Dashboard */}
-            {dashboard && (
-                <Dashboard dashboard={dashboard} />
-            )}
+            {dashboard && <Dashboard dashboard={dashboard} />}
 
-            {/* Budget */}
-            {trip?.budget && (
-                <BudgetCard budget={trip.budget} />
-            )}
+            {/* Share */}
+            <div>
+                <h3>Share</h3>
+                <input value={shareUrl} readOnly />
+            </div>
+
+            {/* Travelers */}
+            <h2>Travelers</h2>
+            {trip?.travelers?.map((t, i) => (
+                <div key={i}>
+                    {t?.name ?? "Unknown"} — ₹{t?.budget ?? 0}
+                </div>
+            ))}
 
             {/* Weather */}
             <h2>Weather</h2>
-            {trip.weather.map((day: Weather, index: number) => (
-                <div key={index}>
-                    {day.date} — {day.max_temp}°C / {day.min_temp}°C
+            {trip?.weather?.map((w, i) => (
+                <div key={i}>
+                    {w?.date ?? "N/A"} — {w?.max_temp ?? 0}° / {w?.min_temp ?? 0}°
                 </div>
             ))}
 
             {/* Hotels */}
             <h2>Hotels</h2>
-            {trip.hotels.map((hotel: Hotel, index: number) => (
-                <div key={index}>
-                    {hotel.name} — {hotel.distance_km} km
+            {trip?.hotels?.map((h, i) => (
+                <div key={i}>
+                    {h?.name ?? "Hotel"} — {h?.distance ?? 0} km
                 </div>
             ))}
 
-            {/* Day Schedule */}
+            {/* Daily Plan */}
             <h2>Daily Plan</h2>
-            {Object.entries(trip.day_schedule).map(
-                ([day, places]: [string, Place[]]) => (
-                    <div key={day}>
-                        <h3>Day {day}</h3>
+            {Object.entries(schedule).map(([day, places]) => (
+                <div key={day}>
+                    <h3>{day}</h3>
 
-                        {places.map((place: Place, i: number) => (
-                            <div key={i}>
-                                {place.name} ({place.category})
-                            </div>
-                        ))}
-                    </div>
-                )
-            )}
+                    {(places ?? []).map((p, i) => (
+                        <div key={i}>
+                            {p?.name ?? "Place"} (
+                            {p?.type ?? p?.category ?? "General"})
+                        </div>
+                    ))}
+                </div>
+            ))}
 
             {/* Itinerary */}
             <h2>AI Itinerary</h2>
-            <div style={{
-    whiteSpace: "pre-wrap",
-    lineHeight: 1.6
-}}>
-    {itinerary.itinerary}
-</div>
-
+            <div style={{ whiteSpace: "pre-wrap" }}>
+                {itinerary?.itinerary ?? ""}
+            </div>
         </div>
     );
 }
