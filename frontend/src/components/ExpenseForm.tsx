@@ -7,29 +7,74 @@ interface Props {
 }
 
 export default function ExpenseForm({ travelers, onAdd }: Props) {
-    const [traveler, setTraveler] = useState(travelers[0] || "");
-    const [amount, setAmount] = useState(0);
-    const [category, setCategory] = useState("food");
+    const [title, setTitle] = useState<string>("");
+    const [amount, setAmount] = useState<number>(0);
+    const [paidBy, setPaidBy] = useState<string>(travelers[0] || "");
 
-    function handleSubmit(e: React.FormEvent) {
-        e.preventDefault();
+    const [splitType, setSplitType] = useState<"equal" | "custom">("equal");
+    const [participants, setParticipants] = useState<string[]>([]);
+    const [customSplit, setCustomSplit] = useState<Record<string, number>>({});
+
+    const handleParticipantToggle = (name: string) => {
+        setParticipants((prev) =>
+            prev.includes(name)
+                ? prev.filter((p) => p !== name)
+                : [...prev, name]
+        );
+    };
+
+    const handleCustomChange = (name: string, value: number) => {
+        setCustomSplit((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
+    };
+
+    const handleSubmit = () => {
+        if (!title || amount <= 0 || participants.length === 0) return;
 
         onAdd({
-            traveler,
+            title,
             amount,
-            category,
+            paidBy,
+            splitType,
+            participants,
+            customSplit:
+                splitType === "custom" ? customSplit : undefined,
         });
 
+        // reset form
+        setTitle("");
         setAmount(0);
-    }
+        setParticipants([]);
+        setCustomSplit({});
+        setSplitType("equal");
+    };
 
     return (
-        <form onSubmit={handleSubmit}>
+        <div className="card">
             <h3>Add Expense</h3>
 
+            {/* Title */}
+            <input
+                type="text"
+                placeholder="Expense title (e.g. Dinner)"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+            />
+
+            {/* Amount */}
+            <input
+                type="number"
+                placeholder="Amount"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+            />
+
+            {/* Paid By */}
             <select
-                value={traveler}
-                onChange={(e) => setTraveler(e.target.value)}
+                value={paidBy}
+                onChange={(e) => setPaidBy(e.target.value)}
             >
                 {travelers.map((t) => (
                     <option key={t} value={t}>
@@ -38,23 +83,55 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
                 ))}
             </select>
 
-            <input
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(Number(e.target.value))}
-            />
-
+            {/* Split Type */}
+            <h4>Split Type</h4>
             <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={splitType}
+                onChange={(e) =>
+                    setSplitType(e.target.value as "equal" | "custom")
+                }
             >
-                <option value="food">Food</option>
-                <option value="transport">Transport</option>
-                <option value="hotel">Hotel</option>
-                <option value="activities">Activities</option>
+                <option value="equal">Equal</option>
+                <option value="custom">Custom</option>
             </select>
 
-            <button type="submit">Add</button>
-        </form>
+            {/* Participants */}
+            <h4>Participants</h4>
+            {travelers.map((name) => (
+                <label key={name} style={{ display: "block" }}>
+                    <input
+                        type="checkbox"
+                        checked={participants.includes(name)}
+                        onChange={() => handleParticipantToggle(name)}
+                    />
+                    {name}
+                </label>
+            ))}
+
+            {/* Custom Split */}
+            {splitType === "custom" && (
+                <div>
+                    <h4>Custom Split</h4>
+                    {participants.map((p) => (
+                        <div key={p}>
+                            {p}:
+                            <input
+                                type="number"
+                                placeholder="Amount"
+                                onChange={(e) =>
+                                    handleCustomChange(
+                                        p,
+                                        Number(e.target.value)
+                                    )
+                                }
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* Submit */}
+            <button onClick={handleSubmit}>Add Expense</button>
+        </div>
     );
 }

@@ -1,10 +1,11 @@
 export interface Expense {
-    traveler: string;
+    title: string;
     amount: number;
-    category: string;
-    note?: string;
+    paidBy: string;
+    splitType: "equal" | "custom";
+    participants: string[];
+    customSplit?: Record<string, number>;
 }
-
 export interface Settlement {
     from: string;
     to: string;

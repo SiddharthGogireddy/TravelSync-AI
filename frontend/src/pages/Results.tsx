@@ -1,7 +1,7 @@
 
 import BudgetCard from "../components/BudgetCard";
 import Dashboard from "../components/Dashboard";
-import type { Expense } from "../types/expense";
+import type { Expense, Settlement } from "../types/expense";
 import type { TripApiResponse, Place } from "../types/api";
 import { useState } from "react";
 import ExpenseDashboard from "../components/ExpenseDashboard";
@@ -13,11 +13,52 @@ interface Props {
 }
 export default function Results({ data }: Props) {
     const [expenses, setExpenses] = useState<Expense[]>([]);
+    const [balances] = useState<Record<string, number>>({});
+    const settlements = settleDebts(balances);
 
+<h2>Settlements</h2>
+{settlements.map((s, i) => (
+    <div key={i}>
+        {s.from} pays ₹{s.amount.toFixed(2)} to {s.to}
+    </div>
+))}
     const handleDelete = (index: number): void => {
         setExpenses((prev) => prev.filter((_, i) => i !== index));
     };
-    
+function settleDebts(balances: Record<string, number>): Settlement[] {
+    const creditors: [string, number][] = [];
+    const debtors: [string, number][] = [];
+
+    Object.entries(balances).forEach(([name, amt]) => {
+        if (amt > 0) creditors.push([name, amt]);
+        else if (amt < 0) debtors.push([name, -amt]);
+    });
+
+    const settlements: Settlement[] = [];
+
+    let i = 0, j = 0;
+
+    while (i < debtors.length && j < creditors.length) {
+        const [dName, dAmt] = debtors[i];
+        const [cName, cAmt] = creditors[j];
+
+        const pay = Math.min(dAmt, cAmt);
+
+        settlements.push({
+            from: dName,
+            to: cName,
+            amount: pay,
+        });
+
+        debtors[i][1] -= pay;
+        creditors[j][1] -= pay;
+
+        if (debtors[i][1] === 0) i++;
+        if (creditors[j][1] === 0) j++;
+    }
+
+    return settlements;
+}
     const dashboard = data.dashboard;
     const trip = data.trip;
     const itinerary = data.itinerary;
@@ -48,6 +89,7 @@ export default function Results({ data }: Props) {
         amount: Number(t.budget) || 0,
     })) ?? [],
 };
+const total = expenses.reduce((sum, e) => sum + e.amount, 0);
 const travelerBudgets = trip.travelers?.map((t) => ({
     name: t.name,
     amount: Number(t.budget) || 0,
@@ -113,7 +155,7 @@ const travelerBudgets = trip.travelers?.map((t) => ({
                     ))}
                 </div>
             ))}
-
+            <h4>Total Spent: ₹{total}</h4>
             {/* Itinerary */}
             <h2>AI Itinerary</h2>
             <div style={{ whiteSpace: "pre-wrap" }}>
