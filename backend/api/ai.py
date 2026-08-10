@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from services.gemini_service import generate
+from backend.services.gemini_service import generate
 
 router = APIRouter()
 
@@ -14,21 +14,26 @@ class ItineraryRequest(BaseModel):
 @router.post("/ai/itinerary")
 def ai_itinerary(data: ItineraryRequest):
     prompt = f"""
-Create a detailed {data.days}-day travel itinerary for {data.location}.
+Generate a {data.days}-day travel itinerary for {data.location} for {data.travelers} people with a budget of ₹{data.budget}.
 
-Budget: {data.budget}
-Travelers: {data.travelers}
-Interests: {", ".join(data.interests)}
+IMPORTANT:
+Return ONLY valid JSON. No markdown, no explanation.
 
-Include:
-- Day-wise plan
-- Places
-- Food suggestions
-- Travel tips
+Format:
+{{
+  "days": [
+    {{
+      "day": 1,
+      "title": "string",
+      "activities": ["string"],
+      "food": ["string"],
+      "budget": "string"
+    }}
+  ]
+}}
 """
-
     result = generate(prompt)
-    return {"itinerary": result}
+    return result
 
 
 

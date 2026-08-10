@@ -1,24 +1,10 @@
 from fastapi import FastAPI
-from routes.trip import router as trip_router
-from routes.location import router as location_router
-from routes.route import router as route_router
-from routes.weather import router as weather_router
-from routes.place import router as place_router
-from routes.planner import router as planner_router
-from api.trip import router as trip_router
-from api.ai import router as ai_router
+from dotenv import load_dotenv
 
-app = FastAPI(title="TravelSync AI")
+load_dotenv()
 
-app.include_router(trip_router)
-app.include_router(place_router)
-app.include_router(weather_router)
-app.include_router(route_router)
-app.include_router(location_router)
+from backend.api.ai import router as ai_router
+
+app = FastAPI()
+
 app.include_router(ai_router)
-app.include_router(planner_router)
-
-
-@app.get("/")
-def root():
-    return {"message": "TravelSync AI Backend Running"}
