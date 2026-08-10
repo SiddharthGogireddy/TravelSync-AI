@@ -2,6 +2,7 @@ export interface Expense {
     title: string;
     amount: number;
     paidBy: string;
+    category: string;
     splitType: "equal" | "custom";
     participants: string[];
     customSplit?: Record<string, number>;

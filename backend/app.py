@@ -6,7 +6,7 @@ from routes.weather import router as weather_router
 from routes.place import router as place_router
 from routes.planner import router as planner_router
 from api.trip import router as trip_router
-
+from api.ai import router as ai_router
 
 app = FastAPI(title="TravelSync AI")
 
@@ -15,6 +15,7 @@ app.include_router(place_router)
 app.include_router(weather_router)
 app.include_router(route_router)
 app.include_router(location_router)
+app.include_router(ai_router)
 app.include_router(planner_router)
 
 

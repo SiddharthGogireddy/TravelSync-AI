@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import type { Expense } from "../types/expense";
 
 interface Props {
@@ -14,7 +14,7 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
     const [splitType, setSplitType] = useState<"equal" | "custom">("equal");
     const [participants, setParticipants] = useState<string[]>([]);
     const [customSplit, setCustomSplit] = useState<Record<string, number>>({});
-
+    const [category, setCategory] = useState<string>("food");
     const handleParticipantToggle = (name: string) => {
         setParticipants((prev) =>
             prev.includes(name)
@@ -41,6 +41,7 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
             participants,
             customSplit:
                 splitType === "custom" ? customSplit : undefined,
+            category,
         });
 
         // reset form
@@ -50,7 +51,22 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
         setCustomSplit({});
         setSplitType("equal");
     };
+    useEffect(() => {
+    if (!title) return;
 
+    const timer = setTimeout(async () => {
+        const res = await fetch("/ai/categorize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title }),
+        });
+
+        const data = await res.json();
+        setCategory(data.category);
+    }, 500);
+
+    return () => clearTimeout(timer);
+}, [title]);
     return (
         <div className="card">
             <h3>Add Expense</h3>
@@ -107,7 +123,17 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
                     {name}
                 </label>
             ))}
-
+            <h4>Category</h4>
+<select
+    value={category}
+    onChange={(e) => setCategory(e.target.value)}
+>
+    <option value="food">Food</option>
+    <option value="travel">Travel</option>
+    <option value="hotel">Hotel</option>
+    <option value="activities">Activities</option>
+    <option value="shopping">Shopping</option>
+</select>
             {/* Custom Split */}
             {splitType === "custom" && (
                 <div>
