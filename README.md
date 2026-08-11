@@ -1,25 +1,20 @@
-# TravelSync AI
+# TravelSync AI 
 
-AI-powered Group Journey Optimizer
-
-## Tech Stack
-
-- React
-- TypeScript
-- FastAPI
-- AWS Lambda
-- API Gateway
-- DynamoDB
-- S3
-- Tailwind CSS
-- Leaflet
-- OpenStreetMap
+AI-powered travel itinerary generator using FastAPI + Gemini API.
 
 ## Features
+- Generate day-wise itineraries
+- Structured JSON output
+- Budget-based planning
+- Food + activities suggestions
 
-- Group travel planning
-- AI itinerary generation
-- Route optimization
-- Budget estimation
-- Weather integration
-- Tourist attraction recommendations
+## Tech Stack
+- FastAPI
+- Gemini API (google.genai)
+- React (frontend - upcoming)
+
+## Run Backend
+
+```bash
+pip install -r requirements.txt
+uvicorn backend.app:app --reload

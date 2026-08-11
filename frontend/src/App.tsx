@@ -1,73 +1,70 @@
 import { useState } from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
 import TripForm from "./components/TripForm";
 import Results from "./pages/Results";
+
+import TripView from "./pages/TripView";
+
 import { generateTrip } from "./services/api";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { TripView } from "./pages/TripView";
-import type { Dashboard, Summary, Budget, Weather, Hotel, Place,TripRequest, BestTime } from "./types/trip";
-import Home from "./pages/Home";
+
+import type { TripRequest } from "./types/trip";
+import type { TripApiResponse } from "./types/api";
+
 export default function App() {
-    type ApiResponse = {
-    trip_id: string;
-    summary: Summary;
-    dashboard: Dashboard;
-    trip: {
-        budget: Budget;
-        weather: Weather[];
-        hotels: Hotel[];
-        day_schedule: Record<string, Place[]>;
-        travelers: {
-            name: string;
-            budget: string;
-            interests: string[];
-            pace: string;
-        }[];
-        best_time:BestTime;
-    };
-    itinerary: {
-        itinerary: string;
-    };
-};
-    const [data, setData] = useState<ApiResponse | null>(null);
+    const [data, setData] = useState<TripApiResponse | null>(null);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (formData: TripRequest) => {
+        try {
+            setLoading(true);
 
-        setLoading(true);
+            const result = await generateTrip(formData);
 
-        const result = await generateTrip(formData);
-
-        setData(result);
-
-        setLoading(false);
+            setData(result);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <div style={{ 
-          maxWidth: "1100px",
-            margin: "auto",
-            padding: "20px",
-            fontFamily: "Arial"
-         }}>
-            <BrowserRouter>
-    <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/trip/:id" element={<TripView data={data} />} />
-    </Routes>
-</BrowserRouter>
-            <h1 style={{
-                textAlign: "center",
-                marginBottom: "20px"
-            }}>
-                TravelSync AI
-            </h1>
+        <BrowserRouter>
+            <div
+                style={{
+                    maxWidth: "1100px",
+                    margin: "auto",
+                    padding: "20px",
+                    fontFamily: "Arial",
+                }}
+            >
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            <>
+                                <h1
+                                    style={{
+                                        textAlign: "center",
+                                        marginBottom: "20px",
+                                    }}
+                                >
+                                    TravelSync AI
+                                </h1>
 
-            <TripForm onSubmit={handleSubmit} />
+                                <TripForm onSubmit={handleSubmit} />
 
-            {loading && <p>Loading...</p>}
+                                {loading && <p>Loading...</p>}
 
-            {data && <Results data={data} />}
+                                {data && <Results data={data} />}
+                            </>
+                        }
+                    />
 
-        </div>
+                    <Route path="/trip/:id" element={<TripView />} />
+                </Routes>
+            </div>
+        </BrowserRouter>
     );
 }

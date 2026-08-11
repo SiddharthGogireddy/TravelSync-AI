@@ -20,7 +20,7 @@ def save_trip(trip_data):
     return trip_id
 
 
-def get_trip(trip_id):
+def load_trip(trip_id):
     with open(FILE, "r") as f:
         trips = json.load(f)
 

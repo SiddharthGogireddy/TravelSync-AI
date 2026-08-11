@@ -16,7 +16,6 @@ function getTripIdFromUrl(): string | undefined {
     const match = window.location.pathname.match(/\/trip\/([^/]+)/);
     return match?.[1];
 }
-
 export default function TripView() {
     const [data, setData] = useState<TripApiResponse | null>(null);
 

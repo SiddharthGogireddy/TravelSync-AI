@@ -3,7 +3,7 @@ import type { TripApiResponse } from "../types/api";
 
 // Base API URL for the frontend service layer.
 // Falls back to a local development server if no Vite env URL is configured.
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 export async function generateTrip(
     data: TripRequest
@@ -19,3 +19,4 @@ export async function generateTrip(
 
     return await res.json();
 }
+

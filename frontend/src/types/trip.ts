@@ -20,16 +20,29 @@ export interface Dashboard {
     budget: number;
 }
 
+export interface Traveler {
+    name: string;
+    interests: string[];
+    budget: string;
+    pace: string;
+}
+
+export interface MandatoryVisit {
+    name: string;
+    day?: number;
+}
+
 export interface TripRequest {
     source: string;
     destination: string;
     days: number;
 
-    travelers: number;
+    travelers: Traveler[];
 
-    budget: number;
+    mandatory_visits: MandatoryVisit[];
+
+    travel_mode: "car" | "bus" | "train" | "flight";
 }
-
 
 
 

@@ -1,4 +1,4 @@
-from services.planner.budget_constants import (
+from backend.services.planner.budget_constants import (
     HOTEL_COST,
     FOOD_COST,
     ACTIVITY_COST,

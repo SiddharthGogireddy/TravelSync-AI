@@ -1,25 +1,29 @@
 import type { Expense, Settlement } from "../types/expense";
 
 export function calculateSettlement(expenses: Expense[]): Settlement[] {
-
     const balances: Record<string, number> = {};
 
     for (const exp of expenses) {
-        const share = exp.amount / exp.splitBetween.length;
+        const participants = exp.participants;
 
-        for (const person of exp.splitBetween) {
+        const share = exp.amount / Math.max(participants.length, 1);
+
+        for (const person of participants) {
             balances[person] = (balances[person] || 0) - share;
         }
 
-        balances[exp.paidBy] += exp.amount;
+        balances[exp.paidBy] = (balances[exp.paidBy] || 0) + exp.amount;
     }
 
     const creditors: [string, number][] = [];
     const debtors: [string, number][] = [];
 
     for (const person in balances) {
-        if (balances[person] > 0) creditors.push([person, balances[person]]);
-        else if (balances[person] < 0) debtors.push([person, balances[person]]);
+        if (balances[person] > 0) {
+            creditors.push([person, balances[person]]);
+        } else if (balances[person] < 0) {
+            debtors.push([person, balances[person]]);
+        }
     }
 
     const settlements: Settlement[] = [];
@@ -28,7 +32,7 @@ export function calculateSettlement(expenses: Expense[]): Settlement[] {
         let remainingDebt = -debt;
 
         for (const creditor of creditors) {
-            if (remainingDebt === 0) break;
+            if (remainingDebt <= 0) break;
 
             const pay = Math.min(remainingDebt, creditor[1]);
 
@@ -36,7 +40,7 @@ export function calculateSettlement(expenses: Expense[]): Settlement[] {
                 settlements.push({
                     from: debtor,
                     to: creditor[0],
-                    amount: Math.round(pay)
+                    amount: Math.round(pay),
                 });
 
                 creditor[1] -= pay;

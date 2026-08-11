@@ -11,57 +11,75 @@ export interface Dashboard {
     budget: number;
 }
 
+export interface Summary {
+    days: number;
+    distance_km: number;
+    travel_time: number;
+    hotel_count: number;
+    place_count: number;
+}
+
+export interface BudgetCategory {
+    hotel: number;
+    food: number;
+    transport: number;
+    activities: number;
+    emergency: number;
+}
+
+export interface BudgetPerson {
+    name: string;
+    share: number;
+}
+
 export interface Budget {
-    total?: number;
-    estimated?: number;
-    hotel?: number;
-    food?: number;
-    transport?: number;
-    activities?: number;
-    emergency?: number;
+    total_budget: number;
+    estimated_cost: number;
+    remaining: number;
+    categories: BudgetCategory;
+    per_person: BudgetPerson[];
 }
 
 export interface Weather {
     date: string;
     max_temp: number;
     min_temp: number;
+    weather_code?: number;
     description?: string;
 }
 
 export interface Hotel {
     name: string;
-    distance?: number;
+    distance_km: number;
 }
 
 export interface Place {
     name: string;
-    type?: string;
-    category?: string;
+    category: string;
+    distance_km: number;
+    lat: number;
+    lon: number;
 }
 
 export interface Traveler {
     name: string;
-    budget: number;
+    budget: string;
     interests: string[];
     pace: string;
 }
 
 export interface BestTime {
-    recommendation: string;
-    best_days?: string[];
-}
-
-export interface Summary {
-    days?: number;
-    distance?: number;
-    travel_time?: number;
-    hotel_count?: number;
-    place_count?: number;
+    best_days: string[];
+    reason: string;
 }
 
 export interface TripApiResponse {
-    dashboard: Dashboard;
+    trip_id: string;
+
     summary: Summary;
+
+    dashboard: Dashboard;
+
     trip: {
         budget: Budget;
         weather: Weather[];
@@ -70,6 +88,7 @@ export interface TripApiResponse {
         travelers: Traveler[];
         best_time: BestTime;
     };
+
     itinerary: {
         itinerary: string;
     };

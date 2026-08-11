@@ -1,25 +1,22 @@
-from backend import services
 from backend.services.planner import best_time_suggester
 from backend.services.planner.best_time_suggester import suggest_best_days
-from services.external.location_service import search_location
-from services.external.route_service import get_route
-from services.external.weather_service import get_weather
-from services.external.place_service import get_places
-from services.ai.itinerary_generator import generate_itinerary
-from services.planner.attraction_ranker import rank_places
-from services.planner.preference_matcher import match_preferences
-from services.planner.mandatory_scheduler import schedule_mandatory_visits
-from services.planner.travel_mode import get_mode_rules
-from services.planner.route_attractions import get_route_attractions
-from services.planner.budget_engine import get_budget_rules 
-from services.external.hotel_service import get_hotels
-from services.planner.day_planner import plan_days
-from services.planner.trip_optimizer import optimize_trip
-from services.planner.trip_summary import build_summary
-from services.planner.budget_tracker import calculate_budget
-from services.planner.dashboard import build_dashboard
-from services.planner.best_time_suggester import suggest_best_days
-from services.storage.trip_store import save_trip
+from backend.services.external.location_service import search_location
+from backend.services.external.route_service import get_route
+from backend.services.external.weather_service import get_weather
+from backend.services.external.place_service import get_places
+from backend.services.planner.attraction_ranker import rank_places
+from backend.services.planner.preference_matcher import match_preferences
+from backend.services.planner.mandatory_scheduler import schedule_mandatory_visits
+from backend.services.planner.travel_mode import get_mode_rules
+from backend.services.planner.route_attractions import get_route_attractions
+from backend.services.planner.budget_engine import get_budget_rules 
+from backend.services.external.hotel_service import get_hotels
+from backend.services.planner.day_planner import plan_days
+from backend.services.planner.trip_optimizer import optimize_trip
+from backend.services.planner.trip_summary import build_summary
+from backend.services.planner.budget_tracker import calculate_budget
+from backend.services.planner.dashboard import build_dashboard
+from backend.services.storage.trip_store import save_trip
 
 async def build_trip(request):
     source = request.source
@@ -27,7 +24,7 @@ async def build_trip(request):
     days = request.days
     travelers = request.travelers
     traveler_profiles = []
-    summary = build_summary(trip_data)  # Assuming trip_data is defined elsewhere in your code
+    
     for traveler in travelers:
 
         profile = traveler.dict()
@@ -44,7 +41,7 @@ async def build_trip(request):
     days,
     [visit.dict() for visit in mandatory_visits]
 )
-
+    
     # Search locations
     source_location = await search_location(source)
     destination_location = await search_location(destination)
@@ -77,7 +74,7 @@ async def build_trip(request):
             "weather_code": daily["weathercode"][i]
         })
 
-    best_days = suggest_best_days(weather_summary)
+    
     # Nearby places
     places = await get_places(
         float(destination_location["lat"]),
@@ -127,7 +124,8 @@ async def build_trip(request):
         print(f"Error fetching hotels: {e}")
         hotels = []
     hotel_list = []
-
+    best_time = suggest_best_days(weather_summary)
+        # Combined response
     for hotel in hotels:
 
         if not hotel.get("name"):
@@ -137,14 +135,14 @@ async def build_trip(request):
             "name": hotel["name"],
             "distance_km": round(hotel.get("dist", 0) / 1000, 2)
         })
-        best_time = suggest_best_days(weather_summary)
+        
     # Combined response
     trip_data= {
         "source": source,
         "destination": destination,
         "days": days,
         "travelers": traveler_profiles,
-        "summary": summary,
+        
         "mandatory_visits": [visit.dict() for visit in mandatory_visits],
         "mandatory_schedule": mandatory_schedule,
         "route": {
@@ -156,11 +154,11 @@ async def build_trip(request):
         "best_time": best_time,
         "travel_mode": travel_mode,
         "travel_mode_rules": mode_rules,
-        "dashboard": build_dashboard(trip_data),
         "weather": weather_summary,
-        "places": matched_places,
-        
+        "places": matched_places,   
     }
+    
+    
     budget = calculate_budget(
         traveler_profiles,
         days,
@@ -168,15 +166,15 @@ async def build_trip(request):
         hotel_list,
         matched_places,
     )
-
+    
     trip_data["budget"] = budget
-    itinerary = await generate_itinerary(trip_data)
+    trip_data["dashboard"] = build_dashboard(trip_data)
+    trip_data["summary"] = build_summary(trip_data)
     trip_id = save_trip({
     "trip": trip_data,
-    "itinerary": itinerary
+    
 })
     return {
         "trip": trip_data,
-        "itinerary": itinerary,
         "trip_id": trip_id
     }

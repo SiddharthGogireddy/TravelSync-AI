@@ -13,5 +13,5 @@ def build_dashboard(trip_data):
         ),
         "distance": trip_data["route"]["distance_km"],
         "duration": trip_data["route"]["duration_hours"],
-        "budget": trip_data["budget"]["total"]
+        "budget": trip_data["budget"]["total_budget"],
     }

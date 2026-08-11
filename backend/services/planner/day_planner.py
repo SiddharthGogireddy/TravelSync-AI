@@ -1,4 +1,4 @@
-def plan_days(places, days):
+def plan_days(places, days,mandatory_schedule=None):
     schedule = {}
 
     if days <= 0:
