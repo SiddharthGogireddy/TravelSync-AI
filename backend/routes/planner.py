@@ -4,7 +4,7 @@ from fastapi import APIRouter
 from backend.models.trip import TripRequest
 
 from backend.services.gemini_service import generate
-from backend.services.planner.trip_planner import build_trip
+from backend.services.planner.itinerary import build_trip
 
 router = APIRouter(
     prefix="/planner",
