@@ -1,0 +1,26 @@
+.budget-card{
+    background:white;
+    padding:20px;
+    border-radius:12px;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+}
+.budget-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:20px;
+}
+.budget-item{
+    background:#f6f6f6;
+    padding:15px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.budget-item span{
+    color:gray;
+    font-size:14px;
+}
+
+.budget-item h3{
+    margin-top:10px;
+}

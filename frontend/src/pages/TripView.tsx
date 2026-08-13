@@ -3,21 +3,25 @@ import Dashboard from "../components/Dashboard";
 import WeatherCard from "../components/WeatherCard";
 import HotelCard from "../components/HotelCard";
 import DayCard from "../components/DayCard";
-
+import BudgetPieChart
+from "../components/BudgetPieChart";
 import {
-    type TripApiResponse,
+    type TripResponse,
     type Weather,
     type Hotel,
-    type Traveler  
+    type Traveler,
+    
 } from "../types/api";
-
+import BudgetCard from "../components/BudgetCard";
+import BudgetBreakdown from "../components/BudgetBreakdown";
+import BudgetStatus from "../components/BudgetStatus";
 function getTripIdFromUrl(): string | undefined {
     if (typeof window === "undefined") return undefined;
     const match = window.location.pathname.match(/\/trip\/([^/]+)/);
     return match?.[1];
 }
 export default function TripView() {
-    const [data, setData] = useState<TripApiResponse | null>(null);
+    const [data, setData] = useState<TripResponse | null>(null);
 
     useEffect(() => {
         const tripId = getTripIdFromUrl();
@@ -26,7 +30,7 @@ export default function TripView() {
         async function fetchTrip() {
             try {
                 const res = await fetch(`http://127.0.0.1:8000/trip/${tripId}`);
-                const json: TripApiResponse = await res.json();
+                const json: TripResponse = await res.json();
                 setData(json);
             } catch (err) {
                 console.error(err);
@@ -38,51 +42,111 @@ export default function TripView() {
 
     if (!data) return <div>Loading...</div>;
 
-    const { dashboard, trip, itinerary } = data;
+    const { dashboard, trip} = data;
 
-    // ✅ Normalize weather safely
+
     const normalizedWeather: Weather[] = trip.weather.map((w) => ({
         ...w,
         description: w.description ?? "",
     }));
 
     return (
-        <div style={{ padding: "20px" }}>
+    <div
+        style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "20px",
+        }}
+    >
+        <Dashboard dashboard={dashboard} />
 
-            {/* Dashboard */}
-            <Dashboard dashboard={dashboard} />
+        <br />
 
-            {/* Travelers */}
-            <h2>Travelers</h2>
-            {trip.travelers.map((t: Traveler, i: number) => (
+        <BudgetCard budget={trip.budget} />
+
+        <br />
+
+        <BudgetStatus
+            status={trip.budget.status}
+        />
+
+        <br />
+
+        <BudgetBreakdown
+            categories={trip.budget.categories}
+        />
+  
+        <BudgetPieChart categories={trip.budget.categories} />
+
+        <hr />
+
+        <h2> Travelers</h2>
+
+        {trip.travelers.map(
+            (t: Traveler, i: number) => (
                 <div key={i}>
-                    <b>{t.name}</b> — {t.budget}
+                    <b>{t.name}</b>
+                    {" — "}
+                    {t.budget}
                 </div>
-            ))}
+            )
+        )}
 
-            {/* Weather */}
-            <h2>Weather</h2>
-            {normalizedWeather.map((day: Weather, index: number) => (
-                <WeatherCard key={index} weather={day} />
-            ))}
+        <hr />
 
-            {/* Hotels */}
-            <h2>Hotels</h2>
-            {trip.hotels.map((hotel: Hotel, index: number) => (
-                <HotelCard key={index} hotel={hotel} />
-            ))}
+        <h2> Weather</h2>
 
-            {/* Daily Plan */}
-            <h2>Daily Plan</h2>
-            {Object.entries(trip.day_schedule).map(([day, places]) => (
-                <DayCard key={day} day={day} places={places} />
-            ))}
-            {/* AI Itinerary */}
-            <h2>AI Itinerary</h2>
-            <pre style={{ whiteSpace: "pre-wrap" }}>
-                {itinerary.itinerary}
-            </pre>
+        {normalizedWeather.map(
+            (day: Weather, index: number) => (
+                <WeatherCard
+                    key={index}
+                    weather={day}
+                />
+            )
+        )}
 
-        </div>
-    );
+        <hr />
+
+        <h2> Hotels</h2>
+
+        {trip.hotels.map(
+            (hotel: Hotel, index: number) => (
+                <HotelCard
+                    key={index}
+                    hotel={hotel}
+                />
+            )
+        )}
+
+        <hr />
+
+        <h2>🗓 Daily Plan</h2>
+
+        {Object.entries(trip.day_schedule).map(
+            ([day, places]) => (
+                <DayCard
+                    key={day}
+                    day={day}
+                    places={places}
+                />
+            )
+        )}
+
+        <hr />
+
+        <h2>AI Itinerary</h2>
+
+        <pre
+            style={{
+                whiteSpace: "pre-wrap",
+                background: "#f5f5f5",
+                padding: "16px",
+                borderRadius: "10px",
+            }}
+        >
+            {trip.itinerary?.itinerary}
+        </pre>
+    </div>
+);
+
 }

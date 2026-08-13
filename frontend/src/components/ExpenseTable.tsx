@@ -1,44 +1,54 @@
-import type { Expense } from "../types/expense";
+type Expense = {
+    title: string;
+    amount: number;
+    paid_by: string;
+};
 
-interface Props {
+type Props = {
     expenses: Expense[];
-    onDelete: (index: number) => void;
-}
+};
 
-export default function ExpenseTable({ expenses, onDelete }: Props) {
+export default function ExpenseTable({
+    expenses,
+}: Props) {
+
     return (
-        <div>
-            <h3>Expense History</h3>
+        <table
+            style={{
+                width: "100%",
+                borderCollapse: "collapse",
+            }}
+        >
+            <thead>
+                <tr>
+                    <th>Expense</th>
+                    <th>Amount</th>
+                    <th>Paid By</th>
+                </tr>
+            </thead>
 
-            {expenses.length === 0 ? (
-                <p>No expenses yet</p>
-            ) : (
-                <table border={1} cellPadding={8}>
-                    <thead>
-                        <tr>
-                            <th>Traveler</th>
-                            <th>Amount</th>
-                            <th>Category</th>
-                            <th>Action</th>
+            <tbody>
+
+                {expenses.map(
+                    (expense, index) => (
+
+                        <tr key={index}>
+
+                            <td>{expense.title}</td>
+
+                            <td>
+                                ₹{expense.amount}
+                            </td>
+
+                            <td>
+                                {expense.paid_by}
+                            </td>
+
                         </tr>
-                    </thead>
+                    )
+                )}
 
-                    <tbody>
-                        {expenses.map((e, i) => (
-                            <tr key={i}>
-                                <td>{e.traveler}</td>
-                                <td>₹{e.amount}</td>
-                                <td>{e.category}</td>
-                                <td>
-                                    <button onClick={() => onDelete(i)}>
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            )}
-        </div>
+            </tbody>
+        </table>
     );
 }

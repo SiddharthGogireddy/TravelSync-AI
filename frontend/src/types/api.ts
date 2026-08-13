@@ -1,3 +1,4 @@
+import type { Budget } from "./trip";
 export interface Dashboard {
     source: string;
     destination: string;
@@ -32,13 +33,7 @@ export interface BudgetPerson {
     share: number;
 }
 
-export interface Budget {
-    total_budget: number;
-    estimated_cost: number;
-    remaining: number;
-    categories: BudgetCategory;
-    per_person: BudgetPerson[];
-}
+
 
 export interface Weather {
     date: string;
@@ -73,23 +68,30 @@ export interface BestTime {
     reason: string;
 }
 
-export interface TripApiResponse {
+export interface TripResponse {
     trip_id: string;
-
-    summary: Summary;
 
     dashboard: Dashboard;
 
+    summary: Summary;
+
     trip: {
         budget: Budget;
-        weather: Weather[];
-        hotels: Hotel[];
-        day_schedule: Record<string, Place[]>;
-        travelers: Traveler[];
-        best_time: BestTime;
-    };
 
-    itinerary: {
-        itinerary: string;
+        weather: Weather[];
+
+        hotels: Hotel[];
+
+        places: Place[];
+
+        day_schedule: Record<string, Place[]>;
+
+        travelers: Traveler[];
+
+        best_time: BestTime;
+
+        itinerary?: {
+            itinerary: string;
+        };
     };
 }

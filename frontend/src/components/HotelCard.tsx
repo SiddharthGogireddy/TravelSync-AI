@@ -13,7 +13,7 @@ export default function HotelCard({ hotel }: Props) {
 
             <h3>{hotel.name}</h3>
 
-            <p>{hotel.distance} km away</p>
+            <p>{hotel.distance_km} km away</p>
 
         </div>
 

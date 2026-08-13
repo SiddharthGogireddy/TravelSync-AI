@@ -1,51 +1,52 @@
+import "./BudgetCard.css";
 
-import "../styles/card.css";
-
-interface BudgetCategory {
-    hotel: number;
-    food: number;
-    transport: number;
-    activities: number;
-    emergency: number;
-}
-
-interface PerPerson {
-    name: string;
-    amount: number;
-}
-export interface BudgetView {
+type BudgetProps = {
+  budget: {
     total_budget: number;
     estimated_cost: number;
     remaining: number;
-    categories: BudgetCategory;
-    per_person: PerPerson[];
-}
+    average_per_day: number;
+    average_per_person: number;
+    status: string;
+  };
+};
 
-interface Props {
-    budget: BudgetView;
-}
-export default function BudgetCard({ budget }: Props) {
-    return (
-        <div>
-            <h2>Budget</h2>
+export default function BudgetCard({ budget }: BudgetProps) {
+  return (
+    <div className="budget-card">
+      <h2> Budget Overview</h2>
 
-            <p>Total: ₹{budget.total_budget}</p>
-            <p>Estimated: ₹{budget.estimated_cost}</p>
-            <p>Remaining: ₹{budget.remaining}</p>
-
-            <h3>Categories</h3>
-            {Object.entries(budget.categories).map(([k, v]) => (
-                <div key={k}>
-                    {k}: ₹{v}
-                </div>
-            ))}
-
-            <h3>Per Person</h3>
-            {budget.per_person.map((p, i) => (
-                <div key={i}>
-                    {p.name}: ₹{p.amount}
-                </div>
-            ))}
+      <div className="budget-grid">
+        <div className="budget-item">
+          <span>Total Budget</span>
+          <h3>₹{budget.total_budget.toLocaleString()}</h3>
         </div>
-    );
+
+        <div className="budget-item">
+          <span>Estimated Cost</span>
+          <h3>₹{budget.estimated_cost.toLocaleString()}</h3>
+        </div>
+
+        <div className="budget-item">
+          <span>Remaining</span>
+          <h3>₹{budget.remaining.toLocaleString()}</h3>
+        </div>
+
+        <div className="budget-item">
+          <span>Average / Day</span>
+          <h3>₹{budget.average_per_day.toLocaleString()}</h3>
+        </div>
+
+        <div className="budget-item">
+          <span>Average / Person</span>
+          <h3>₹{budget.average_per_person.toLocaleString()}</h3>
+        </div>
+
+        <div className="budget-item">
+          <span>Status</span>
+          <h3>{budget.status}</h3>
+        </div>
+      </div>
+    </div>
+  );
 }
