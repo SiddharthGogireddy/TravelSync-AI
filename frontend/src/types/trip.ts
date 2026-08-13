@@ -1,3 +1,4 @@
+
 export interface BudgetCategory {
     hotel: number;
     food: number;
@@ -32,16 +33,27 @@ export interface Budget {
 
     categories: BudgetCategory;
 
-    category_percentage: {
-        hotel: number;
-        food: number;
-        transport: number;
-        activities: number;
-        emergency: number;
-    };
+    category_percentage: CategoryPercentage;
 
-    per_person: {
-        name: string;
-        share: number;
-    }[];
+    per_person: PerPersonBudget[];
+}
+export interface TravelerRequest {
+    name: string;
+    interests: string[];
+    budget: string;
+    pace: string;
+}
+
+export interface MandatoryVisit {
+    name: string;
+    day?: number;
+}
+
+export interface TripRequest {
+    source: string;
+    destination: string;
+    days: number;
+    travel_mode: string;
+    travelers: TravelerRequest[];
+    mandatory_visits: MandatoryVisit[];
 }

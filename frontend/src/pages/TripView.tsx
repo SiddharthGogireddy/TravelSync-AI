@@ -1,152 +1,297 @@
 import { useEffect, useState } from "react";
+import AddExpenseModal from "../components/AddExpenseModal";
+import { addExpense } from "../services/expense";
 import Dashboard from "../components/Dashboard";
 import WeatherCard from "../components/WeatherCard";
 import HotelCard from "../components/HotelCard";
 import DayCard from "../components/DayCard";
-import BudgetPieChart
-from "../components/BudgetPieChart";
-import {
-    type TripResponse,
-    type Weather,
-    type Hotel,
-    type Traveler,
-    
-} from "../types/api";
+
 import BudgetCard from "../components/BudgetCard";
 import BudgetBreakdown from "../components/BudgetBreakdown";
 import BudgetStatus from "../components/BudgetStatus";
+import BudgetPieChart from "../components/BudgetPieChart";
+
+import ExpenseCard from "../components/ExpenseCard";
+import ExpenseTable from "../components/ExpenseTable";
+import SettlementCard from "../components/SettlementCard";
+
+import { getExpenses } from "../services/expense";
+
+import type {
+    TripResponse,
+    Weather,
+    Hotel,
+    Traveler,
+} from "../types/api";
+
+import type {
+    ExpenseResponse,
+} from "../types/expense";
+
 function getTripIdFromUrl(): string | undefined {
     if (typeof window === "undefined") return undefined;
-    const match = window.location.pathname.match(/\/trip\/([^/]+)/);
+
+    const match = window.location.pathname.match(
+        /\/trip\/([^/]+)/
+    );
+
     return match?.[1];
 }
+
 export default function TripView() {
-    const [data, setData] = useState<TripResponse | null>(null);
+    async function handleAddExpense(
+    title: string,
+    amount: number,
+    paidBy: string
+) {
+
+    const tripId = getTripIdFromUrl();
+
+    if (!tripId) return;
+
+    await addExpense(
+        tripId,
+        {
+            title,
+            amount,
+            paid_by: paidBy,
+        }
+    );
+
+    const updated =
+        await getExpenses(tripId);
+
+    setExpenseData(updated);
+
+}
+    const [data, setData] =
+        useState<TripResponse | null>(null);
+
+    const [expenseData, setExpenseData] =
+        useState<ExpenseResponse | null>(null);
 
     useEffect(() => {
+
         const tripId = getTripIdFromUrl();
+
         if (!tripId) return;
 
-        async function fetchTrip() {
+        async function fetchTrip(id: string) {
+
             try {
-                const res = await fetch(`http://127.0.0.1:8000/trip/${tripId}`);
-                const json: TripResponse = await res.json();
+
+                const res = await fetch(
+                    `http://127.0.0.1:8000/trip/${id}`
+                );
+
+                const json: TripResponse =
+                    await res.json();
+
                 setData(json);
-            } catch (err) {
-                console.error(err);
+
+                const expenses =
+                    await getExpenses(id);
+
+                setExpenseData(expenses);
+
             }
+
+            catch (err) {
+
+                console.error(err);
+
+            }
+
         }
 
-        fetchTrip();
+        fetchTrip(tripId);
+
     }, []);
 
-    if (!data) return <div>Loading...</div>;
+    if (!data)
+        return <div>Loading...</div>;
 
-    const { dashboard, trip} = data;
+    const { dashboard, trip } = data;
 
-
-    const normalizedWeather: Weather[] = trip.weather.map((w) => ({
-        ...w,
-        description: w.description ?? "",
-    }));
+    const normalizedWeather: Weather[] =
+        trip.weather.map((w) => ({
+            ...w,
+            description:
+                w.description ?? "",
+        }));
 
     return (
-    <div
-        style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-            padding: "20px",
-        }}
-    >
-        <Dashboard dashboard={dashboard} />
 
-        <br />
+        <div
+            style={{
+                maxWidth: "1200px",
+                margin: "0 auto",
+                padding: "20px",
+            }}
+        >
 
-        <BudgetCard budget={trip.budget} />
+            <Dashboard dashboard={dashboard} />
 
-        <br />
+            <br />
 
-        <BudgetStatus
-            status={trip.budget.status}
-        />
+            <BudgetCard
+                budget={trip.budget}
+            />
 
-        <br />
+            <br />
 
-        <BudgetBreakdown
-            categories={trip.budget.categories}
-        />
-  
-        <BudgetPieChart categories={trip.budget.categories} />
+            <BudgetStatus
+                status={trip.budget.status}
+            />
 
-        <hr />
+            <br />
 
-        <h2> Travelers</h2>
+            <BudgetBreakdown
+                categories={
+                    trip.budget.categories
+                }
+            />
 
-        {trip.travelers.map(
-            (t: Traveler, i: number) => (
-                <div key={i}>
-                    <b>{t.name}</b>
-                    {" — "}
-                    {t.budget}
-                </div>
-            )
-        )}
+            <br />
 
-        <hr />
+            <BudgetPieChart
+                categories={
+                    trip.budget.categories
+                }
+            />
 
-        <h2> Weather</h2>
+            <hr />
 
-        {normalizedWeather.map(
-            (day: Weather, index: number) => (
-                <WeatherCard
-                    key={index}
-                    weather={day}
-                />
-            )
-        )}
+            <h2> Travelers</h2>
 
-        <hr />
+            {trip.travelers.map(
+                (traveler: Traveler, index: number) => (
 
-        <h2> Hotels</h2>
+                    <div key={index}>
 
-        {trip.hotels.map(
-            (hotel: Hotel, index: number) => (
-                <HotelCard
-                    key={index}
-                    hotel={hotel}
-                />
-            )
-        )}
+                        <b>{traveler.name}</b>
 
-        <hr />
+                        {" - "}
 
-        <h2>🗓 Daily Plan</h2>
+                        {traveler.budget}
 
-        {Object.entries(trip.day_schedule).map(
-            ([day, places]) => (
+                    </div>
+
+                )
+            )}
+
+            <hr />
+
+            <h2> Weather</h2>
+
+            {normalizedWeather.map(
+                (weather: Weather, index) => (
+
+                    <WeatherCard
+                        key={index}
+                        weather={weather}
+                    />
+
+                )
+            )}
+
+            <hr />
+
+            <h2> Hotels</h2>
+
+            {trip.hotels.map(
+                (hotel: Hotel, index) => (
+
+                    <HotelCard
+                        key={index}
+                        hotel={hotel}
+                    />
+
+                )
+            )}
+
+            <hr />
+
+            <h2> Daily Plan</h2>
+
+            {Object.entries(
+                trip.day_schedule
+            ).map(([day, places]) => (
+
                 <DayCard
                     key={day}
                     day={day}
                     places={places}
                 />
-            )
-        )}
 
-        <hr />
+            ))}
 
-        <h2>AI Itinerary</h2>
+            <hr />
 
-        <pre
-            style={{
-                whiteSpace: "pre-wrap",
-                background: "#f5f5f5",
-                padding: "16px",
-                borderRadius: "10px",
-            }}
-        >
-            {trip.itinerary?.itinerary}
-        </pre>
-    </div>
-);
+            <h2> AI Itinerary</h2>
+
+            <pre
+                style={{
+                    whiteSpace: "pre-wrap",
+                    background: "#f5f5f5",
+                    padding: "16px",
+                    borderRadius: "10px",
+                }}
+            >
+                {trip.itinerary?.itinerary ?? "No AI itinerary available."}
+            </pre>
+
+            <hr />
+                <AddExpenseModal
+    travelers={
+        trip.travelers.map(
+            (traveler) => traveler.name
+        )
+    }
+    onAdd={handleAddExpense}
+/>
+            <h2> Trip Expenses</h2>
+
+            {expenseData && (
+
+                <>
+
+                    <ExpenseCard
+                        total={
+                            expenseData.expenses.reduce(
+                                (
+                                    sum,
+                                    expense
+                                ) =>
+                                    sum +
+                                    expense.amount,
+                                0
+                            )
+                        }
+                    />
+
+                    <br />
+
+                    <ExpenseTable
+                        expenses={
+                            expenseData.expenses
+                        }
+                    />
+
+                    <br />
+
+                    <SettlementCard
+                        settlements={
+                            expenseData.settlements
+                        }
+                    />
+
+                </>
+
+            )}
+
+        </div>
+
+    );
 
 }

@@ -1,14 +1,17 @@
 export interface Expense {
     title: string;
     amount: number;
-    paidBy: string;
-    category: string;
-    splitType: "equal" | "custom";
-    participants: string[];
-    customSplit?: Record<string, number>;
+    paid_by: string;
 }
+
 export interface Settlement {
     from: string;
     to: string;
     amount: number;
+}
+
+export interface ExpenseResponse {
+    expenses: Expense[];
+    balances: Record<string, number>;
+    settlements: Settlement[];
 }
