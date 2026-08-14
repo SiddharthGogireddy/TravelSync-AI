@@ -1,5 +1,7 @@
 import os
+
 import httpx
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,20 +12,24 @@ BASE_URL = "https://api.opentripmap.com/0.1/en/places/radius"
 
 
 async def get_hotels(lat, lon):
+
     params = {
         "radius": 15000,
         "lon": lon,
         "lat": lat,
         "limit": 20,
         "format": "json",
-        "apikey": API_KEY
+        "kinds": "other_hotels",
+        "apikey": API_KEY,
     }
 
     async with httpx.AsyncClient() as client:
-        response = await client.get(BASE_URL, params=params)
 
+        response = await client.get(
+            BASE_URL,
+            params=params,
+        )
 
+        response.raise_for_status()
 
-    data = response.json()
-
-    return data
+    return response.json()

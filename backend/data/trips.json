@@ -573,5 +573,420 @@
         }
       }
     }
+  },
+  {
+    "id": "7111608f-adf8-4382-8e04-fa8888f66814",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "Hyderabad",
+        "destination": "Goa",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "Siddharth",
+            "interests": [
+              "Beaches",
+              "Food"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.65,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-14",
+            "max_temp": 28.7,
+            "min_temp": 23.9,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-15",
+            "max_temp": 28.8,
+            "min_temp": 23.4,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-16",
+            "max_temp": 28.7,
+            "min_temp": 23.4,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 29.2,
+            "min_temp": 22.9,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 27.4,
+            "min_temp": 23.1,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 26.9,
+            "min_temp": 23.5,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 27.6,
+            "min_temp": 23.3,
+            "weather_code": 80
+          }
+        ],
+        "best_time": {
+          "best_days": [],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "St.Anthony Church",
+            "category": "Religion",
+            "distance_km": 2.08,
+            "lat": 15.300780296325684,
+            "lon": 74.06610870361328,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Our Lady of Fatima Chapel",
+            "category": "Religion",
+            "distance_km": 3.0,
+            "lat": 15.324767112731934,
+            "lon": 74.07317352294922,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "St. Francis Xavier Church",
+            "category": "Religion",
+            "distance_km": 3.07,
+            "lat": 15.289353370666504,
+            "lon": 74.05935668945312,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Shri Sateri Temple",
+            "category": "Religion",
+            "distance_km": 3.63,
+            "lat": 15.267666816711426,
+            "lon": 74.08405303955078,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "St.Francis Xavier Chapel",
+            "category": "Religion",
+            "distance_km": 3.82,
+            "lat": 15.304940223693848,
+            "lon": 74.05022430419922,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Kuskem Waterfall",
+            "category": "Other",
+            "distance_km": 4.14,
+            "lat": 15.299214363098145,
+            "lon": 74.1240463256836,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "St. Francis Xavier Chapel, Guirdolim",
+            "category": "Religion",
+            "distance_km": 4.47,
+            "lat": 15.272496223449707,
+            "lon": 74.05542755126953,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Z Square Cine Niagara",
+            "category": "Cultural",
+            "distance_km": 4.74,
+            "lat": 15.263314247131348,
+            "lon": 74.10758972167969,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Holy Cross Chapel",
+            "category": "Religion",
+            "distance_km": 5.08,
+            "lat": 15.262213706970215,
+            "lon": 74.05927276611328,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Dattatraya Temple",
+            "category": "Religion",
+            "distance_km": 5.09,
+            "lat": 15.335558891296387,
+            "lon": 74.11617279052734,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Dr. B. R. Ambedkar",
+            "category": "Cultural",
+            "distance_km": 5.11,
+            "lat": 15.258479118347168,
+            "lon": 74.1053237915039,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Ravindra Bhavan",
+            "category": "Cultural",
+            "distance_km": 5.17,
+            "lat": 15.258463859558105,
+            "lon": 74.10671997070312,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Guardian Angel Church",
+            "category": "Religion",
+            "distance_km": 5.24,
+            "lat": 15.261651039123535,
+            "lon": 74.11345672607422,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Shivaji",
+            "category": "Cultural",
+            "distance_km": 5.42,
+            "lat": 15.257878303527832,
+            "lon": 74.11054229736328,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Shiv Temple",
+            "category": "Religion",
+            "distance_km": 5.53,
+            "lat": 15.256967544555664,
+            "lon": 74.0601806640625,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Carmel Chapel",
+            "category": "Religion",
+            "distance_km": 5.59,
+            "lat": 15.291115760803223,
+            "lon": 74.0343246459961,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Excavated site in Chandor",
+            "category": "Historic",
+            "distance_km": 5.73,
+            "lat": 15.258122444152832,
+            "lon": 74.05485534667969,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          },
+          {
+            "name": "Shri Kamaxi Devasthan",
+            "category": "Religion",
+            "distance_km": 5.88,
+            "lat": 15.320893287658691,
+            "lon": 74.03497314453125,
+            "score": 1,
+            "matched_travelers": [],
+            "match_count": 0
+          }
+        ],
+        "hotels": [
+          {
+            "name": "Chatrapati Hotel",
+            "distance_km": 5.35
+          },
+          {
+            "name": "Sangam Hotel",
+            "distance_km": 7.86
+          },
+          {
+            "name": "Hotel Yuvraj",
+            "distance_km": 8.83
+          },
+          {
+            "name": "Sai Raj Hotel",
+            "distance_km": 9.23
+          },
+          {
+            "name": "Hill View Hotel",
+            "distance_km": 12.69
+          },
+          {
+            "name": "OYO 6988 Hotel Sincro",
+            "distance_km": 12.79
+          },
+          {
+            "name": "Mohan Hotel",
+            "distance_km": 13.19
+          },
+          {
+            "name": "Apple rosa",
+            "distance_km": 13.44
+          },
+          {
+            "name": "Dona Maria Residency",
+            "distance_km": 13.48
+          },
+          {
+            "name": "hotel paulino",
+            "distance_km": 13.58
+          },
+          {
+            "name": "Hotel Top",
+            "distance_km": 13.58
+          },
+          {
+            "name": "Hotel Grand Liz",
+            "distance_km": 13.71
+          },
+          {
+            "name": "Hotel Star City",
+            "distance_km": 13.76
+          },
+          {
+            "name": "Harmonia Apartments",
+            "distance_km": 13.8
+          },
+          {
+            "name": "nanutel margao",
+            "distance_km": 13.85
+          },
+          {
+            "name": "Shanbag hotel",
+            "distance_km": 13.92
+          },
+          {
+            "name": "Hotel Menino",
+            "distance_km": 14.0
+          }
+        ],
+        "day_schedule": null,
+        "budget": {
+          "total_budget": 38700,
+          "estimated_cost": 42570,
+          "remaining": -3870,
+          "status": "Over Budget",
+          "average_per_day": 14190,
+          "average_per_person": 42570,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 18000,
+            "emergency": 3870
+          },
+          "category_percentage": {
+            "hotel": 32,
+            "food": 8,
+            "transport": 8,
+            "activities": 42,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "Siddharth",
+              "share": 38700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "Hyderabad",
+          "destination": "Goa",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 80,
+          "hotel_count": 17,
+          "attraction_count": 18,
+          "mandatory_count": 0,
+          "distance": 636.65,
+          "duration": 9.07,
+          "budget": 38700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.65,
+          "travel_time": 9.07,
+          "hotel_count": 17,
+          "place_count": 18
+        }
+      },
+      "dashboard": {
+        "source": "Hyderabad",
+        "destination": "Goa",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 80,
+        "hotel_count": 17,
+        "attraction_count": 18,
+        "mandatory_count": 0,
+        "distance": 636.65,
+        "duration": 9.07,
+        "budget": 38700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.65,
+        "travel_time": 9.07,
+        "hotel_count": 17,
+        "place_count": 18
+      }
+    }
   }
 ]
