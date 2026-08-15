@@ -214,32 +214,64 @@ export default function TripView() {
 
             <h2> Daily Plan</h2>
 
-            {Object.entries(
-                trip.day_schedule
-            ).map(([day, places]) => (
-
-                <DayCard
-                    key={day}
-                    day={day}
-                    places={places}
-                />
-
-            ))}
+            {trip.day_schedule &&
+    Object.entries(trip.day_schedule).map(
+        ([day, places]) => (
+            <DayCard
+                key={day}
+                day={day}
+                places={places}
+            />
+        )
+    )}
 
             <hr />
 
-            <h2> AI Itinerary</h2>
+            <h2>AI Itinerary</h2>
 
-            <pre
-                style={{
-                    whiteSpace: "pre-wrap",
-                    background: "#f5f5f5",
-                    padding: "16px",
-                    borderRadius: "10px",
-                }}
-            >
-                {trip.itinerary?.itinerary ?? "No AI itinerary available."}
-            </pre>
+{data.itinerary?.days?.map((day) => (
+    <div
+        key={day.day}
+        style={{
+            border: "1px solid lightgray",
+            padding: "16px",
+            marginBottom: "16px",
+            borderRadius: "10px",
+        }}
+    >
+        <h3>
+            Day {day.day}: {day.title}
+        </h3>
+
+        <h4>Activities</h4>
+
+        <ul>
+            {day.activities.map(
+                (activity, index) => (
+                    <li key={index}>
+                        {activity}
+                    </li>
+                )
+            )}
+        </ul>
+
+        <h4>Food</h4>
+
+        <ul>
+            {day.food.map(
+                (food, index) => (
+                    <li key={index}>
+                        {food}
+                    </li>
+                )
+            )}
+        </ul>
+
+        <p>
+            <b>Budget:</b> {day.budget}
+        </p>
+    </div>
+))}
 
             <hr />
                 <AddExpenseModal

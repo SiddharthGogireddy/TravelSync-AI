@@ -1,4 +1,4 @@
-import type { BestTime } from "../types/trip";
+import type { BestTime } from "../types/api";
 
 export default function BestTimeCard({ data }: { data: BestTime }) {
     return (

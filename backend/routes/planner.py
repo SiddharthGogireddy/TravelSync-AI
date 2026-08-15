@@ -1,8 +1,5 @@
-
-
 from fastapi import APIRouter
 from backend.models.trip import TripRequest
-
 from backend.services.gemini_service import generate
 from backend.services.planner.itinerary import build_trip
 
@@ -12,50 +9,68 @@ router = APIRouter(
 )
 
 
-
-
-
-
 @router.post("/")
 async def planner(request: TripRequest):
-    result = await build_trip(
-        request
-    )
+
+    result = await build_trip(request)
+
+    place_names = [
+        p["name"]
+        for p in result["trip"]["places"][:10]
+    ]
+
+    hotel_names = [
+        h["name"]
+        for h in result["trip"]["hotels"][:5]
+    ]
+
     prompt = f"""
 Generate a {request.days}-day travel itinerary.
 
+Source: {request.source}
+
 Destination: {request.destination}
 
-Travelers:
-{len(request.travelers)}
+Travel mode: {request.travel_mode}
 
-Interests:
+Traveler interests:
+
 {[t.interests for t in request.travelers]}
+
+Recommended attractions:
+
+{place_names}
+
+Recommended hotels:
+
+{hotel_names}
 
 Return ONLY valid JSON.
 
 Format:
 
 {{
-  "days":[
-    {{
-      "day":1,
-      "title":"string",
-      "activities":["string"],
-      "food":["string"],
-      "budget":"string"
-    }}
-  ]
+    "days": [
+        {{
+            "day": 1,
+            "title": "",
+            "activities": [],
+            "food": [],
+            "budget": ""
+        }}
+    ]
 }}
 """
 
-    itinerary = generate(prompt)
+    try:
+        itinerary = generate(prompt)
 
-    result["itinerary"] = itinerary
+    except Exception as e:
+        print("Gemini error:", e)
 
-    return result
-    
-    itinerary = generate(prompt)
+        itinerary = {
+            "days": []
+        }
 
     result["itinerary"] = itinerary
 

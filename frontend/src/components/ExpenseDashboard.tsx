@@ -16,9 +16,9 @@ export default function ExpenseDashboard({ expenses, budgets }: Props) {
     const spent: Record<string, number> = {};
 
     expenses.forEach((e) => {
-        spent[e.traveler] =
-            (spent[e.traveler] || 0) + e.amount;
-    });
+        spent[e.paid_by] =
+    (spent[e.paid_by] || 0) + e.amount;
+        });
 
     return (
         <div>

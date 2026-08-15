@@ -55,7 +55,17 @@ export interface Place {
     lat: number;
     lon: number;
 }
+export interface ItineraryDay {
+    day: number;
+    title: string;
+    activities: string[];
+    food: string[];
+    budget: string;
+}
 
+export interface Itinerary {
+    days: ItineraryDay[];
+}
 export interface Traveler {
     name: string;
     budget: string;
@@ -76,22 +86,12 @@ export interface TripResponse {
     summary: Summary;
 
     trip: {
-        budget: Budget;
-
         weather: Weather[];
-
         hotels: Hotel[];
-
-        places: Place[];
-
-        day_schedule: Record<string, Place[]>;
-
         travelers: Traveler[];
-
-        best_time: BestTime;
-
-        itinerary?: {
-            itinerary: string;
-        };
+        budget: Budget;
+        day_schedule: Record<string, Place[]> | null;
     };
+
+    itinerary?: Itinerary;
 }

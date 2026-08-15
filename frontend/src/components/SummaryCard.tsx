@@ -1,4 +1,4 @@
-import type{ Summary } from "../types/trip";
+import type{ Summary } from "../types/api";
 interface Props {
     summary: Summary;
 }
@@ -13,7 +13,7 @@ export default function SummaryCard({ summary }: Props) {
 
             <p>Days: {summary.days}</p>
 
-            <p>Distance: {summary.distance} km</p>
+            <p>Distance: {summary.distance_km} km</p>
 
             <p>Travel Time: {summary.travel_time} hrs</p>
 

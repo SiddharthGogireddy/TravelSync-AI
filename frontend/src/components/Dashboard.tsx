@@ -1,4 +1,4 @@
-import type { Dashboard as Dashboard } from "../types/trip";
+import type { Dashboard as Dashboard } from "../types/api";
 import "../styles/card.css";
 interface Props {
     dashboard: Dashboard;

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from services.external.location_service import search_location
-from services.external.place_service import get_places
+from backend.services.external.location_service import search_location
+from backend.services.external.place_service import get_places
 
 router = APIRouter(
     prefix="/places",

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import type { Expense } from "../types/expense";
-import type { TripApiResponse } from "../types/api";
+import type { TripResponse } from "../types/api";
 
 interface ChatContext {
     expenses: Expense[];
-    trip: TripApiResponse["trip"];
+    trip: TripResponse["trip"];
 }
 export default function ChatBox({ context }: { context: ChatContext }) {
     const [msg, setMsg] = useState("");

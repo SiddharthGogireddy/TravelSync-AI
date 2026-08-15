@@ -8,15 +8,17 @@ const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export async function generateTrip(
     data: TripRequest
 ): Promise<TripResponse> {
-
-    const res = await fetch(`${API}/planner`, {
+    const res = await fetch(`${API}/planner/`, {
         method: "POST",
         headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
     });
 
-    return await res.json();
-}
+    const result = await res.json();
 
+    console.log(result);
+
+    return result;
+}

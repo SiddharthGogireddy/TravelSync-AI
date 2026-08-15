@@ -1,3 +1,4 @@
+from backend.routes.place import places
 from backend.services.planner.distance import haversine
 
 
@@ -5,7 +6,7 @@ def optimize_trip(
     places,
     days,
     mandatory_schedule=None
-):
+    ):
     """
     Creates a balanced itinerary by:
     - Respecting mandatory visits
@@ -14,7 +15,13 @@ def optimize_trip(
     - Limiting attractions per day
     """
 
-    MAX_PER_DAY = 4
+    MAX_PER_DAY = max(
+    1,
+    min(
+        4,
+        (len(places) + days - 1) // days
+    )
+    )
     MAX_CLUSTER_DISTANCE = 5  # km
 
     if mandatory_schedule is None:
@@ -102,62 +109,50 @@ def optimize_trip(
     # STEP 3
     # Fill remaining days
     # -------------------------------------------------
+    remaining = [
+    place
+    for place in places
+    if place["name"] not in used
+    ]
 
-    for place in places:
+    day_keys = list(schedule.keys())
 
-        if place["name"] in used:
-            continue
+    day_index = 0
 
-        for day in schedule:
+    for place in remaining:
 
-            if len(schedule[day]) >= MAX_PER_DAY:
-                continue
+        attempts = 0
 
-            if len(schedule[day]) == 0:
+        while attempts < len(day_keys):
 
-                schedule[day].append(place)
-                used.add(place["name"])
-                break
-
-            base_place = schedule[day][0]
-
-            if (
-                base_place.get("lat") is None
-                or base_place.get("lon") is None
-                or place.get("lat") is None
-                or place.get("lon") is None
-            ):
-                continue
-
-            distance = haversine(
-                base_place["lat"],
-                base_place["lon"],
-                place["lat"],
-                place["lon"]
-            )
-
-            if distance <= MAX_CLUSTER_DISTANCE:
-
-                schedule[day].append(place)
-                used.add(place["name"])
-                break
-
-    # -------------------------------------------------
-    # STEP 4
-    # Put any remaining attractions wherever space exists
-    # -------------------------------------------------
-
-    for place in places:
-
-        if place["name"] in used:
-            continue
-
-        for day in schedule:
+            day = day_keys[day_index]
 
             if len(schedule[day]) < MAX_PER_DAY:
 
                 schedule[day].append(place)
-                used.add(place["name"])
                 break
+
+            day_index = (
+                day_index + 1
+            ) % len(day_keys)
+
+            attempts += 1
+
+        day_index = (
+            day_index + 1
+        ) % len(day_keys)
+    
+    scheduled = sum(
+    len(day)
+    for day in schedule.values()
+    )
+
+    print(
+        f"Scheduled: {scheduled}"
+    )
+
+    print(
+        f"Available: {len(places)}"
+    )
 
     return schedule

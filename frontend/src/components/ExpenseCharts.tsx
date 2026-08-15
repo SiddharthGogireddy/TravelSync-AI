@@ -27,8 +27,8 @@ export default function ExpenseCharts({ expenses }: Props) {
     // ✅ Traveler aggregation
     const travelerMap: Record<string, number> = {};
     expenses.forEach((e) => {
-        travelerMap[e.traveler] =
-            (travelerMap[e.traveler] || 0) + e.amount;
+        travelerMap[e.paid_by] =
+            (travelerMap[e.paid_by] || 0) + e.amount;
     });
 
     const travelerData = Object.entries(travelerMap).map(
@@ -38,7 +38,7 @@ export default function ExpenseCharts({ expenses }: Props) {
     return (
         <div style={{ display: "flex", gap: "40px", flexWrap: "wrap" }}>
 
-            {/* 🔵 Pie Chart */}
+            {/* Category Breakdown */}
             <div>
                 <h3>Category Breakdown</h3>
                 <PieChart width={300} height={300}>
@@ -56,7 +56,7 @@ export default function ExpenseCharts({ expenses }: Props) {
                 </PieChart>
             </div>
 
-            {/* 🟢 Bar Chart */}
+            {/* Spending per Traveler */}
             <div>
                 <h3>Spending per Traveler</h3>
                 <BarChart width={400} height={300} data={travelerData}>

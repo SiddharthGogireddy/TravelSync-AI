@@ -36,15 +36,15 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
         onAdd({
             title,
             amount,
-            paidBy,
-            splitType,
+            paid_by: paidBy,
+            split_type: splitType,
             participants,
-            customSplit:
+            custom_split:
                 splitType === "custom" ? customSplit : undefined,
             category,
         });
 
-        // reset form
+        // reset form 
         setTitle("");
         setAmount(0);
         setParticipants([]);

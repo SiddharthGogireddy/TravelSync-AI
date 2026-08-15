@@ -12,7 +12,7 @@ export function calculateSettlement(expenses: Expense[]): Settlement[] {
             balances[person] = (balances[person] || 0) - share;
         }
 
-        balances[exp.paidBy] = (balances[exp.paidBy] || 0) + exp.amount;
+        balances[exp.paid_by] = (balances[exp.paid_by] || 0) + exp.amount;
     }
 
     const creditors: [string, number][] = [];

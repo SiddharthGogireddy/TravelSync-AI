@@ -19,24 +19,6 @@ from backend.services.planner.best_time_suggester import suggest_best_days
 
 from backend.services.storage.trip_store import save_trip
 
-def optimize_trip(
-    places,
-    days,
-    mandatory_schedule=None
-):
-
-    if mandatory_schedule is None:
-        mandatory_schedule = {}
-
-    MAX_PER_DAY = min(
-    6,
-    max(
-        3,
-        (len(places) + days - 1) // days
-    )
-    )
-
-    MAX_CLUSTER_DISTANCE = 5  # km
 async def build_trip(request):
     source = request.source
     destination = request.destination
@@ -155,7 +137,21 @@ async def build_trip(request):
         [traveler.dict() for traveler in travelers],
     )
 
+    unique_places = {}
+    cleaned_places = []
 
+    for place in matched_places:
+
+        name = place["name"].strip().lower()
+
+        if name in unique_places:
+            continue
+
+    unique_places[name] = True
+
+    cleaned_places.append(place)
+
+    matched_places = cleaned_places
     matched_places = await get_route_attractions(
     route,
     matched_places,

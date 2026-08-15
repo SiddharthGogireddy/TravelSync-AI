@@ -9,10 +9,10 @@ import TripView from "./pages/TripView";
 import { generateTrip } from "./services/api";
 
 import type { TripRequest } from "./types/trip";
-import type { TripApiResponse } from "./types/api";
+import type { TripResponse } from "./types/api";
 
 export default function App() {
-    const [data, setData] = useState<TripApiResponse | null>(null);
+    const [data, setData] = useState<TripResponse | null>(null);
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (formData: TripRequest) => {
@@ -20,7 +20,7 @@ export default function App() {
             setLoading(true);
 
             const result = await generateTrip(formData);
-
+            console.log("Trip generated:", result);
             setData(result);
         } catch (err) {
             console.error(err);
