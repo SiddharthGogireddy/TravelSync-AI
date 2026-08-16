@@ -4,6 +4,7 @@ from backend.services.external.weather_service import get_weather
 from backend.services.external.place_service import get_places
 from backend.services.external.hotel_service import get_hotels
 
+from backend.services.planner import travel_mode
 from backend.services.planner.attraction_ranker import rank_places
 from backend.services.planner.preference_matcher import match_preferences
 from backend.services.planner.mandatory_scheduler import schedule_mandatory_visits
@@ -54,8 +55,14 @@ async def build_trip(request):
         return {
             "error": "Source or destination not found"
         }
+    print("Destination location:")
+    print(destination_location)
 
-
+    places = await get_places(
+        float(destination_location["lat"]),
+        float(destination_location["lon"]),
+    )
+    print("Raw places:", len(places))
     route = await get_route(
         float(source_location["lon"]),
         float(source_location["lat"]),
@@ -99,10 +106,7 @@ async def build_trip(request):
     best_time = suggest_best_days(weather_summary)
 
 
-    places = await get_places(
-        float(destination_location["lat"]),
-        float(destination_location["lon"]),
-    )
+    
 
     place_list = []
 
@@ -127,15 +131,39 @@ async def build_trip(request):
             }
         )
 
+    print("Place list:", len(place_list))
+    place_list = [
+    place
+    for place in place_list
+    if place["distance_km"] <= 25
+    ]
     ranked_places = rank_places(
         place_list,
         [traveler.dict() for traveler in travelers],
     )
 
+    print("Ranked places:", len(ranked_places))
     matched_places = match_preferences(
-        ranked_places,
-        [traveler.dict() for traveler in travelers],
+    ranked_places,
+    [traveler.dict() for traveler in travelers]
+)
+
+    print(
+        "Matched places:",
+        len(matched_places)
     )
+    day_schedule = optimize_trip(
+        matched_places,
+        days,
+        mandatory_schedule,
+    )
+
+    print(
+        "Scheduled attractions:",
+        sum(len(day) for day in day_schedule.values())
+    )
+  
+    print("Matched places:", len(matched_places))
 
     unique_places = {}
     cleaned_places = []
@@ -147,22 +175,26 @@ async def build_trip(request):
         if name in unique_places:
             continue
 
-    unique_places[name] = True
+        unique_places[name] = True
 
-    cleaned_places.append(place)
+        cleaned_places.append(place)
 
     matched_places = cleaned_places
+    print("Unique places before route attractions:", len(matched_places))
     matched_places = await get_route_attractions(
     route,
     matched_places,
     travel_mode,
-)
+    )
+    print("Route attractions after:", len(matched_places))
 
-    day_schedule = optimize_trip(
-    matched_places,
-    days,
-    mandatory_schedule,
-)
+    print(
+        "First 5 places:",
+        [p["name"] for p in matched_places[:5]]
+    )
+    print("Travel mode:", travel_mode)
+    print(type(travel_mode))
+    
 
     try:
 
@@ -191,6 +223,8 @@ async def build_trip(request):
                     hotel.get("dist", 0) / 1000,
                     2,
                 ),
+                "lat": hotel.get("point", {}).get("lat"),
+        "lon": hotel.get("point", {}).get("lon"),
             }
         )
 
@@ -218,7 +252,10 @@ async def build_trip(request):
             visit.dict()
             for visit in mandatory_visits
         ],
-
+        "destination_location": {
+        "lat": float(destination_location["lat"]),
+        "lon": float(destination_location["lon"]),
+    },
         "mandatory_schedule": mandatory_schedule,
 
         "travel_mode": travel_mode,

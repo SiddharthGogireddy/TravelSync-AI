@@ -1,41 +1,49 @@
 import type { Place } from "../types/api";
-import "../styles/card.css";
+
+import "../styles/DayCard.css";
 interface Props {
-
     day: string;
-
     places: Place[];
-
+    onSelect: (place: Place) => void;
 }
 
-export default function DayCard({ day, places }: Props) {
+const TIMES = [
+    "09:00 AM",
+    "11:00 AM",
+    "02:00 PM",
+    "05:00 PM"
+];
 
+export default function DayCard({
+    day,
+    places,
+    onSelect
+}: Props) {
     return (
+        <div className="day-card">
+            <h3>Day {day}</h3>
 
-        <div className="card">
+            {places.map((place, index) => (
+                <div
+                    key={index}
+                    className="attraction-card"
+                    onClick={() => onSelect(place)}
+                >
+                    <div className="timeline-time">
+                        {TIMES[index] || "06:00 PM"}
+                    </div>
 
-            <h2>Day {day}</h2>
+                    <div className="attraction-content">
+                        <h4>{place.name}</h4>
 
-            <ul>
-
-                {places.map((place, index) => (
-
-                    <li key={index}>
-
-                        {place.name}
-
-                        {" - "}
-
-                        {place.category}
-
-                    </li>
-
-                ))}
-
-            </ul>
-
+                        <p>
+                            {place.category}
+                            {" • "}
+                            {place.distance_km} km
+                        </p>
+                    </div>
+                </div>
+            ))}
         </div>
-
     );
-
 }

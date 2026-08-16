@@ -1,0 +1,44 @@
+.day-card {
+    padding: 20px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 12px;
+}
+
+.attraction-card {
+    display: flex;
+
+    gap: 20px;
+
+    padding: 15px;
+
+    margin-bottom: 15px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 10px;
+}
+
+.timeline-time {
+    min-width: 90px;
+
+    font-weight: bold;
+}
+
+.attraction-content {
+    flex: 1;
+}
+
+.attraction-content h4 {
+    margin: 0 0 8px;
+}
+
+.attraction-content p {
+    margin: 0;
+}
+.attraction-card {
+    cursor: pointer;
+}

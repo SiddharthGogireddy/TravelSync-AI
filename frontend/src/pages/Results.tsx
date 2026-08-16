@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import Dashboard from "../components/Dashboard";
 import BudgetCard from "../components/BudgetCard";
+import MapView from "../components/MapView";
 
 import type {
     TripResponse,
@@ -17,6 +18,9 @@ interface Props {
 export default function Results({ data }: Props) {
     const [expenses] =
         useState<Expense[]>([]);
+
+    const [selectedPlace] =
+        useState<Place | null>(null);
 
     if (!data?.trip) {
         return <div>No trip data available.</div>;
@@ -34,10 +38,9 @@ export default function Results({ data }: Props) {
         0
     );
 
-    const schedule: Record<
-        string,
-        Place[]
-    > = trip.day_schedule ?? {};
+    const schedule:
+        Record<string, Place[]> =
+        trip.day_schedule ?? {};
 
     return (
         <div
@@ -107,33 +110,53 @@ export default function Results({ data }: Props) {
 
             <h2>Daily Plan</h2>
 
-            {Object.entries(
-                schedule
-            ).map(([day, places]) => (
-                <div key={day}>
-                    <h3>{day}</h3>
+            {Object.entries(schedule).map(
+                ([day, places]) => (
+                    <div key={day}>
+                        <h3>{day}</h3>
 
-                    {places.map(
-                        (
-                            place,
-                            index
-                        ) => (
-                            <div
-                                key={index}
-                            >
-                                {place.name}
-                                {" ("}
-                                {
-                                    place.category
-                                }
-                                {")"}
-                            </div>
-                        )
-                    )}
-                </div>
-            ))}
+                        {places.map(
+                            (
+                                place,
+                                index
+                            ) => (
+                                <div
+                                    key={index}
+                                >
+                                    {place.name}
+                                    {" ("}
+                                    {
+                                        place.category
+                                    }
+                                    {")"}
+                                </div>
+                            )
+                        )}
+                    </div>
+                )
+            )}
 
             <hr />
+
+            <h2>Map</h2>
+
+            <MapView
+                lat={
+                    trip
+                        .destination_location
+                        .lat
+                }
+                lon={
+                    trip
+                        .destination_location
+                        .lon
+                }
+                places={trip.places}
+                hotels={trip.hotels}
+                selectedPlace={
+                    selectedPlace
+                }
+            />
 
             <h2>Total Expenses</h2>
 

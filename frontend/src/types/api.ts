@@ -33,7 +33,10 @@ export interface BudgetPerson {
     share: number;
 }
 
-
+export interface Location {
+    lat: number;
+    lon: number;
+}
 
 export interface Weather {
     date: string;
@@ -46,6 +49,8 @@ export interface Weather {
 export interface Hotel {
     name: string;
     distance_km: number;
+    lat:number;
+    lon:number;
 }
 
 export interface Place {
@@ -86,9 +91,11 @@ export interface TripResponse {
     summary: Summary;
 
     trip: {
+        destination_location:Location ;
         weather: Weather[];
         hotels: Hotel[];
         travelers: Traveler[];
+        places:Place[]
         budget: Budget;
         day_schedule: Record<string, Place[]> | null;
     };

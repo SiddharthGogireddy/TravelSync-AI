@@ -19,15 +19,15 @@ export default function Dashboard({ dashboard }: Props) {
         gap: "10px"
     }}>
 
-        <div>📍 {dashboard.source} → {dashboard.destination}</div>
-        <div>📅 {dashboard.days} Days</div>
-        <div>🚗 {dashboard.travel_mode}</div>
-        <div>🏨 {dashboard.hotel_count} Hotels</div>
-        <div>📍 {dashboard.attraction_count} Attractions</div>
-        <div>⭐ {dashboard.mandatory_count} Mandatory</div>
-        <div>🛣 {dashboard.distance} km</div>
-        <div>⏱ {dashboard.duration} hrs</div>
-        <div>💰 ₹{dashboard.budget}</div>
+        <div> {dashboard.source} → {dashboard.destination}</div>
+        <div> {dashboard.days} Days</div>
+        <div> {dashboard.travel_mode}</div>
+        <div> {dashboard.hotel_count} Hotels</div>
+        <div> {dashboard.attraction_count} Attractions</div>
+        <div> {dashboard.mandatory_count} Mandatory</div>
+        <div> {dashboard.distance} km</div>
+        <div> {dashboard.duration} hrs</div>
+        <div> ₹{dashboard.budget}</div>
 
     </div>
 

@@ -3,9 +3,9 @@ import AddExpenseModal from "../components/AddExpenseModal";
 import { addExpense } from "../services/expense";
 import Dashboard from "../components/Dashboard";
 import WeatherCard from "../components/WeatherCard";
-import HotelCard from "../components/HotelCard";
+import type{ Place } from "../types/api";
 import DayCard from "../components/DayCard";
-
+import MapView from "../components/MapView";
 import BudgetCard from "../components/BudgetCard";
 import BudgetBreakdown from "../components/BudgetBreakdown";
 import BudgetStatus from "../components/BudgetStatus";
@@ -20,7 +20,7 @@ import { getExpenses } from "../services/expense";
 import type {
     TripResponse,
     Weather,
-    Hotel,
+
     Traveler,
 } from "../types/api";
 
@@ -44,7 +44,7 @@ export default function TripView() {
     amount: number,
     paidBy: string
 ) {
-
+    
     const tripId = getTripIdFromUrl();
 
     if (!tripId) return;
@@ -63,7 +63,8 @@ export default function TripView() {
 
     setExpenseData(updated);
 
-}
+}   const [ selectedPlace,setSelectedPlace] =
+    useState<Place | null>(null);
     const [data, setData] =
         useState<TripResponse | null>(null);
 
@@ -112,6 +113,7 @@ export default function TripView() {
         return <div>Loading...</div>;
 
     const { dashboard, trip } = data;
+    
 
     const normalizedWeather: Weather[] =
         trip.weather.map((w) => ({
@@ -121,7 +123,7 @@ export default function TripView() {
         }));
 
     return (
-
+        
         <div
             style={{
                 maxWidth: "1200px",
@@ -199,16 +201,17 @@ export default function TripView() {
 
             <h2> Hotels</h2>
 
-            {trip.hotels.map(
-                (hotel: Hotel, index) => (
-
-                    <HotelCard
-                        key={index}
-                        hotel={hotel}
-                    />
-
-                )
-            )}
+            {trip.hotels.map((hotel, index) => (
+    <div key={index}>
+        <a
+            href={`https://www.google.com/maps?q=${hotel.lat},${hotel.lon}`}
+            target="_blank"
+            rel="noreferrer"
+        >
+            {hotel.name}
+        </a>
+    </div>
+))}
 
             <hr />
 
@@ -221,10 +224,11 @@ export default function TripView() {
                 key={day}
                 day={day}
                 places={places}
+                onSelect={setSelectedPlace}
             />
         )
     )}
-
+     
             <hr />
 
             <h2>AI Itinerary</h2>
@@ -265,8 +269,16 @@ export default function TripView() {
                     </li>
                 )
             )}
+        
         </ul>
-
+        <h2> Map</h2>
+            <MapView
+    lat={trip.destination_location.lat}
+    lon={trip.destination_location.lon}
+    places={trip.places}
+    hotels={trip.hotels}
+    selectedPlace={selectedPlace}
+/>
         <p>
             <b>Budget:</b> {day.budget}
         </p>
@@ -323,6 +335,7 @@ export default function TripView() {
             )}
 
         </div>
+        
 
     );
 

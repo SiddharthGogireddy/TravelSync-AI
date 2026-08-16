@@ -4206,5 +4206,1930 @@
         "place_count": 1
       }
     }
+  },
+  {
+    "id": "0a25e77b-a8ec-4bd3-a759-6eb85e8f630d",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "king",
+            "interests": [
+              "Beaches"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.81,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-16",
+            "max_temp": 30.8,
+            "min_temp": 23.5,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 30.3,
+            "min_temp": 23.4,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 30.1,
+            "min_temp": 23.4,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 28.6,
+            "min_temp": 23.3,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 29.2,
+            "min_temp": 23.7,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-21",
+            "max_temp": 30.1,
+            "min_temp": 23.6,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-22",
+            "max_temp": 28.9,
+            "min_temp": 23.6,
+            "weather_code": 51
+          }
+        ],
+        "best_time": {
+          "best_days": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "Chowmahalla Palace",
+            "category": "Palaces",
+            "distance_km": 0.4,
+            "lat": 17.357810974121094,
+            "lon": 78.47164916992188,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          }
+        ],
+        "hotels": [
+          {
+            "name": "oyo 47785 hotel pariwar inn",
+            "distance_km": 1.37
+          },
+          {
+            "name": "Gandhi Bhavan Hotel",
+            "distance_km": 2.06
+          },
+          {
+            "name": "Jewel Residency Lodge",
+            "distance_km": 2.18
+          },
+          {
+            "name": "oyo 4376 imax inn",
+            "distance_km": 2.44
+          },
+          {
+            "name": "Hotel Siddhartha",
+            "distance_km": 2.83
+          },
+          {
+            "name": "Suhail",
+            "distance_km": 2.93
+          },
+          {
+            "name": "Sri brindavan hotel",
+            "distance_km": 3.12
+          },
+          {
+            "name": "Taj Falaknuma Palace",
+            "distance_km": 3.36
+          },
+          {
+            "name": "Asian Rest Home",
+            "distance_km": 3.44
+          },
+          {
+            "name": "Hotel Royal Plaza",
+            "distance_km": 3.44
+          },
+          {
+            "name": "OYO The City Park",
+            "distance_km": 3.44
+          },
+          {
+            "name": "taj mahal hotel abids",
+            "distance_km": 3.45
+          },
+          {
+            "name": "Hotel Udipi",
+            "distance_km": 3.47
+          },
+          {
+            "name": "Royal Plaza Hotel",
+            "distance_km": 3.52
+          },
+          {
+            "name": "oyo 17315 hotel lorgan residency",
+            "distance_km": 3.64
+          },
+          {
+            "name": "New Asian Lodge",
+            "distance_km": 3.66
+          },
+          {
+            "name": "oyo 18652 hotel golden shah",
+            "distance_km": 3.67
+          },
+          {
+            "name": "Green Casserole",
+            "distance_km": 3.69
+          }
+        ],
+        "day_schedule": {
+          "1": [
+            {
+              "name": "Chowmahalla Palace",
+              "category": "Palaces",
+              "distance_km": 0.4,
+              "lat": 17.357810974121094,
+              "lon": 78.47164916992188,
+              "score": 2,
+              "matched_travelers": [],
+              "match_count": 0
+            }
+          ],
+          "2": [],
+          "3": []
+        },
+        "budget": {
+          "total_budget": 21700,
+          "estimated_cost": 23870,
+          "remaining": -2170,
+          "status": "Over Budget",
+          "average_per_day": 7957,
+          "average_per_person": 23870,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 1000,
+            "emergency": 2170
+          },
+          "category_percentage": {
+            "hotel": 57,
+            "food": 15,
+            "transport": 15,
+            "activities": 4,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "king",
+              "share": 21700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "goa ",
+          "destination": "hyderabad",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 51,
+          "hotel_count": 18,
+          "attraction_count": 1,
+          "mandatory_count": 0,
+          "distance": 636.81,
+          "duration": 9.07,
+          "budget": 21700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.81,
+          "travel_time": 9.07,
+          "hotel_count": 18,
+          "place_count": 1
+        }
+      },
+      "dashboard": {
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 51,
+        "hotel_count": 18,
+        "attraction_count": 1,
+        "mandatory_count": 0,
+        "distance": 636.81,
+        "duration": 9.07,
+        "budget": 21700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.81,
+        "travel_time": 9.07,
+        "hotel_count": 18,
+        "place_count": 1
+      }
+    }
+  },
+  {
+    "id": "da97b0fd-4422-42c6-8305-0fe6d0f2f38e",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "king",
+            "interests": [
+              "Beaches"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.81,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-16",
+            "max_temp": 30.8,
+            "min_temp": 23.5,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 30.3,
+            "min_temp": 23.4,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 30.1,
+            "min_temp": 23.4,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 28.6,
+            "min_temp": 23.3,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 29.2,
+            "min_temp": 23.7,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-21",
+            "max_temp": 30.1,
+            "min_temp": 23.6,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-22",
+            "max_temp": 28.9,
+            "min_temp": 23.6,
+            "weather_code": 51
+          }
+        ],
+        "best_time": {
+          "best_days": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "Chowmahalla Palace",
+            "category": "Palaces",
+            "distance_km": 0.4,
+            "lat": 17.357810974121094,
+            "lon": 78.47164916992188,
+            "score": 2,
+            "matched_travelers": [],
+            "match_count": 0
+          }
+        ],
+        "hotels": [
+          {
+            "name": "oyo 47785 hotel pariwar inn",
+            "distance_km": 1.37
+          },
+          {
+            "name": "Gandhi Bhavan Hotel",
+            "distance_km": 2.06
+          },
+          {
+            "name": "Jewel Residency Lodge",
+            "distance_km": 2.18
+          },
+          {
+            "name": "oyo 4376 imax inn",
+            "distance_km": 2.44
+          },
+          {
+            "name": "Hotel Siddhartha",
+            "distance_km": 2.83
+          },
+          {
+            "name": "Suhail",
+            "distance_km": 2.93
+          },
+          {
+            "name": "Sri brindavan hotel",
+            "distance_km": 3.12
+          },
+          {
+            "name": "Taj Falaknuma Palace",
+            "distance_km": 3.36
+          },
+          {
+            "name": "Asian Rest Home",
+            "distance_km": 3.44
+          },
+          {
+            "name": "Hotel Royal Plaza",
+            "distance_km": 3.44
+          },
+          {
+            "name": "OYO The City Park",
+            "distance_km": 3.44
+          },
+          {
+            "name": "taj mahal hotel abids",
+            "distance_km": 3.45
+          },
+          {
+            "name": "Hotel Udipi",
+            "distance_km": 3.47
+          },
+          {
+            "name": "Royal Plaza Hotel",
+            "distance_km": 3.52
+          },
+          {
+            "name": "oyo 17315 hotel lorgan residency",
+            "distance_km": 3.64
+          },
+          {
+            "name": "New Asian Lodge",
+            "distance_km": 3.66
+          },
+          {
+            "name": "oyo 18652 hotel golden shah",
+            "distance_km": 3.67
+          },
+          {
+            "name": "Green Casserole",
+            "distance_km": 3.69
+          }
+        ],
+        "day_schedule": {
+          "1": [
+            {
+              "name": "Chowmahalla Palace",
+              "category": "Palaces",
+              "distance_km": 0.4,
+              "lat": 17.357810974121094,
+              "lon": 78.47164916992188,
+              "score": 2,
+              "matched_travelers": [],
+              "match_count": 0
+            }
+          ],
+          "2": [],
+          "3": []
+        },
+        "budget": {
+          "total_budget": 21700,
+          "estimated_cost": 23870,
+          "remaining": -2170,
+          "status": "Over Budget",
+          "average_per_day": 7957,
+          "average_per_person": 23870,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 1000,
+            "emergency": 2170
+          },
+          "category_percentage": {
+            "hotel": 57,
+            "food": 15,
+            "transport": 15,
+            "activities": 4,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "king",
+              "share": 21700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "goa ",
+          "destination": "hyderabad",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 51,
+          "hotel_count": 18,
+          "attraction_count": 1,
+          "mandatory_count": 0,
+          "distance": 636.81,
+          "duration": 9.07,
+          "budget": 21700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.81,
+          "travel_time": 9.07,
+          "hotel_count": 18,
+          "place_count": 1
+        }
+      },
+      "dashboard": {
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 51,
+        "hotel_count": 18,
+        "attraction_count": 1,
+        "mandatory_count": 0,
+        "distance": 636.81,
+        "duration": 9.07,
+        "budget": 21700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.81,
+        "travel_time": 9.07,
+        "hotel_count": 18,
+        "place_count": 1
+      }
+    }
+  },
+  {
+    "id": "13ecc09e-496d-45b7-8a52-0414e8b60b81",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "king",
+            "interests": [
+              "Beaches"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.81,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-16",
+            "max_temp": 30.8,
+            "min_temp": 23.5,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 30.3,
+            "min_temp": 23.4,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 30.1,
+            "min_temp": 23.4,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 28.6,
+            "min_temp": 23.3,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 29.2,
+            "min_temp": 23.7,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-21",
+            "max_temp": 30.1,
+            "min_temp": 23.6,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-22",
+            "max_temp": 28.9,
+            "min_temp": 23.6,
+            "weather_code": 51
+          }
+        ],
+        "best_time": {
+          "best_days": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "Santoshi Maa Temple",
+            "category": "Religion",
+            "distance_km": 1.9,
+            "lat": 17.373382568359375,
+            "lon": 78.46218872070312,
+            "score": 2
+          }
+        ],
+        "hotels": [
+          {
+            "name": "oyo 47785 hotel pariwar inn",
+            "distance_km": 1.37
+          },
+          {
+            "name": "Gandhi Bhavan Hotel",
+            "distance_km": 2.06
+          },
+          {
+            "name": "Jewel Residency Lodge",
+            "distance_km": 2.18
+          },
+          {
+            "name": "oyo 4376 imax inn",
+            "distance_km": 2.44
+          },
+          {
+            "name": "Hotel Siddhartha",
+            "distance_km": 2.83
+          },
+          {
+            "name": "Suhail",
+            "distance_km": 2.93
+          },
+          {
+            "name": "Sri brindavan hotel",
+            "distance_km": 3.12
+          },
+          {
+            "name": "Taj Falaknuma Palace",
+            "distance_km": 3.36
+          },
+          {
+            "name": "Asian Rest Home",
+            "distance_km": 3.44
+          },
+          {
+            "name": "Hotel Royal Plaza",
+            "distance_km": 3.44
+          },
+          {
+            "name": "OYO The City Park",
+            "distance_km": 3.44
+          },
+          {
+            "name": "taj mahal hotel abids",
+            "distance_km": 3.45
+          },
+          {
+            "name": "Hotel Udipi",
+            "distance_km": 3.47
+          },
+          {
+            "name": "Royal Plaza Hotel",
+            "distance_km": 3.52
+          },
+          {
+            "name": "oyo 17315 hotel lorgan residency",
+            "distance_km": 3.64
+          },
+          {
+            "name": "New Asian Lodge",
+            "distance_km": 3.66
+          },
+          {
+            "name": "oyo 18652 hotel golden shah",
+            "distance_km": 3.67
+          },
+          {
+            "name": "Green Casserole",
+            "distance_km": 3.69
+          }
+        ],
+        "day_schedule": {
+          "1": [
+            {
+              "name": "Santoshi Maa Temple",
+              "category": "Religion",
+              "distance_km": 1.9,
+              "lat": 17.373382568359375,
+              "lon": 78.46218872070312,
+              "score": 2
+            }
+          ],
+          "2": [],
+          "3": []
+        },
+        "budget": {
+          "total_budget": 21700,
+          "estimated_cost": 23870,
+          "remaining": -2170,
+          "status": "Over Budget",
+          "average_per_day": 7957,
+          "average_per_person": 23870,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 1000,
+            "emergency": 2170
+          },
+          "category_percentage": {
+            "hotel": 57,
+            "food": 15,
+            "transport": 15,
+            "activities": 4,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "king",
+              "share": 21700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "goa ",
+          "destination": "hyderabad",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 51,
+          "hotel_count": 18,
+          "attraction_count": 1,
+          "mandatory_count": 0,
+          "distance": 636.81,
+          "duration": 9.07,
+          "budget": 21700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.81,
+          "travel_time": 9.07,
+          "hotel_count": 18,
+          "place_count": 1
+        }
+      },
+      "dashboard": {
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 51,
+        "hotel_count": 18,
+        "attraction_count": 1,
+        "mandatory_count": 0,
+        "distance": 636.81,
+        "duration": 9.07,
+        "budget": 21700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.81,
+        "travel_time": 9.07,
+        "hotel_count": 18,
+        "place_count": 1
+      }
+    }
+  },
+  {
+    "id": "449ed8ca-583d-43e6-bde2-1d0f8ed8a9c6",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "king",
+            "interests": [
+              "Beaches"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.81,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-16",
+            "max_temp": 30.8,
+            "min_temp": 23.5,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 30.3,
+            "min_temp": 23.4,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 30.1,
+            "min_temp": 23.4,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 28.6,
+            "min_temp": 23.3,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 29.2,
+            "min_temp": 23.7,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-21",
+            "max_temp": 30.1,
+            "min_temp": 23.6,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-22",
+            "max_temp": 28.9,
+            "min_temp": 23.6,
+            "weather_code": 51
+          }
+        ],
+        "best_time": {
+          "best_days": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "Santoshi Maa Temple",
+            "category": "Religion",
+            "distance_km": 1.9,
+            "lat": 17.373382568359375,
+            "lon": 78.46218872070312,
+            "score": 2
+          }
+        ],
+        "hotels": [
+          {
+            "name": "oyo 47785 hotel pariwar inn",
+            "distance_km": 1.37
+          },
+          {
+            "name": "Gandhi Bhavan Hotel",
+            "distance_km": 2.06
+          },
+          {
+            "name": "Jewel Residency Lodge",
+            "distance_km": 2.18
+          },
+          {
+            "name": "oyo 4376 imax inn",
+            "distance_km": 2.44
+          },
+          {
+            "name": "Hotel Siddhartha",
+            "distance_km": 2.83
+          },
+          {
+            "name": "Suhail",
+            "distance_km": 2.93
+          },
+          {
+            "name": "Sri brindavan hotel",
+            "distance_km": 3.12
+          },
+          {
+            "name": "Taj Falaknuma Palace",
+            "distance_km": 3.36
+          },
+          {
+            "name": "Asian Rest Home",
+            "distance_km": 3.44
+          },
+          {
+            "name": "Hotel Royal Plaza",
+            "distance_km": 3.44
+          },
+          {
+            "name": "OYO The City Park",
+            "distance_km": 3.44
+          },
+          {
+            "name": "taj mahal hotel abids",
+            "distance_km": 3.45
+          },
+          {
+            "name": "Hotel Udipi",
+            "distance_km": 3.47
+          },
+          {
+            "name": "Royal Plaza Hotel",
+            "distance_km": 3.52
+          },
+          {
+            "name": "oyo 17315 hotel lorgan residency",
+            "distance_km": 3.64
+          },
+          {
+            "name": "New Asian Lodge",
+            "distance_km": 3.66
+          },
+          {
+            "name": "oyo 18652 hotel golden shah",
+            "distance_km": 3.67
+          },
+          {
+            "name": "Green Casserole",
+            "distance_km": 3.69
+          }
+        ],
+        "day_schedule": {
+          "1": [
+            {
+              "name": "Santoshi Maa Temple",
+              "category": "Religion",
+              "distance_km": 1.9,
+              "lat": 17.373382568359375,
+              "lon": 78.46218872070312,
+              "score": 2
+            }
+          ],
+          "2": [],
+          "3": []
+        },
+        "budget": {
+          "total_budget": 21700,
+          "estimated_cost": 23870,
+          "remaining": -2170,
+          "status": "Over Budget",
+          "average_per_day": 7957,
+          "average_per_person": 23870,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 1000,
+            "emergency": 2170
+          },
+          "category_percentage": {
+            "hotel": 57,
+            "food": 15,
+            "transport": 15,
+            "activities": 4,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "king",
+              "share": 21700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "goa ",
+          "destination": "hyderabad",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 51,
+          "hotel_count": 18,
+          "attraction_count": 1,
+          "mandatory_count": 0,
+          "distance": 636.81,
+          "duration": 9.07,
+          "budget": 21700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.81,
+          "travel_time": 9.07,
+          "hotel_count": 18,
+          "place_count": 1
+        }
+      },
+      "dashboard": {
+        "source": "goa ",
+        "destination": "hyderabad",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 51,
+        "hotel_count": 18,
+        "attraction_count": 1,
+        "mandatory_count": 0,
+        "distance": 636.81,
+        "duration": 9.07,
+        "budget": 21700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.81,
+        "travel_time": 9.07,
+        "hotel_count": 18,
+        "place_count": 1
+      }
+    }
+  },
+  {
+    "id": "d7e1fd67-1214-42e7-a4dc-a929b2d75ed4",
+    "data": {
+      "trip": {
+        "planner_version": "1.0",
+        "source": "goa",
+        "destination": "hyderabad",
+        "days": 3,
+        "travelers": [
+          {
+            "name": "king",
+            "interests": [
+              "Beaches"
+            ],
+            "budget": "Medium",
+            "pace": "Balanced",
+            "budget_rules": {
+              "hotel": "3-Star Hotel",
+              "transport": "Rental Car or Taxi",
+              "food": "Popular Restaurants",
+              "activity": "Paid Attractions"
+            }
+          }
+        ],
+        "mandatory_visits": [],
+        "mandatory_schedule": {
+          "1": [],
+          "2": [],
+          "3": []
+        },
+        "travel_mode": "car",
+        "travel_mode_rules": {
+          "route_stops": true,
+          "airport": false,
+          "station": false,
+          "bus_stop": false,
+          "scenic": true
+        },
+        "route": {
+          "distance_km": 636.81,
+          "duration_hours": 9.07
+        },
+        "weather": [
+          {
+            "date": "2026-08-16",
+            "max_temp": 30.4,
+            "min_temp": 23.7,
+            "weather_code": 55
+          },
+          {
+            "date": "2026-08-17",
+            "max_temp": 30.4,
+            "min_temp": 23.8,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-18",
+            "max_temp": 29.7,
+            "min_temp": 23.2,
+            "weather_code": 80
+          },
+          {
+            "date": "2026-08-19",
+            "max_temp": 29.4,
+            "min_temp": 23.3,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-20",
+            "max_temp": 30.9,
+            "min_temp": 24.2,
+            "weather_code": 51
+          },
+          {
+            "date": "2026-08-21",
+            "max_temp": 29.4,
+            "min_temp": 23.5,
+            "weather_code": 53
+          },
+          {
+            "date": "2026-08-22",
+            "max_temp": 28.9,
+            "min_temp": 23.6,
+            "weather_code": 51
+          }
+        ],
+        "best_time": {
+          "best_days": [
+            "Monday",
+            "Wednesday",
+            "Thursday"
+          ],
+          "reason": "Weekdays with better weather conditions"
+        },
+        "places": [
+          {
+            "name": "Wazu Khana",
+            "category": "Fountains",
+            "distance_km": 0.03,
+            "lat": 17.36039924621582,
+            "lon": 78.4738998413086,
+            "score": 2
+          },
+          {
+            "name": "Mecca Masjid",
+            "category": "Religion",
+            "distance_km": 0.05,
+            "lat": 17.360660552978516,
+            "lon": 78.4736099243164,
+            "score": 2
+          },
+          {
+            "name": "Shahi Maqbara",
+            "category": "Historic",
+            "distance_km": 0.05,
+            "lat": 17.36029624938965,
+            "lon": 78.47367095947266,
+            "score": 2
+          },
+          {
+            "name": "Medak Cathedral",
+            "category": "Religion",
+            "distance_km": 0.08,
+            "lat": 17.360305786132812,
+            "lon": 78.47341918945312,
+            "score": 2
+          },
+          {
+            "name": "Jama Masjid Gulbarga",
+            "category": "Religion",
+            "distance_km": 0.08,
+            "lat": 17.360305786132812,
+            "lon": 78.47341918945312,
+            "score": 2
+          },
+          {
+            "name": "Gunfoundry",
+            "category": "Historic Architecture",
+            "distance_km": 0.1,
+            "lat": 17.36138916015625,
+            "lon": 78.47444152832031,
+            "score": 2
+          },
+          {
+            "name": "Char Minar",
+            "category": "Religion",
+            "distance_km": 0.13,
+            "lat": 17.361602783203125,
+            "lon": 78.47463989257812,
+            "score": 2
+          },
+          {
+            "name": "Charminar",
+            "category": "Historic",
+            "distance_km": 0.13,
+            "lat": 17.361602783203125,
+            "lon": 78.47463989257812,
+            "score": 2
+          },
+          {
+            "name": "Bhagyalaxmi Temple",
+            "category": "Religion",
+            "distance_km": 0.13,
+            "lat": 17.36151123046875,
+            "lon": 78.47480010986328,
+            "score": 2
+          },
+          {
+            "name": "Char Kaman",
+            "category": "Fortifications",
+            "distance_km": 0.22,
+            "lat": 17.362468719482422,
+            "lon": 78.47482299804688,
+            "score": 2
+          },
+          {
+            "name": "Gulzar houz (fountain)",
+            "category": "Fountains",
+            "distance_km": 0.33,
+            "lat": 17.36345100402832,
+            "lon": 78.4749984741211,
+            "score": 2
+          },
+          {
+            "name": "Mahboob Chowk Clock Tower",
+            "category": "Architecture",
+            "distance_km": 0.36,
+            "lat": 17.361770629882812,
+            "lon": 78.47091674804688,
+            "score": 2
+          },
+          {
+            "name": "Mehboob Chowk Clock Tower",
+            "category": "Historic",
+            "distance_km": 0.36,
+            "lat": 17.361879348754883,
+            "lon": 78.47091674804688,
+            "score": 2
+          },
+          {
+            "name": "Masjid e Hafiz dhanka",
+            "category": "Religion",
+            "distance_km": 0.39,
+            "lat": 17.35917854309082,
+            "lon": 78.47740173339844,
+            "score": 2
+          },
+          {
+            "name": "Chowmahalla Palace",
+            "category": "Palaces",
+            "distance_km": 0.4,
+            "lat": 17.357810974121094,
+            "lon": 78.47164916992188,
+            "score": 2
+          },
+          {
+            "name": "Masjid",
+            "category": "Religion",
+            "distance_km": 0.41,
+            "lat": 17.36187171936035,
+            "lon": 78.47046661376953,
+            "score": 2
+          },
+          {
+            "name": "Moghalpura Tomb",
+            "category": "Historic",
+            "distance_km": 0.44,
+            "lat": 17.357372283935547,
+            "lon": 78.47642517089844,
+            "score": 2
+          },
+          {
+            "name": "Machli Kaman",
+            "category": "Fortifications",
+            "distance_km": 0.44,
+            "lat": 17.364391326904297,
+            "lon": 78.4752197265625,
+            "score": 2
+          },
+          {
+            "name": "khader Yar Khan Masjid",
+            "category": "Religion",
+            "distance_km": 0.52,
+            "lat": 17.36512565612793,
+            "lon": 78.47531127929688,
+            "score": 2
+          },
+          {
+            "name": "Masjid-E-Rohella",
+            "category": "Religion",
+            "distance_km": 0.6,
+            "lat": 17.35915184020996,
+            "lon": 78.46859741210938,
+            "score": 2
+          },
+          {
+            "name": "Mosque",
+            "category": "Religion",
+            "distance_km": 0.61,
+            "lat": 17.355119705200195,
+            "lon": 78.47386932373047,
+            "score": 2
+          },
+          {
+            "name": "Allah Masjid",
+            "category": "Religion",
+            "distance_km": 0.61,
+            "lat": 17.355133056640625,
+            "lon": 78.47325897216797,
+            "score": 2
+          },
+          {
+            "name": "Masjid e Lashkar Jung",
+            "category": "Religion",
+            "distance_km": 0.67,
+            "lat": 17.362380981445312,
+            "lon": 78.4801025390625,
+            "score": 2
+          },
+          {
+            "name": "Jamia Nizamia",
+            "category": "Religion",
+            "distance_km": 0.85,
+            "lat": 17.360441207885742,
+            "lon": 78.4660415649414,
+            "score": 2
+          },
+          {
+            "name": "Ajfan",
+            "category": "Historic",
+            "distance_km": 0.89,
+            "lat": 17.36847686767578,
+            "lon": 78.47573852539062,
+            "score": 2
+          },
+          {
+            "name": "Dewaan Dewdi Entrance",
+            "category": "Architecture",
+            "distance_km": 0.95,
+            "lat": 17.368839263916016,
+            "lon": 78.47653198242188,
+            "score": 2
+          },
+          {
+            "name": "Badshahi Ashurkhana",
+            "category": "Historic Architecture",
+            "distance_km": 0.96,
+            "lat": 17.369089126586914,
+            "lon": 78.47572326660156,
+            "score": 2
+          },
+          {
+            "name": "Badshaahi Ashoor Khana",
+            "category": "Religion",
+            "distance_km": 0.96,
+            "lat": 17.36916732788086,
+            "lon": 78.4756088256836,
+            "score": 2
+          },
+          {
+            "name": "Jama Masjid Dewaan Dewdi",
+            "category": "Religion",
+            "distance_km": 0.97,
+            "lat": 17.36870002746582,
+            "lon": 78.4774169921875,
+            "score": 2
+          },
+          {
+            "name": "High Court of Telangana",
+            "category": "Historic",
+            "distance_km": 0.97,
+            "lat": 17.369165420532227,
+            "lon": 78.47212982177734,
+            "score": 2
+          },
+          {
+            "name": "Dewaan Dewdi Kamaan",
+            "category": "Architecture",
+            "distance_km": 1.01,
+            "lat": 17.3690185546875,
+            "lon": 78.47766876220703,
+            "score": 2
+          },
+          {
+            "name": "Purani Haveli",
+            "category": "Historical Places",
+            "distance_km": 1.03,
+            "lat": 17.364845275878906,
+            "lon": 78.4826889038086,
+            "score": 2
+          },
+          {
+            "name": "Muslim Graveyard",
+            "category": "Other",
+            "distance_km": 1.05,
+            "lat": 17.370046615600586,
+            "lon": 78.47476959228516,
+            "score": 2
+          },
+          {
+            "name": "Daira Mir Momin",
+            "category": "Cemeteries",
+            "distance_km": 1.05,
+            "lat": 17.351909637451172,
+            "lon": 78.47806549072266,
+            "score": 2
+          },
+          {
+            "name": "Nizams museum",
+            "category": "Cultural",
+            "distance_km": 1.1,
+            "lat": 17.36564826965332,
+            "lon": 78.48296356201172,
+            "score": 2
+          },
+          {
+            "name": "ganesh temple",
+            "category": "Religion",
+            "distance_km": 1.24,
+            "lat": 17.357858657836914,
+            "lon": 78.46276092529297,
+            "score": 2
+          },
+          {
+            "name": "Hanuman Ghat",
+            "category": "Religion",
+            "distance_km": 1.27,
+            "lat": 17.369901657104492,
+            "lon": 78.46704864501953,
+            "score": 2
+          },
+          {
+            "name": "Jamia Masjid Hakeem Mir Wazir Ali",
+            "category": "Religion",
+            "distance_km": 1.28,
+            "lat": 17.354591369628906,
+            "lon": 78.4637680053711,
+            "score": 2
+          },
+          {
+            "name": "Osmania Masjid",
+            "category": "Religion",
+            "distance_km": 1.29,
+            "lat": 17.365995407104492,
+            "lon": 78.48480987548828,
+            "score": 2
+          },
+          {
+            "name": "Mandir",
+            "category": "Religion",
+            "distance_km": 1.32,
+            "lat": 17.365962982177734,
+            "lon": 78.48511505126953,
+            "score": 2
+          },
+          {
+            "name": "shaik faiz kaman",
+            "category": "Historic",
+            "distance_km": 1.32,
+            "lat": 17.361820220947266,
+            "lon": 78.4864273071289,
+            "score": 2
+          },
+          {
+            "name": "SST",
+            "category": "Religion",
+            "distance_km": 1.34,
+            "lat": 17.358631134033203,
+            "lon": 78.46163177490234,
+            "score": 2
+          },
+          {
+            "name": "Kali Masjid",
+            "category": "Religion",
+            "distance_km": 1.35,
+            "lat": 17.364788055419922,
+            "lon": 78.48594665527344,
+            "score": 2
+          },
+          {
+            "name": "Salar Jung museum",
+            "category": "National Museums",
+            "distance_km": 1.36,
+            "lat": 17.37139129638672,
+            "lon": 78.48014831542969,
+            "score": 2
+          },
+          {
+            "name": "alawa bibi",
+            "category": "Religion",
+            "distance_km": 1.38,
+            "lat": 17.365646362304688,
+            "lon": 78.48588562011719,
+            "score": 2
+          },
+          {
+            "name": "Jamia Masjid Dar-ul-Shifa",
+            "category": "Religion",
+            "distance_km": 1.4,
+            "lat": 17.37103843688965,
+            "lon": 78.4814224243164,
+            "score": 2
+          },
+          {
+            "name": "Noor masjid",
+            "category": "Religion",
+            "distance_km": 1.4,
+            "lat": 17.365936279296875,
+            "lon": 78.48602294921875,
+            "score": 2
+          },
+          {
+            "name": "Bhulaxmi Temple",
+            "category": "Religion",
+            "distance_km": 1.4,
+            "lat": 17.371063232421875,
+            "lon": 78.46671295166016,
+            "score": 2
+          },
+          {
+            "name": "Dabeerpura darwaza",
+            "category": "Historic",
+            "distance_km": 1.43,
+            "lat": 17.367921829223633,
+            "lon": 78.48516845703125,
+            "score": 2
+          },
+          {
+            "name": "Hyderabad",
+            "category": "Other",
+            "distance_km": 1.45,
+            "lat": 17.373531341552734,
+            "lon": 78.47632598876953,
+            "score": 2
+          },
+          {
+            "name": "Darga kamli wale shah sahab",
+            "category": "Religion",
+            "distance_km": 1.53,
+            "lat": 17.366191864013672,
+            "lon": 78.48719024658203,
+            "score": 2
+          },
+          {
+            "name": "Masjid e Pyaaru Miyan",
+            "category": "Religion",
+            "distance_km": 1.57,
+            "lat": 17.349088668823242,
+            "lon": 78.4654541015625,
+            "score": 2
+          },
+          {
+            "name": "State Library",
+            "category": "Historic",
+            "distance_km": 1.57,
+            "lat": 17.374156951904297,
+            "lon": 78.47821807861328,
+            "score": 2
+          },
+          {
+            "name": "Lal Darwaza",
+            "category": "Fortifications",
+            "distance_km": 1.61,
+            "lat": 17.346385955810547,
+            "lon": 78.47744750976562,
+            "score": 2
+          },
+          {
+            "name": "Aza Khana E Zehra",
+            "category": "Religion",
+            "distance_km": 1.62,
+            "lat": 17.37286376953125,
+            "lon": 78.48238372802734,
+            "score": 2
+          },
+          {
+            "name": "Akkanna Madanna Temple",
+            "category": "Religion",
+            "distance_km": 1.63,
+            "lat": 17.37527847290039,
+            "lon": 78.47444152832031,
+            "score": 2
+          },
+          {
+            "name": "Bada Khabrastan",
+            "category": "Cemeteries",
+            "distance_km": 1.7,
+            "lat": 17.364940643310547,
+            "lon": 78.4893569946289,
+            "score": 2
+          },
+          {
+            "name": "Afzalgunj Masjid",
+            "category": "Religion",
+            "distance_km": 1.73,
+            "lat": 17.3762149810791,
+            "lon": 78.47391510009766,
+            "score": 2
+          },
+          {
+            "name": "Masjid e Haji Kamaal",
+            "category": "Religion",
+            "distance_km": 1.74,
+            "lat": 17.37368392944336,
+            "lon": 78.48316192626953,
+            "score": 2
+          },
+          {
+            "name": "Shah Raju Khattab R.A.",
+            "category": "Cemeteries",
+            "distance_km": 1.76,
+            "lat": 17.34800910949707,
+            "lon": 78.46397399902344,
+            "score": 2
+          },
+          {
+            "name": "Purana Pul Darwaza",
+            "category": "Fortifications",
+            "distance_km": 1.77,
+            "lat": 17.36655616760254,
+            "lon": 78.45855712890625,
+            "score": 2
+          },
+          {
+            "name": "Hazrath Abdullah Shah Sahab",
+            "category": "Cemeteries",
+            "distance_km": 1.77,
+            "lat": 17.349262237548828,
+            "lon": 78.46226501464844,
+            "score": 2
+          },
+          {
+            "name": "Dargah Hazrat Muhammad Abdul Qadeer Siddiqi Qadri",
+            "category": "Religion",
+            "distance_km": 1.8,
+            "lat": 17.35972023010254,
+            "lon": 78.45718383789062,
+            "score": 2
+          },
+          {
+            "name": "Saath Gudi",
+            "category": "Religion",
+            "distance_km": 1.81,
+            "lat": 17.367469787597656,
+            "lon": 78.48947143554688,
+            "score": 2
+          },
+          {
+            "name": "Santoshi Maa Temple",
+            "category": "Religion",
+            "distance_km": 1.9,
+            "lat": 17.373382568359375,
+            "lon": 78.46218872070312,
+            "score": 2
+          }
+        ],
+        "hotels": [
+          {
+            "name": "oyo 47785 hotel pariwar inn",
+            "distance_km": 1.37
+          },
+          {
+            "name": "Gandhi Bhavan Hotel",
+            "distance_km": 2.06
+          },
+          {
+            "name": "Jewel Residency Lodge",
+            "distance_km": 2.18
+          },
+          {
+            "name": "oyo 4376 imax inn",
+            "distance_km": 2.44
+          },
+          {
+            "name": "Hotel Siddhartha",
+            "distance_km": 2.83
+          },
+          {
+            "name": "Suhail",
+            "distance_km": 2.93
+          },
+          {
+            "name": "Sri brindavan hotel",
+            "distance_km": 3.12
+          },
+          {
+            "name": "Taj Falaknuma Palace",
+            "distance_km": 3.36
+          },
+          {
+            "name": "Asian Rest Home",
+            "distance_km": 3.44
+          },
+          {
+            "name": "Hotel Royal Plaza",
+            "distance_km": 3.44
+          },
+          {
+            "name": "OYO The City Park",
+            "distance_km": 3.44
+          },
+          {
+            "name": "taj mahal hotel abids",
+            "distance_km": 3.45
+          },
+          {
+            "name": "Hotel Udipi",
+            "distance_km": 3.47
+          },
+          {
+            "name": "Royal Plaza Hotel",
+            "distance_km": 3.52
+          },
+          {
+            "name": "oyo 17315 hotel lorgan residency",
+            "distance_km": 3.64
+          },
+          {
+            "name": "New Asian Lodge",
+            "distance_km": 3.66
+          },
+          {
+            "name": "oyo 18652 hotel golden shah",
+            "distance_km": 3.67
+          },
+          {
+            "name": "Green Casserole",
+            "distance_km": 3.69
+          }
+        ],
+        "day_schedule": {
+          "1": [
+            {
+              "name": "Wazu Khana",
+              "category": "Fountains",
+              "distance_km": 0.03,
+              "lat": 17.36039924621582,
+              "lon": 78.4738998413086,
+              "score": 2
+            },
+            {
+              "name": "Medak Cathedral",
+              "category": "Religion",
+              "distance_km": 0.08,
+              "lat": 17.360305786132812,
+              "lon": 78.47341918945312,
+              "score": 2
+            },
+            {
+              "name": "Gunfoundry",
+              "category": "Historic Architecture",
+              "distance_km": 0.1,
+              "lat": 17.36138916015625,
+              "lon": 78.47444152832031,
+              "score": 2
+            },
+            {
+              "name": "Bhagyalaxmi Temple",
+              "category": "Religion",
+              "distance_km": 0.13,
+              "lat": 17.36151123046875,
+              "lon": 78.47480010986328,
+              "score": 2
+            }
+          ],
+          "2": [
+            {
+              "name": "Mecca Masjid",
+              "category": "Religion",
+              "distance_km": 0.05,
+              "lat": 17.360660552978516,
+              "lon": 78.4736099243164,
+              "score": 2
+            },
+            {
+              "name": "Jama Masjid Gulbarga",
+              "category": "Religion",
+              "distance_km": 0.08,
+              "lat": 17.360305786132812,
+              "lon": 78.47341918945312,
+              "score": 2
+            },
+            {
+              "name": "Char Minar",
+              "category": "Religion",
+              "distance_km": 0.13,
+              "lat": 17.361602783203125,
+              "lon": 78.47463989257812,
+              "score": 2
+            },
+            {
+              "name": "Char Kaman",
+              "category": "Fortifications",
+              "distance_km": 0.22,
+              "lat": 17.362468719482422,
+              "lon": 78.47482299804688,
+              "score": 2
+            }
+          ],
+          "3": [
+            {
+              "name": "Shahi Maqbara",
+              "category": "Historic",
+              "distance_km": 0.05,
+              "lat": 17.36029624938965,
+              "lon": 78.47367095947266,
+              "score": 2
+            },
+            {
+              "name": "Mecca Masjid",
+              "category": "Religion",
+              "distance_km": 0.09,
+              "lat": 17.360538482666016,
+              "lon": 78.4731674194336,
+              "score": 2
+            },
+            {
+              "name": "Charminar",
+              "category": "Historic",
+              "distance_km": 0.13,
+              "lat": 17.361602783203125,
+              "lon": 78.47463989257812,
+              "score": 2
+            },
+            {
+              "name": "Gulzar houz (fountain)",
+              "category": "Fountains",
+              "distance_km": 0.33,
+              "lat": 17.36345100402832,
+              "lon": 78.4749984741211,
+              "score": 2
+            }
+          ]
+        },
+        "budget": {
+          "total_budget": 85700,
+          "estimated_cost": 94270,
+          "remaining": -8570,
+          "status": "Over Budget",
+          "average_per_day": 31423,
+          "average_per_person": 94270,
+          "categories": {
+            "hotel": 13500,
+            "food": 3600,
+            "transport": 3600,
+            "activities": 65000,
+            "emergency": 8570
+          },
+          "category_percentage": {
+            "hotel": 14,
+            "food": 4,
+            "transport": 4,
+            "activities": 69,
+            "emergency": 9
+          },
+          "per_person": [
+            {
+              "name": "king",
+              "share": 85700
+            }
+          ]
+        },
+        "dashboard": {
+          "source": "goa",
+          "destination": "hyderabad",
+          "days": 3,
+          "travel_mode": "car",
+          "weather": 55,
+          "hotel_count": 18,
+          "attraction_count": 65,
+          "mandatory_count": 0,
+          "distance": 636.81,
+          "duration": 9.07,
+          "budget": 85700
+        },
+        "summary": {
+          "days": 3,
+          "distance": 636.81,
+          "travel_time": 9.07,
+          "hotel_count": 18,
+          "place_count": 65
+        }
+      },
+      "dashboard": {
+        "source": "goa",
+        "destination": "hyderabad",
+        "days": 3,
+        "travel_mode": "car",
+        "weather": 55,
+        "hotel_count": 18,
+        "attraction_count": 65,
+        "mandatory_count": 0,
+        "distance": 636.81,
+        "duration": 9.07,
+        "budget": 85700
+      },
+      "summary": {
+        "days": 3,
+        "distance": 636.81,
+        "travel_time": 9.07,
+        "hotel_count": 18,
+        "place_count": 65
+      }
+    }
   }
 ]

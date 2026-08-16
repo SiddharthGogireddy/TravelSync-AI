@@ -182,3 +182,22 @@
     border-right-color: var(--border);
   }
 }
+.day-card {
+    padding: 16px;
+
+    margin-bottom: 16px;
+
+    border: 1px solid #ddd;
+
+    border-radius: 12px;
+}
+
+.place-card {
+    padding: 8px;
+
+    margin-top: 8px;
+
+    border: 1px solid #eee;
+
+    border-radius: 8px;
+}

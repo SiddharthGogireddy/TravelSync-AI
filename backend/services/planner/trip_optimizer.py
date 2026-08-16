@@ -1,4 +1,4 @@
-from backend.routes.place import places
+
 from backend.services.planner.distance import haversine
 
 
@@ -147,12 +147,15 @@ def optimize_trip(
     for day in schedule.values()
     )
 
-    print(
-        f"Scheduled: {scheduled}"
+    print("Inside optimize_trip()")
+    print("Received:", len(places))
+
+    scheduled = sum(
+        len(day)
+        for day in schedule.values()
     )
 
-    print(
-        f"Available: {len(places)}"
-    )
+    print("Scheduled:", scheduled)
+    print("Available:", len(places))
 
     return schedule

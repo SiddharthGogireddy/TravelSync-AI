@@ -1,12 +1,51 @@
 INTEREST_MAP = {
-    "Beaches": ["Beach"],
-    "Food": ["Restaurant", "Cafe", "Market"],
-    "Photography": ["Historic", "Cultural", "Viewpoint"],
-    "Adventure": ["Adventure", "Waterfall"],
-    "Water Sports": ["Beach", "Adventure"],
-    "Religion": ["Religion"],
-    "History": ["Historic"],
-    "Nature": ["Nature", "Waterfall", "Park"]
+    "Beaches": [
+        "Beach",
+        "Waterfall",
+        "Fountains"
+    ],
+
+    "Food": [
+        "Restaurant",
+        "Cafe",
+        "Market"
+    ],
+
+    "Photography": [
+        "Historic",
+        "Historic Architecture",
+        "Cultural",
+        "Viewpoint",
+        "Palaces"
+    ],
+
+    "Adventure": [
+        "Adventure",
+        "Waterfall"
+    ],
+
+    "Water Sports": [
+        "Beach",
+        "Waterfall",
+        "Fountains"
+    ],
+
+    "Religion": [
+        "Religion"
+    ],
+
+    "History": [
+        "Historic",
+        "Historic Architecture",
+        "Palaces",
+        "Fortifications"
+    ],
+
+    "Nature": [
+        "Nature",
+        "Waterfall",
+        "Park"
+    ]
 }
 
 
