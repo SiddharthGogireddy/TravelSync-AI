@@ -13,7 +13,15 @@ router = APIRouter(
 async def planner(request: TripRequest):
 
     result = await build_trip(request)
+    print("TYPE:", type(result))
 
+    if isinstance(result, dict):
+        print("KEYS:", list(result.keys()))
+
+        print(
+        "HAS_TRIP:",
+        "trip" in result
+        )
     place_names = [
         p["name"]
         for p in result["trip"]["places"][:10]

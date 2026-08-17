@@ -58,12 +58,13 @@ export default function TripForm({
                 onChange={(e) => setDestination(e.target.value)}
             />
 
-            <input
-                type="number"
-                placeholder="Days"
-                value={days}
-                onChange={(e) => setDays(Number(e.target.value))}
-            />
+            <label>Days</label>
+
+<input
+    type="number"
+    value={days || ""}
+    onChange={(e) => setDays(Number(e.target.value))}
+/>
 
             <select
                 value={budget}

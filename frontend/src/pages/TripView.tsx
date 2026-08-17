@@ -121,6 +121,9 @@ export default function TripView() {
             description:
                 w.description ?? "",
         }));
+        console.log("TripView rendered");
+console.log(data);
+console.log(trip);
 
     return (
         
@@ -131,20 +134,25 @@ export default function TripView() {
                 padding: "20px",
             }}
         >
+             <h1>TRIPVIEW TEST</h1>
 
             <Dashboard dashboard={dashboard} />
-
+            <h1> test 1</h1>
             <br />
 
             <BudgetCard
                 budget={trip.budget}
             />
+            <h1>test 2</h1>
 
             <br />
+            <h1> test 3
 
+            </h1>
             <BudgetStatus
                 status={trip.budget.status}
             />
+            <h1> test 4</h1>
 
             <br />
 
@@ -155,7 +163,7 @@ export default function TripView() {
             />
 
             <br />
-
+<h1>test</h1>
             <BudgetPieChart
                 categories={
                     trip.budget.categories
@@ -230,7 +238,17 @@ export default function TripView() {
     )}
      
             <hr />
-
+                  <h2> Map</h2>
+            <MapView
+    lat={trip.destination_location.lat}
+    lon={trip.destination_location.lon}
+    places={trip.places}
+    hotels={trip.hotels}
+    selectedPlace={selectedPlace}
+      routeCoordinates={
+        trip.route_coordinates
+      }
+/>
             <h2>AI Itinerary</h2>
 
 {data.itinerary?.days?.map((day) => (
@@ -271,14 +289,7 @@ export default function TripView() {
             )}
         
         </ul>
-        <h2> Map</h2>
-            <MapView
-    lat={trip.destination_location.lat}
-    lon={trip.destination_location.lon}
-    places={trip.places}
-    hotels={trip.hotels}
-    selectedPlace={selectedPlace}
-/>
+  
         <p>
             <b>Budget:</b> {day.budget}
         </p>
@@ -331,9 +342,23 @@ export default function TripView() {
                     />
 
                 </>
+                
 
             )}
+        <button
+    onClick={() => {
+        const tripId =
+            getTripIdFromUrl();
 
+        if (!tripId) return;
+
+        window.open(
+            `http://127.0.0.1:8000/trip/${tripId}/pdf`
+        );
+    }}
+>
+    Download PDF
+</button>
         </div>
         
 

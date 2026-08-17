@@ -16,9 +16,11 @@ interface Props {
 }
 
 export default function Results({ data }: Props) {
+    console.log("RESULTS COMPONENT IS RUNNING");
     const [expenses] =
         useState<Expense[]>([]);
-
+    const [showItinerary, setShowItinerary] =
+    useState(false);
     const [selectedPlace] =
         useState<Place | null>(null);
 
@@ -27,10 +29,10 @@ export default function Results({ data }: Props) {
     }
 
     const trip = data.trip;
-
+    console.log("Trip ID:", data.trip_id);
     const dashboard = data.dashboard;
 
-    const itinerary = data.itinerary;
+    
 
     const total = expenses.reduce(
         (sum, expense) =>
@@ -156,23 +158,54 @@ export default function Results({ data }: Props) {
                 selectedPlace={
                     selectedPlace
                 }
+                  routeCoordinates={
+        trip.route_coordinates
+                  }
             />
 
             <h2>Total Expenses</h2>
 
             <p>₹{total}</p>
 
-            <hr />
+    <hr />
 
-            <h2>AI Itinerary</h2>
+<h2>AI Itinerary</h2>
 
-            <pre>
-                {JSON.stringify(
-                    itinerary,
-                    null,
-                    2
-                )}
-            </pre>
+<button
+    onClick={() =>
+        setShowItinerary(
+            !showItinerary
+        )
+    }
+>
+    {showItinerary
+        ? "Hide Itinerary"
+        : "Show Itinerary"}
+</button>
+
+<button
+    onClick={() =>
+        window.open(
+            `http://127.0.0.1:8000/trip/${data.trip_id}/pdf`
+        )
+    }
+    style={{
+        marginLeft: 10,
+    }}
+>
+    Download PDF
+</button>
+
+{showItinerary && (
+    <pre>
+        {JSON.stringify(
+            data.itinerary,
+            null,
+            2
+        )}
+    </pre>
+)}
+            
         </div>
     );
 }

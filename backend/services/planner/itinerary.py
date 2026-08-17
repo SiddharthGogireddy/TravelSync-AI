@@ -114,7 +114,7 @@ async def build_trip(request):
 
         if not place.get("name"):
             continue
-
+        
         place_list.append(
             {
                 "name": place["name"],
@@ -135,7 +135,7 @@ async def build_trip(request):
     place_list = [
     place
     for place in place_list
-    if place["distance_km"] <= 25
+    if place["distance_km"] <= 15
     ]
     ranked_places = rank_places(
         place_list,
@@ -150,6 +150,32 @@ async def build_trip(request):
 
     print(
         "Matched places:",
+        len(matched_places)
+    )
+
+    seen = set()
+
+    unique_places = []
+
+    for place in matched_places:
+
+        normalized_name = (
+            place["name"]
+            .lower()
+            .replace(" ", "")
+        )
+
+        if normalized_name in seen:
+            continue
+
+        seen.add(normalized_name)
+
+        unique_places.append(place)
+
+    matched_places = unique_places
+
+    print(
+        "Unique places:",
         len(matched_places)
     )
     day_schedule = optimize_trip(
@@ -228,7 +254,14 @@ async def build_trip(request):
             }
         )
 
-  
+    route_coordinates = []
+    
+    if route:
+        route_coordinates = [
+            [point[1], point[0]]
+            for point in route["routes"][0]["geometry"]["coordinates"]
+        ]
+    
 
     budget = calculate_budget(
         traveler_profiles,
@@ -263,7 +296,7 @@ async def build_trip(request):
         "travel_mode_rules": mode_rules,
 
         "route": route_summary,
-
+        "route_coordinates":route_coordinates,
         "weather": weather_summary,
 
         "best_time": best_time,

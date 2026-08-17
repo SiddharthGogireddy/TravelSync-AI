@@ -3,6 +3,7 @@ import {
     Pie,
     Cell,
     Tooltip,
+    Legend,
     ResponsiveContainer,
 } from "recharts";
 
@@ -64,32 +65,32 @@ export default function BudgetPieChart({
             }}
         >
             <h2>Budget Distribution</h2>
-
             <ResponsiveContainer>
-                <PieChart>
+    <PieChart>
+        <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            outerRadius={120}
+            label
+        >
+            {data.map((_, index) => (
+                <Cell
+                    key={index}
+                    fill={
+                        COLORS[
+                            index % COLORS.length
+                        ]
+                    }
+                />
+            ))}
+        </Pie>
 
-                    <Pie
-                        data={data}
-                        dataKey="value"
-                        outerRadius={120}
-                        label
-                    >
-                        {data.map((_, index) => (
-                            <Cell
-                                key={index}
-                                fill={
-                                    COLORS[
-                                        index % COLORS.length
-                                    ]
-                                }
-                            />
-                        ))}
-                    </Pie>
+        <Tooltip />
 
-                    <Tooltip />
-
-                </PieChart>
-            </ResponsiveContainer>
+        <Legend />
+    </PieChart>
+</ResponsiveContainer>
         </div>
     );
 }

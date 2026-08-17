@@ -1,10 +1,16 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.responses import (
+    FileResponse,
+)
+
 from backend.services.storage.trip_store import load_trip
 
 router = APIRouter(
     prefix="/trip",
     tags=["Trip"]
 )
+
 
 @router.get("/{trip_id}")
 def get_trip(trip_id: str):
@@ -17,3 +23,4 @@ def get_trip(trip_id: str):
         )
 
     return trip
+

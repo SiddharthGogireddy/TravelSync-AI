@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, } from "react-router-dom";
 
 import TripForm from "./components/TripForm";
 import Results from "./pages/Results";
@@ -14,20 +14,38 @@ import type { TripResponse } from "./types/api";
 export default function App() {
     const [data, setData] = useState<TripResponse | null>(null);
     const [loading, setLoading] = useState(false);
+    const handleSubmit = async (
+    formData: TripRequest
+) => {
+    try {
+        setLoading(true);
 
-    const handleSubmit = async (formData: TripRequest) => {
-        try {
-            setLoading(true);
+        const result =
+            await generateTrip(formData);
 
-            const result = await generateTrip(formData);
-            console.log("Trip generated:", result);
-            setData(result);
-        } catch (err) {
-            console.error(err);
-        } finally {
-            setLoading(false);
+        console.log(
+            "Trip generated:",
+            result
+        );
+
+        if (result.trip_id) {
+            window.location.href =
+                `/trip/${result.trip_id}`;
+
+            return;
         }
-    };
+
+        setData(result);
+    }
+
+    catch (err) {
+        console.error(err);
+    }
+
+    finally {
+        setLoading(false);
+    }
+};
 
     return (
         <BrowserRouter>
@@ -53,7 +71,9 @@ export default function App() {
                                     TravelSync AI
                                 </h1>
 
-                                <TripForm onSubmit={handleSubmit} />
+                                 <div style={{ marginBottom: "40px" }}>
+        <TripForm onSubmit={handleSubmit} />
+    </div>
 
                                 {loading && <p>Loading...</p>}
 

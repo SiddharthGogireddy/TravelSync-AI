@@ -97,6 +97,7 @@ export interface TripResponse {
         travelers: Traveler[];
         places:Place[]
         budget: Budget;
+        route_coordinates:number[][];
         day_schedule: Record<string, Place[]> | null;
     };
 
