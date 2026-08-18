@@ -75,31 +75,39 @@ input {
     border: 1px solid #ccc;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+h1 {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #111;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
 h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
+    font-size: 2rem;
+    font-weight: 900;
+    color: #111;
+
+    padding-bottom: 12px;
+
+    margin-top: 40px;
+    margin-bottom: 24px;
+
+    border-bottom: 3px solid #111;
 }
+
+h3 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #222;
+}
+
+h4 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+}
+
+
+
 p {
   margin: 0;
 }
@@ -118,6 +126,7 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+
+body {
+    background: #f3f4f6;
+}

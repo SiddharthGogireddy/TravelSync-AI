@@ -49,14 +49,7 @@ export default function App() {
 
     return (
         <BrowserRouter>
-            <div
-                style={{
-                    maxWidth: "1100px",
-                    margin: "auto",
-                    padding: "20px",
-                    fontFamily: "Arial",
-                }}
-            >
+           <div>
                 <Routes>
                     <Route
                         path="/"

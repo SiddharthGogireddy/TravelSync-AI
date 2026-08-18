@@ -16,6 +16,7 @@ interface Props {
 }
 
 export default function Results({ data }: Props) {
+    
     console.log("RESULTS COMPONENT IS RUNNING");
     const [expenses] =
         useState<Expense[]>([]);
@@ -23,7 +24,7 @@ export default function Results({ data }: Props) {
     useState(false);
     const [selectedPlace] =
         useState<Place | null>(null);
-
+    
     if (!data?.trip) {
         return <div>No trip data available.</div>;
     }
@@ -50,7 +51,8 @@ export default function Results({ data }: Props) {
                 padding: 20,
             }}
         >
-            <h1>Trip Results</h1>
+            
+               <h1>Trip Results</h1>
 
             {dashboard && (
                 <Dashboard

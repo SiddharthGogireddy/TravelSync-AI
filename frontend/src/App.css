@@ -201,3 +201,113 @@
 
     border-radius: 8px;
 }
+.section-title {
+    font-size: 2rem;
+
+    font-weight: 900;
+
+    color: black;
+
+    text-transform: uppercase;
+
+    margin: 0 0 24px 0;
+
+    padding: 12px 16px;
+
+    background: #f3f4f6;
+
+    border-radius: 10px;
+
+    border: 1px solid #d1d5db;
+}
+.card {
+    padding: 24px;
+
+    margin-bottom: 24px;
+
+    border-radius: 16px;
+
+    background: white;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+h1 {
+    font-size: 2.5rem;
+    font-weight: 800;
+}
+
+.card {
+    padding: 24px;
+    margin-bottom: 24px;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+}
+.dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+.page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+.section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 2.2rem;
+
+    font-weight: 800;
+
+    color: #111827;
+
+    margin-bottom: 24px;
+
+    padding-bottom: 14px;
+
+    border-bottom: 3px solid #d1d5db;
+
+    letter-spacing: -0.5px;
+}
+
+.card {
+    padding: 24px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid #e5e7eb;
+
+    border-radius: 16px;
+
+    background: white;
+
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.download-button {
+    padding: 12px 20px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+}
+h3 {
+    font-size: 1.5rem;
+
+    font-weight: 700;
+
+    color: #1f2937;
+}
+
+h4 {
+    font-size: 1.1rem;
+
+    font-weight: 600;
+
+    color: #374151;
+}
