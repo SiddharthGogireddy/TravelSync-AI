@@ -6,7 +6,9 @@ from backend.api.ai import router as ai_router
 from backend.routes.planner import router as planner_router
 from backend.routes.trip import router as trip_router
 from backend.routes.pdf import router as pdf_router
-
+from backend.routes.update_trip import (
+    router as update_trip_router,
+)
 
 load_dotenv()
 
@@ -23,4 +25,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+app.include_router(
+    update_trip_router
 )

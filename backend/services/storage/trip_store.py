@@ -29,3 +29,28 @@ def load_trip(trip_id):
             return trip["data"]
 
     return None
+def update_saved_trip(
+    trip_id,
+    trip_data,
+):
+
+    with open(FILE, "r") as f:
+        trips = json.load(f)
+
+    for trip in trips:
+
+        if trip["id"] == trip_id:
+
+            trip["data"] = trip_data
+
+            with open(FILE, "w") as f:
+
+                json.dump(
+                    trips,
+                    f,
+                    indent=2,
+                )
+
+            return True
+
+    return False
