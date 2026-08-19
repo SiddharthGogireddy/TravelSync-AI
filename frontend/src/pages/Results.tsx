@@ -17,7 +17,7 @@ interface Props {
 
 export default function Results({ data }: Props) {
     
-    console.log("RESULTS COMPONENT IS RUNNING");
+  
     const [expenses] =
         useState<Expense[]>([]);
     const [showItinerary, setShowItinerary] =
@@ -30,7 +30,7 @@ export default function Results({ data }: Props) {
     }
 
     const trip = data.trip;
-    console.log("Trip ID:", data.trip_id);
+    
     const dashboard = data.dashboard;
 
     
@@ -160,9 +160,8 @@ export default function Results({ data }: Props) {
                 selectedPlace={
                     selectedPlace
                 }
-                  routeCoordinates={
-        trip.route_coordinates
-                  }
+                routeCoordinates={[]}
+                 
             />
 
             <h2>Total Expenses</h2>

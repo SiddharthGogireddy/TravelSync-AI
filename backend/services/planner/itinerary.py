@@ -254,14 +254,9 @@ async def build_trip(request):
             }
         )
 
-    route_coordinates = []
     
-    if route:
-        route_coordinates = [
-            [point[1], point[0]]
-            for point in route["routes"][0]["geometry"]["coordinates"]
-        ]
     
+   
 
     budget = calculate_budget(
         traveler_profiles,
@@ -296,7 +291,7 @@ async def build_trip(request):
         "travel_mode_rules": mode_rules,
 
         "route": route_summary,
-        "route_coordinates":route_coordinates,
+        
         "weather": weather_summary,
 
         "best_time": best_time,

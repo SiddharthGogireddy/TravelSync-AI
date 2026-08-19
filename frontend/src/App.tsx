@@ -23,10 +23,7 @@ export default function App() {
         const result =
             await generateTrip(formData);
 
-        console.log(
-            "Trip generated:",
-            result
-        );
+        
 
         if (result.trip_id) {
             window.location.href =

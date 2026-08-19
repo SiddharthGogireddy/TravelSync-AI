@@ -236,7 +236,7 @@ export default function TripView() {
             selectedPlace
           }
           routeCoordinates={
-            trip.route_coordinates
+          []
           }
         />
       </div>

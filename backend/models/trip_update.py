@@ -3,7 +3,11 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class TripUpdateRequest(BaseModel):
+class TripUpdateRequest(
+    BaseModel
+):
+
+    prompt: Optional[str] = None
 
     budget: Optional[int] = None
 

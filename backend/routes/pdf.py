@@ -25,7 +25,6 @@ def download_pdf(trip_id: str):
             detail="Trip not found",
         )
 
-    print("Trip loaded successfully")
 
     filename = (
     f"{trip['trip']['destination']}_trip.pdf"
