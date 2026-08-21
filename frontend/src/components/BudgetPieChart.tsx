@@ -56,7 +56,7 @@ export default function BudgetPieChart({
         <div
             style={{
                 width: "100%",
-                height: 350,
+                height: 380,
                 background: "white",
                 borderRadius: 12,
                 padding: 20,
@@ -66,6 +66,7 @@ export default function BudgetPieChart({
         >
             <h2>Budget Distribution</h2>
             <ResponsiveContainer>
+    
     <PieChart>
         <Pie
             data={data}
@@ -88,7 +89,11 @@ export default function BudgetPieChart({
 
         <Tooltip />
 
-        <Legend />
+        <Legend
+    wrapperStyle={{
+        paddingTop: "20px",
+    }}
+/>
     </PieChart>
 </ResponsiveContainer>
         </div>

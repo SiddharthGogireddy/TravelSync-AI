@@ -256,7 +256,15 @@ async def build_trip(request):
 
     
     
-   
+    print(
+        "FINAL PLACE SAMPLE:",
+        matched_places[:3]
+    )
+
+    scheduled_activity_count = sum(
+    len(places)
+    for places in day_schedule.values()
+)
 
     budget = calculate_budget(
         traveler_profiles,
@@ -264,7 +272,9 @@ async def build_trip(request):
         travel_mode,
         hotel_list,
         matched_places,
-    )
+        scheduled_activity_count=
+            scheduled_activity_count,
+        )
 
 
     trip_data = {

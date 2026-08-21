@@ -13,6 +13,9 @@ def calculate_budget(
     travel_mode,
     hotels,
     places,
+    scheduled_activity_count=None,
+    total_budget=None,
+    
 ):
     hotel_cost = 0
     food_cost = 0
@@ -27,7 +30,16 @@ def calculate_budget(
 
         hotel = HOTEL_COST.get(budget, 2500) * days
         food = FOOD_COST.get(budget, 800) * days
-        activities = ACTIVITY_COST.get(budget, 700) * len(places)
+        activity_count = (
+            scheduled_activity_count
+            if scheduled_activity_count is not None
+            else len(places)
+        )
+
+        activities = (
+            ACTIVITY_COST.get(budget, 700)
+            * activity_count
+        )
         transport = (
             TRANSPORT_COST.get(travel_mode, 1000)
             * days
@@ -60,11 +72,11 @@ def calculate_budget(
 
     estimated_total = subtotal + emergency
 
-    total_budget = sum(
-        person["share"]
-        for person in per_person
+    if total_budget is None:
+        total_budget = sum(
+            person["share"]
+            for person in per_person
     )
-
     remaining = total_budget - estimated_total
 
     if remaining > estimated_total * 0.20:

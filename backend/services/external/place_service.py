@@ -26,3 +26,37 @@ async def get_places(lat, lon):
     data = response.json()
     print(f"Fetched {len(data)} places from OpenTripMap API.")
     return data
+
+async def find_place(
+    name,
+    lat,
+    lon,
+):
+    places = await get_places(
+        lat,
+        lon,
+    )
+
+    search_name = name.lower().strip()
+
+    for place in places:
+
+        place_name = place.get(
+            "name",
+            ""
+        ).lower().strip()
+
+        if search_name == place_name:
+            return place
+
+    for place in places:
+
+        place_name = place.get(
+            "name",
+            ""
+        ).lower().strip()
+
+        if search_name in place_name:
+            return place
+
+    return None

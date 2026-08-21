@@ -17,13 +17,10 @@ def parse_prompt(prompt: str):
 
     if "add" in text:
 
-        place = text.replace(
-            "add",
-            ""
-        ).strip()
+        if text.startswith("add "):
+            place = text[4:].strip()
 
-        changes["add_place"] = place
-
+            changes["add_place"] = place
     if "remove" in text:
 
         place = text.replace(
