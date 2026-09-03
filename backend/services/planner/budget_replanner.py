@@ -6,6 +6,7 @@ from backend.services.planner.budget_tracker import (
 def fit_trip_to_budget(
     trip,
     target_budget,
+    protected_day=None,
 ):
     trip_data = trip["trip"]
 
@@ -56,6 +57,11 @@ def fit_trip_to_budget(
         candidates = []
 
         for day, day_places in day_schedule.items():
+            if protected_day is not None and str(day) == str(protected_day):
+                continue
+            # Keep at least one activity on every day
+            if len(day_places) <= 1:
+                continue
 
             for index, place in enumerate(day_places):
 

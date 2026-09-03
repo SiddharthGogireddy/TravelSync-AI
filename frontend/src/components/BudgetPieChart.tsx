@@ -56,7 +56,7 @@ export default function BudgetPieChart({
         <div
             style={{
                 width: "100%",
-                height: 380,
+                height: 400,
                 background: "white",
                 borderRadius: 12,
                 padding: 20,

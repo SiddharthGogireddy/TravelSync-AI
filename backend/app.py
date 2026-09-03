@@ -9,7 +9,7 @@ from backend.routes.pdf import router as pdf_router
 from backend.routes.update_trip import (
     router as update_trip_router,
 )
-
+from backend.services.trip_editor.llm_interpreter import interpret_trip_prompt
 load_dotenv()
 
 app = FastAPI(title="TravelSync AI")
@@ -29,3 +29,8 @@ app.add_middleware(
 app.include_router(
     update_trip_router
 )
+@app.get("/test-llm")
+async def test_llm():
+    return interpret_trip_prompt(
+        "Regenerate Day 2 and keep the budget under ₹30,000"
+    )

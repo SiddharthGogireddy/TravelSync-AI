@@ -5,6 +5,7 @@ interface Props {
     day: string;
     places: Place[];
     onSelect: (place: Place) => void;
+    onRegenerate?: (day: string) => void;
 }
 
 const TIMES = [
@@ -17,7 +18,8 @@ const TIMES = [
 export default function DayCard({
     day,
     places,
-    onSelect
+    onSelect,
+    onRegenerate
 }: Props) {
     return (
         <div className="day-card">
@@ -44,6 +46,14 @@ export default function DayCard({
                     </div>
                 </div>
             ))}
+            {onRegenerate && (
+    <button
+        className="regenerate-button"
+        onClick={() => onRegenerate(day)}
+    >
+        Regenerate Day
+    </button>
+)}
         </div>
     );
 }

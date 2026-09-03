@@ -44,7 +44,8 @@ export default function TripView() {
 
   const [expenseData, setExpenseData] =
     useState<ExpenseResponse | null>(null);
-
+  const [prompt, setPrompt] = useState("");
+  const [updating, setUpdating] = useState(false);
   async function handleAddExpense(
     title: string,
     amount: number,
@@ -65,7 +66,81 @@ export default function TripView() {
 
     setExpenseData(updated);
   }
+  async function handleRegenerateDay(day: string) {
+    const tripId = getTripIdFromUrl();
 
+    if (!tripId) return;
+
+    try {
+        const response = await fetch(
+            `http://127.0.0.1:8000/trip/${tripId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    prompt: `Regenerate Day ${day}`,
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(
+                `Failed to regenerate Day ${day}`
+            );
+        }
+
+        const updatedTrip: TripResponse =
+            await response.json();
+
+        setData(updatedTrip);
+    } catch (error) {
+        console.error(
+            "Regeneration failed:",
+            error
+        );
+    }
+}
+  async function handlePromptUpdate() {
+    const tripId = getTripIdFromUrl();
+
+    if (!tripId || !prompt.trim()) return;
+
+    try {
+        setUpdating(true);
+
+        const response = await fetch(
+            `http://127.0.0.1:8000/trip/${tripId}`,
+            {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    prompt: prompt.trim(),
+                }),
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to update trip");
+        }
+
+        const updatedTrip: TripResponse =
+            await response.json();
+
+        setData(updatedTrip);
+        setPrompt("");
+    } catch (error) {
+        console.error(
+            "Trip update failed:",
+            error
+        );
+    } finally {
+        setUpdating(false);
+    }
+}
   useEffect(() => {
     const tripId = getTripIdFromUrl();
 
@@ -136,9 +211,14 @@ export default function TripView() {
       </div>
 
       <div className="section card">
-        <h2 className="section-title">
-          Travelers
-        </h2>
+        <h2
+    style={{
+        marginTop: "40px",
+        marginBottom: "20px",
+    }}
+>
+    Travelers
+</h2>
 
         {trip.travelers.map(
           (
@@ -195,7 +275,41 @@ export default function TripView() {
           )
         )}
       </div>
+        <div className="section card">
+    <h2 className="section-title">
+        Edit Your Trip
+    </h2>
 
+    <input
+        type="text"
+        value={prompt}
+        onChange={(e) =>
+            setPrompt(e.target.value)
+        }
+        placeholder="e.g. Regenerate Day 2 and keep the budget under ₹30000"
+        style={{
+            width: "100%",
+            padding: "12px",
+            marginBottom: "12px",
+            boxSizing: "border-box",
+        }}
+    />
+
+    <button
+        className="regenerate-button"
+        onClick={handlePromptUpdate}
+        disabled={updating || !prompt.trim()}
+    >
+        {updating
+            ? "Updating..."
+            : "Update Trip"}
+    </button>
+
+    <p style={{ marginTop: "10px" }}>
+        Try: "Add Charminar", "Remove Charminar",
+        "Regenerate Day 2", or "Keep budget under ₹30000"
+    </p>
+</div>
       <div className="section">
         <h2 className="section-title">
           Daily Plan
@@ -213,6 +327,7 @@ export default function TripView() {
                 onSelect={
                   setSelectedPlace
                 }
+                onRegenerate={handleRegenerateDay}
               />
             )
           )}

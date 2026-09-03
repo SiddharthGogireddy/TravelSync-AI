@@ -30,5 +30,5 @@ def generate(prompt: str):
         print("Gemini error:", e)
 
         return {
-            "days": []
+            "actions": []
         }
