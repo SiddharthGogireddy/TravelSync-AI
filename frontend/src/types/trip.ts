@@ -52,6 +52,7 @@ export interface MandatoryVisit {
 export interface TripRequest {
     source: string;
     destination: string;
+    
     days: number;
     travel_mode: string;
     travelers: TravelerRequest[];

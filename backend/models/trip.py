@@ -17,6 +17,7 @@ class MandatoryVisit(BaseModel):
 class TripRequest(BaseModel):
     source: str
     destination: str
+    
     days: int
     travelers: List[Traveler]
     mandatory_visits: List[MandatoryVisit] = []

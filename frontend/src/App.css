@@ -201,6 +201,22 @@
 
     border-radius: 8px;
 }
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 14px;
+}
+
+.form-group label {
+    font-weight: 600;
+}
+
+.form-group select,
+.form-group input {
+    width: 100%;
+    box-sizing: border-box;
+}
 .section-title {
     font-size: 2rem;
 
@@ -310,4 +326,56 @@ h4 {
     font-weight: 600;
 
     color: #374151;
+}
+.location-field {
+    position: relative;
+}
+
+.location-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.location-option {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: white;
+    text-align: left;
+    cursor: pointer;
+    color: #222;
+}
+
+.location-option:hover {
+    background: #f0f0f0;
+}
+
+.no-results {
+    padding: 10px;
+    color: #777;
+}
+.plan-another-button {
+    margin-bottom: 20px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #4caf50;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.plan-another-button:hover {
+    opacity: 0.9;
 }

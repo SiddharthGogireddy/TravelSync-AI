@@ -6,19 +6,22 @@ HEADERS = {
     "User-Agent": "TravelSyncAI/1.0"
 }
 
+
 async def search_location(place: str):
     params = {
         "q": place,
         "format": "json",
-        "limit": 1
+        "limit": 1,
     }
 
     async with httpx.AsyncClient() as client:
         response = await client.get(
             BASE_URL,
             params=params,
-            headers=HEADERS
+            headers=HEADERS,
         )
+
+    response.raise_for_status()
 
     data = response.json()
 

@@ -1,23 +1,25 @@
-from fastapi import APIRouter
-from services.external.place_service import get_places
-from services.external.location_service import search_location
+from fastapi import APIRouter, Query
 
-router = APIRouter(
-    prefix="/location",
-    tags=["Location"]
+from backend.services.external.location_service import (
+    search_location,
 )
 
+router = APIRouter(
+    prefix="/locations",
+    tags=["Locations"],
+)
+
+
 @router.get("/search")
-async def get_location(place: str):
-    result = await search_location(place)
+async def location_search(
+    q: str = Query(
+        ...,
+        min_length=2,
+    ),
+):
+    locations = await search_location(q)
 
-    if not result:
-        return {"error": "Location not found"}
+    if locations is None:
+        return []
 
-    location = result
-
-    places = await get_places(
-        float(location["lat"]),
-        float(location["lon"])
-    )
-    return result
+    return [locations]

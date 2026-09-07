@@ -12,7 +12,7 @@ import ExpenseTable from "../components/ExpenseTable";
 import MapView from "../components/MapView";
 import SettlementCard from "../components/SettlementCard";
 import WeatherCard from "../components/WeatherCard";
-
+import { useNavigate } from "react-router-dom";
 import { addExpense, getExpenses } from "../services/expense";
 
 import type {
@@ -35,7 +35,7 @@ function getTripIdFromUrl(): string | undefined {
 }
 
 export default function TripView() {
-    
+  const navigate = useNavigate();
   const [selectedPlace, setSelectedPlace] =
     useState<Place | null>(null);
 
@@ -182,8 +182,15 @@ export default function TripView() {
     }));
 
   return (
-   
+    
     <div className="page-container">
+    <button
+    type="button"
+    className="plan-another-button"
+    onClick={() => navigate("/")}
+>
+    ← Plan Another Trip
+</button>
       <Dashboard dashboard={dashboard} />
         
       <div className="section">
