@@ -187,7 +187,13 @@ export default function TripView() {
     <button
     type="button"
     className="plan-another-button"
-    onClick={() => navigate("/")}
+    onClick={() =>
+    navigate("/", {
+        state: {
+            trip: trip,
+        },
+    })
+}
 >
     ← Plan Another Trip
 </button>
@@ -257,7 +263,38 @@ export default function TripView() {
           )
         )}
       </div>
+        {trip.transport && (
+    <div className="card">
+        <h2>Transportation</h2>
 
+        <p>
+            <strong>Mode:</strong>{" "}
+            {trip.transport.label}
+        </p>
+
+        <p>
+            <strong>From:</strong>{" "}
+            {trip.transport.source}
+        </p>
+
+        <p>
+            <strong>To:</strong>{" "}
+            {trip.transport.destination}
+        </p>
+
+        <strong>{trip.transport.distance_label}:</strong>{" "}
+{trip.transport.distance_km} km
+
+        <p>
+            <strong>{trip.transport.duration_label}:</strong>{" "}
+            {trip.transport.road_duration_hours} hours
+        </p>
+
+        <p>
+            {trip.transport.description}
+        </p>
+    </div>
+)}
       <div className="section card">
         <h2 className="section-title">
           Hotels

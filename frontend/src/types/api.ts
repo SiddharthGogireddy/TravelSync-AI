@@ -1,4 +1,5 @@
 import type { Budget } from "./trip";
+import type { Transport } from "./trip";
 export interface Dashboard {
     source: string;
     destination: string;
@@ -91,14 +92,19 @@ export interface TripResponse {
     summary: Summary;
 
     trip: {
-        destination_location:Location ;
+        destination_location: Location;
         weather: Weather[];
         hotels: Hotel[];
         travelers: Traveler[];
-        places:Place[]
+        places: Place[];
         budget: Budget;
-    
-        day_schedule: Record<string, Place[]> | null;
+
+        day_schedule: Record<
+            string,
+            Place[]
+        > | null;
+
+        transport: Transport;
     };
 
     itinerary?: Itinerary;

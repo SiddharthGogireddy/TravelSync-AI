@@ -3,7 +3,9 @@ from backend.services.external.route_service import get_route
 from backend.services.external.weather_service import get_weather
 from backend.services.external.place_service import get_places
 from backend.services.external.hotel_service import get_hotels
-
+from backend.services.planner.transport_planner import (
+    build_transport_summary,
+)
 from backend.services.planner import travel_mode
 from backend.services.planner.attraction_ranker import rank_places
 from backend.services.planner.preference_matcher import match_preferences
@@ -80,7 +82,12 @@ async def build_trip(request):
             2,
         ),
     }
-
+    transport_summary = build_transport_summary(
+    source,
+    destination,
+    travel_mode,
+    route,
+)
     
 
     weather = await get_weather(
@@ -301,6 +308,7 @@ async def build_trip(request):
         "travel_mode_rules": mode_rules,
 
         "route": route_summary,
+        "transport": transport_summary,
         
         "weather": weather_summary,
 

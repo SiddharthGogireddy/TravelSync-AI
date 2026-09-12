@@ -48,7 +48,17 @@ export interface MandatoryVisit {
     name: string;
     day?: number;
 }
-
+export interface Transport {
+    mode: string;
+    label: string;
+    description: string;
+    source: string;
+    destination: string;
+    distance_km: number;
+    road_duration_hours: number;
+    distance_label: string;
+    duration_label: string;
+}
 export interface TripRequest {
     source: string;
     destination: string;

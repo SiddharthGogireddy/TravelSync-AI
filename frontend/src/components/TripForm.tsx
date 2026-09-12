@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { TripRequest } from "../types/trip";
+import {useLocation} from  "react-router-dom";
 const locations: Record<string, string[]> = {
     India: [
         "Bengaluru, Karnataka, India",
@@ -54,15 +55,19 @@ export default function TripForm({
 }: {
     onSubmit: (data: TripRequest) => void;
 }) {
+    const location = useLocation();
+    const previousTrip = location.state?.trip;
     const [source, setSource] = useState<string>(
-    locations.India[0]
+    previousTrip?.source ?? locations.India[0]
 );
     const [sourceSelected, setSourceSelected] = useState(true);
 const [destinationSelected, setDestinationSelected] = useState(true);
 const [destination, setDestination] = useState<string>(
-    locations.India[1]
+    previousTrip?.destination ?? locations.India[1]
 );
-    const [days, setDays] = useState(3);
+    const [days, setDays] = useState(
+    previousTrip?.days ?? 3
+);
     
     const [name, setName] = useState("");
 
@@ -70,7 +75,7 @@ const [destination, setDestination] = useState<string>(
 
     const [travelMode, setTravelMode] = useState<
         "car" | "bus" | "train" | "flight"
-    >("car");
+    >(previousTrip?.travel_mode ?? "car");
 
     const handleSubmit = (
     e: React.FormEvent<HTMLFormElement>
@@ -100,8 +105,13 @@ const [destination, setDestination] = useState<string>(
         travel_mode: travelMode,
     });
 };
-    const [sourceSearch, setSourceSearch] = useState("");
-    const [destinationSearch, setDestinationSearch] = useState("");
+    const [sourceSearch, setSourceSearch] = useState(
+    previousTrip?.source ?? ""
+);
+
+const [destinationSearch, setDestinationSearch] = useState(
+    previousTrip?.destination ?? ""
+);
 
     const [showSourceResults, setShowSourceResults] = useState(false);
     const [showDestinationResults, setShowDestinationResults] =
