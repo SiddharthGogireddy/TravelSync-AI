@@ -60,6 +60,10 @@ export interface Place {
     distance_km: number;
     lat: number;
     lon: number;
+    score?: number;
+    matched_travelers?: string[];
+    match_count?: number;
+    travel_from_previous_km?: number | null;
 }
 export interface ItineraryDay {
     day: number;

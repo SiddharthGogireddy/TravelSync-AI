@@ -10,7 +10,12 @@ INTEREST_MAP = {
         "Cafe",
         "Market"
     ],
-
+    "Culture": [
+        "Cultural",
+        "Historic",
+        "Historic Architecture",
+        "Palaces"
+    ],
     "Photography": [
         "Historic",
         "Historic Architecture",

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TripRequest } from "../types/trip";
+import type { TravelerRequest, TripRequest } from "../types/trip";
 import {useLocation} from  "react-router-dom";
 const locations: Record<string, string[]> = {
     India: [
@@ -69,10 +69,18 @@ const [destination, setDestination] = useState<string>(
     previousTrip?.days ?? 3
 );
     
-    const [name, setName] = useState("");
-
-    const [budget, setBudget] = useState("Medium");
-
+    const [travelers, setTravelers] = useState<
+    TravelerRequest[]
+>(
+    previousTrip?.travelers ?? [
+        {
+            name: "",
+            interests: ["Beaches"],
+            budget: "Medium",
+            pace: "Balanced",
+        },
+    ]
+);
     const [travelMode, setTravelMode] = useState<
         "car" | "bus" | "train" | "flight"
     >(previousTrip?.travel_mode ?? "car");
@@ -93,14 +101,8 @@ const [destination, setDestination] = useState<string>(
         source,
         destination,
         days,
-        travelers: [
-            {
-                name,
-                interests: ["Beaches"],
-                budget,
-                pace: "Balanced",
-            },
-        ],
+        travelers,
+
         mandatory_visits: [],
         travel_mode: travelMode,
     });
@@ -139,16 +141,168 @@ const [destinationSearch, setDestinationSearch] = useState(
             <h2>Plan Your Trip</h2>
 
             <div className="form-group">
-                <label>Your Name</label>
+    <h3>Travelers</h3>
 
-                <input
-                    placeholder="Enter your name"
-                    value={name}
-                    onChange={(e) =>
-                        setName(e.target.value)
-                    }
-                />
-            </div>
+    {travelers.map((traveler, index) => (
+        <div
+            key={index}
+            className="card"
+            style={{ marginBottom: "15px" }}
+        >
+            <h4>Traveler {index + 1}</h4>
+
+            <label>Name</label>
+            <input
+                placeholder="Enter name"
+                value={traveler.name}
+                onChange={(e) => {
+                    const updated = [...travelers];
+
+                    updated[index] = {
+                        ...updated[index],
+                        name: e.target.value,
+                    };
+
+                    setTravelers(updated);
+                }}
+            />
+
+            <label>Budget</label>
+            <select
+                value={traveler.budget}
+                onChange={(e) => {
+                    const updated = [...travelers];
+
+                    updated[index] = {
+                        ...updated[index],
+                        budget: e.target.value,
+                    };
+
+                    setTravelers(updated);
+                }}
+            >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+            </select>
+
+            <label>Interests</label>
+
+            {[
+                "Beaches",
+                "History",
+                "Nature",
+                "Food",
+                "Shopping",
+                "Adventure",
+                "Culture",
+            ].map((interest) => (
+                <label
+                    key={interest}
+                    style={{
+                        display: "block",
+                        marginTop: "6px",
+                    }}
+                >
+                    <input
+                        type="checkbox"
+                        checked={traveler.interests.includes(
+                            interest
+                        )}
+                        onChange={() => {
+                            const updated = [...travelers];
+
+                            const currentInterests =
+                                traveler.interests;
+
+                            updated[index] = {
+                                ...updated[index],
+                                interests:
+                                    currentInterests.includes(
+                                        interest
+                                    )
+                                        ? currentInterests.filter(
+                                              (item) =>
+                                                  item !== interest
+                                          )
+                                        : [
+                                              ...currentInterests,
+                                              interest,
+                                          ],
+                            };
+
+                            setTravelers(updated);
+                        }}
+                    />
+
+                    {" "}
+                    {interest}
+                </label>
+            ))}
+
+            <label>Travel Pace</label>
+
+            <select
+                value={traveler.pace}
+                onChange={(e) => {
+                    const updated = [...travelers];
+
+                    updated[index] = {
+                        ...updated[index],
+                        pace: e.target.value,
+                    };
+
+                    setTravelers(updated);
+                }}
+            >
+                <option value="Relaxed">
+                    Relaxed
+                </option>
+                <option value="Balanced">
+                    Balanced
+                </option>
+                <option value="Fast">
+                    Fast
+                </option>
+            </select>
+
+            {travelers.length > 1 && (
+                <button
+                    type="button"
+                    onClick={() => {
+                        setTravelers(
+                            travelers.filter(
+                                (_, i) => i !== index
+                            )
+                        );
+                    }}
+                    style={{
+                        marginTop: "10px",
+                    }}
+                >
+                    Remove Traveler
+                </button>
+            )}
+        </div>
+    ))}
+
+    <button
+        type="button"
+        onClick={() => {
+            setTravelers([
+                ...travelers,
+                {
+                    name: "",
+                    interests: ["Beaches"],
+                    budget: "Medium",
+                    pace: "Balanced",
+                },
+            ]);
+        }}
+    >
+        + Add Traveler
+    </button>
+</div>
                     <div className="form-group location-field">
     <label>Source</label>
 
@@ -243,31 +397,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                         )
                     }
                 />
-            </div>
-
-            <div className="form-group">
-                <label>Budget</label>
-
-                <select
-                    value={budget}
-                    onChange={(e) =>
-                        setBudget(e.target.value)
-                    }
-                >
-                    <option value="Low">
-                        Low
-                    </option>
-
-                    <option value="Medium">
-                        Medium
-                    </option>
-
-                    <option value="High">
-                        High
-                    </option>
-                </select>
-            </div>
-
+            </div>       
             <div className="form-group">
                 <label>Travel Mode</label>
 

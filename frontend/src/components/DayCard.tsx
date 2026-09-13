@@ -43,6 +43,13 @@ export default function DayCard({
                             {" • "}
                             {place.distance_km} km
                         </p>
+                        {place.matched_travelers &&
+        place.matched_travelers.length > 0 && (
+            <p>
+                <strong>Matches:</strong>{" "}
+                {place.matched_travelers.join(", ")}
+            </p>
+        )}
                     </div>
                 </div>
             ))}

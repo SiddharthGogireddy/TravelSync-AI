@@ -6,7 +6,13 @@ INTEREST_MAP = {
     "Water Sports": ["Beach", "Adventure"],
     "Religion": ["Religion"],
     "History": ["Historic"],
-    "Nature": ["Nature", "Waterfall", "Park"]
+    "Nature": ["Nature", "Waterfall", "Park"],
+    "Culture": [
+        "Cultural",
+        "Historic",
+        "Historic Architecture",
+        "Palaces",
+    ],
 }
 
 
@@ -15,17 +21,37 @@ def rank_places(places, travelers):
     for place in places:
 
         score = 0
+        matched_interests = []
+        matched_travelers = []
 
         category = place["category"]
 
         for traveler in travelers:
 
+            traveler_matched = False
+
             for interest in traveler["interests"]:
 
-                mapped_categories = INTEREST_MAP.get(interest, [])
+                mapped_categories = INTEREST_MAP.get(
+                    interest,
+                    []
+                )
 
                 if category in mapped_categories:
+
                     score += 5
+
+                    if interest not in matched_interests:
+                        matched_interests.append(
+                            interest
+                        )
+
+                    traveler_matched = True
+
+            if traveler_matched:
+                matched_travelers.append(
+                    traveler["name"]
+                )
 
         if place["distance_km"] < 5:
             score += 2
@@ -35,35 +61,23 @@ def rank_places(places, travelers):
 
         place["score"] = score
 
-    return places
+        place["matched_interests"] = (
+            matched_interests
+        )
 
-def rank_places(places, travelers):
+        place["matched_travelers"] = (
+            matched_travelers
+        )
 
-    for place in places:
-
-        score = 0
-
-        category = place["category"]
-
-        for traveler in travelers:
-
-            for interest in traveler["interests"]:
-
-                mapped_categories = INTEREST_MAP.get(interest, [])
-
-                if category in mapped_categories:
-                    score += 5
-
-        if place["distance_km"] < 5:
-            score += 2
-
-        elif place["distance_km"] < 10:
-            score += 1
-
-        place["score"] = score
+        place["match_count"] = len(
+            matched_travelers
+        )
 
     places.sort(
-        key=lambda x: (-x["score"], x["distance_km"])
+        key=lambda x: (
+            -x["score"],
+            x["distance_km"],
+        )
     )
 
     return places

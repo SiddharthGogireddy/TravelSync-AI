@@ -185,12 +185,24 @@ async def build_trip(request):
         "Unique places:",
         len(matched_places)
     )
+    print("\nINTEREST DISTRIBUTION:")
+
+    for place in matched_places:
+        print(
+            place["name"],
+            "|",
+            place["category"],
+            "|",
+            place.get("matched_interests", []),
+            "| score:",
+            place.get("score"),
+        )
     day_schedule = optimize_trip(
         matched_places,
         days,
         mandatory_schedule,
+        pace=traveler_profiles[0]["pace"],
     )
-
     print(
         "Scheduled attractions:",
         sum(len(day) for day in day_schedule.values())

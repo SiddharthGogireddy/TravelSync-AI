@@ -5,8 +5,9 @@ from backend.services.planner.distance import haversine
 def optimize_trip(
     places,
     days,
-    mandatory_schedule=None
-    ):
+    mandatory_schedule=None,
+    pace="Balanced",
+):
     """
     Creates a balanced itinerary by:
     - Respecting mandatory visits
@@ -15,12 +16,27 @@ def optimize_trip(
     - Limiting attractions per day
     """
 
-    MAX_PER_DAY = max(
-    1,
-    min(
+    PACE_LIMITS = {
+        "Relaxed": 3,
+        "Balanced": 4,
+        "Fast": 5,
+    }
+
+    pace_limit = PACE_LIMITS.get(
+        pace,
         4,
-        (len(places) + days - 1) // days
     )
+
+    average_places_per_day = (
+        len(places) + days - 1
+    ) // days
+
+    MAX_PER_DAY = max(
+        1,
+        min(
+            pace_limit,
+            average_places_per_day,
+        )
     )
     MAX_CLUSTER_DISTANCE = 5  # km
 
@@ -32,7 +48,8 @@ def optimize_trip(
         places,
         key=lambda x: (
             -x["score"],
-            x["distance_km"]
+            -x.get("match_count", 0),
+            x["distance_km"],
         )
     )
 
@@ -61,50 +78,107 @@ def optimize_trip(
                     used.add(place["name"])
                     break
 
+    
     # -------------------------------------------------
-    # STEP 2
-    # Fill nearby attractions around mandatory ones
-    # -------------------------------------------------
+# STEP 2
+# Build geographically efficient and diverse
+# day clusters
+# -------------------------------------------------
 
     for day in schedule:
 
         if len(schedule[day]) == 0:
             continue
 
-        base_place = schedule[day][0]
+        covered_interests = set()
 
-        if (
-            base_place.get("lat") is None
-            or base_place.get("lon") is None
-        ):
-            continue
-
-        for place in places:
-
-            if place["name"] in used:
-                continue
-
-            if (
-                place.get("lat") is None
-                or place.get("lon") is None
-            ):
-                continue
-
-            if len(schedule[day]) >= MAX_PER_DAY:
-                break
-
-            distance = haversine(
-                base_place["lat"],
-                base_place["lon"],
-                place["lat"],
-                place["lon"]
+        for existing_place in schedule[day]:
+            covered_interests.update(
+                existing_place.get(
+                    "matched_interests",
+                    []
+                )
             )
 
-            if distance <= MAX_CLUSTER_DISTANCE:
+        while len(schedule[day]) < MAX_PER_DAY:
 
-                schedule[day].append(place)
-                used.add(place["name"])
+            current_place = schedule[day][-1]
 
+            if (
+                current_place.get("lat") is None
+                or current_place.get("lon") is None
+            ):
+                break
+
+            best_place = None
+            best_value = None
+
+            for place in places:
+
+                if place["name"] in used:
+                    continue
+
+                if (
+                    place.get("lat") is None
+                    or place.get("lon") is None
+                ):
+                    continue
+
+                distance = haversine(
+                    current_place["lat"],
+                    current_place["lon"],
+                    place["lat"],
+                    place["lon"],
+                )
+
+                if distance > MAX_CLUSTER_DISTANCE:
+                    continue
+
+                place_interests = set(
+                    place.get(
+                        "matched_interests",
+                        []
+                    )
+                )
+
+                new_interests = (
+                    place_interests - covered_interests
+                )
+
+                diversity_bonus = (
+                    len(new_interests) * 3
+                )
+
+                value = (
+                    place.get("score", 0)
+                    + diversity_bonus
+                    - distance * 0.5
+                )
+
+                if (
+                    best_value is None
+                    or value > best_value
+                ):
+                    best_value = value
+                    best_place = place
+
+            if best_place is None:
+                break
+
+            schedule[day].append(
+                best_place
+            )
+
+            used.add(
+                best_place["name"]
+            )
+
+            covered_interests.update(
+                best_place.get(
+                    "matched_interests",
+                    []
+                )
+            )
     # -------------------------------------------------
     # STEP 3
     # Fill remaining days
@@ -118,44 +192,108 @@ def optimize_trip(
     day_keys = list(schedule.keys())
 
     day_index = 0
-
     for place in remaining:
 
-        attempts = 0
+        available_days = [
+            day
+            for day in day_keys
+            if len(schedule[day]) < MAX_PER_DAY
+        ]
 
-        while attempts < len(day_keys):
+        if not available_days:
+            break
 
-            day = day_keys[day_index]
+        best_day = None
+        best_distance = None
 
-            if len(schedule[day]) < MAX_PER_DAY:
+        if (
+            place.get("lat") is not None
+            and place.get("lon") is not None
+        ):
 
-                schedule[day].append(place)
-                break
+            for day in available_days:
 
-            day_index = (
-                day_index + 1
-            ) % len(day_keys)
+                if not schedule[day]:
+                    distance = 0
 
-            attempts += 1
+                else:
+                    last_place = schedule[day][-1]
 
-        day_index = (
-            day_index + 1
-        ) % len(day_keys)
-    
-    scheduled = sum(
-    len(day)
-    for day in schedule.values()
-    )
+                    if (
+                        last_place.get("lat") is None
+                        or last_place.get("lon") is None
+                    ):
+                        continue
 
-    print("Inside optimize_trip()")
-    print("Received:", len(places))
+                    distance = haversine(
+                        last_place["lat"],
+                        last_place["lon"],
+                        place["lat"],
+                        place["lon"],
+                    )
 
+                if (
+                    best_distance is None
+                    or distance < best_distance
+                ):
+                    best_distance = distance
+                    best_day = day
+
+        # Fallback if coordinates are unavailable
+        if best_day is None:
+            best_day = min(
+                available_days,
+                key=lambda d: len(schedule[d])
+            )
+
+        schedule[best_day].append(place)
+        used.add(place["name"])
     scheduled = sum(
         len(day)
         for day in schedule.values()
-    )
-
+)
     print("Scheduled:", scheduled)
     print("Available:", len(places))
+    for day, day_places in schedule.items():
 
+        for index, place in enumerate(day_places):
+
+            if index == 0:
+                place["travel_from_previous_km"] = 0
+                continue
+
+            previous = day_places[index - 1]
+
+            if (
+                previous.get("lat") is None
+                or previous.get("lon") is None
+                or place.get("lat") is None
+                or place.get("lon") is None
+            ):
+                place["travel_from_previous_km"] = None
+                continue
+
+            distance = haversine(
+                previous["lat"],
+                previous["lon"],
+                place["lat"],
+                place["lon"],
+            )
+
+            place["travel_from_previous_km"] = round(
+                distance,
+                2,
+            )
+    print("\nFINAL DAY SCHEDULE:")
+
+    for day, day_places in schedule.items():
+        print(f"\nDAY {day}")
+
+        for place in day_places:
+            print(
+                place["name"],
+                "→",
+                place.get("travel_from_previous_km"),
+                "km"
+            )
     return schedule

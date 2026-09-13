@@ -1,1 +1,14 @@
-{}
+{
+    "a452c345-58cf-4d04-bd73-ee82df9b6caa": [
+        {
+            "title": "",
+            "amount": 9999.0,
+            "paid_by": "king 1"
+        },
+        {
+            "title": "",
+            "amount": 5000.0,
+            "paid_by": "king 2"
+        }
+    ]
+}
