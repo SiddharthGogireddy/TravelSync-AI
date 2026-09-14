@@ -1,6 +1,6 @@
 INTEREST_MAP = {
     "Beaches": ["Beach"],
-    "Food": ["Restaurant", "Cafe", "Market"],
+    "Food": ["Restaurant", "Cafe", "Market","Foods"],
     "Photography": ["Historic", "Cultural", "Viewpoint"],
     "Adventure": ["Adventure", "Waterfall"],
     "Water Sports": ["Beach", "Adventure"],
@@ -17,7 +17,13 @@ INTEREST_MAP = {
 
 
 def rank_places(places, travelers):
-
+    print("\n=== TRAVELERS RECEIVED BY RANKER ===")
+    for traveler in travelers:
+        print(
+            traveler["name"],
+            "→",
+            traveler["interests"]
+        )
     for place in places:
 
         score = 0

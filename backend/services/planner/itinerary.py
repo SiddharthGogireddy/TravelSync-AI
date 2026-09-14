@@ -86,7 +86,8 @@ async def build_trip(request):
     source,
     destination,
     travel_mode,
-    route,
+    route_summary["distance_km"],
+    route_summary["duration_hours"],
 )
     
 

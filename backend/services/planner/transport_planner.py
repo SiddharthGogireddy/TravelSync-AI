@@ -1,87 +1,272 @@
-def build_transport_summary(
+def build_transport_plan(
     source,
     destination,
     travel_mode,
-    route,
+    road_distance_km,
+    road_duration_hours,
 ):
     travel_mode = travel_mode.strip().lower()
-    road_distance_km = round(
-        route["routes"][0]["distance"] / 1000,
-        2,
-    )
 
-    road_duration_hours = round(
-        route["routes"][0]["duration"] / 3600,
-        2,
-    )
-
-    mode_info = {
+    modes = {
         "car": {
             "label": "Car",
-            "description": "Road travel by car",
-            "distance_label": "Road Distance",
-            "duration_label": "Estimated Driving Time",
-            "distance_km": road_distance_km,
-            "duration_hours": road_duration_hours,
+            "description": "Direct road travel by car",
         },
-
         "bus": {
             "label": "Bus",
-            "description": "Intercity bus travel",
-            "distance_label": "Road Distance",
-            "duration_label": "Estimated Bus Travel Time",
-            "distance_km": road_distance_km,
-            "duration_hours": round(
-                road_duration_hours * 1.15,
-                2,
-            ),
+            "description": "Road travel with intercity bus service",
         },
-
         "train": {
             "label": "Train",
-            "description": "Rail travel",
-            "distance_label": "Estimated Rail Distance",
-            "duration_label": "Estimated Train Travel Time",
-            "distance_km": round(
-                road_distance_km * 0.95,
-                2,
-            ),
-            "duration_hours": round(
-                road_duration_hours * 1.10,
-                2,
-            ),
+            "description": "Road transfer to railway station followed by rail travel",
         },
-
         "flight": {
             "label": "Flight",
-            "description": "Air travel",
-            "distance_label": "Estimated Air Distance",
-            "duration_label": "Estimated Flight Time",
-            "distance_km": round(
-                road_distance_km * 0.80,
-                2,
-            ),
-            "duration_hours": round(
-                road_duration_hours * 0.18,
-                2,
-            ),
+            "description": "Road transfer to airport followed by air travel",
         },
     }
 
-    selected = mode_info.get(
+    selected = modes.get(
         travel_mode,
-        mode_info["car"],
+        modes["car"],
     )
-    print("TRANSPORT MODE:", travel_mode)
-    print("TRANSPORT SELECTED:", selected)
+
+    # -------------------------------------------------
+    # CAR
+    # -------------------------------------------------
+
+    if travel_mode == "car":
+
+        legs = [
+            {
+                "type": "road",
+                "mode": "car",
+                "label": "Drive",
+                "from": source,
+                "to": destination,
+                "distance_km": round(
+                    road_distance_km,
+                    2,
+                ),
+                "duration_hours": round(
+                    road_duration_hours,
+                    2,
+                ),
+            }
+        ]
+
+        total_distance = road_distance_km
+        total_duration = road_duration_hours
+
+    # -------------------------------------------------
+    # BUS
+    # -------------------------------------------------
+
+    elif travel_mode == "bus":
+
+        bus_duration = road_duration_hours * 1.15
+
+        legs = [
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer to Bus Station",
+                "from": source,
+                "to": "Bus Station",
+                "distance_km": round(
+                    road_distance_km * 0.03,
+                    2,
+                ),
+                "duration_hours": 0.25,
+            },
+            {
+                "type": "main",
+                "mode": "bus",
+                "label": "Intercity Bus",
+                "from": "Bus Station",
+                "to": "Destination Bus Station",
+                "distance_km": round(
+                    road_distance_km * 0.94,
+                    2,
+                ),
+                "duration_hours": round(
+                    bus_duration,
+                    2,
+                ),
+            },
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer from Bus Station",
+                "from": "Destination Bus Station",
+                "to": destination,
+                "distance_km": round(
+                    road_distance_km * 0.03,
+                    2,
+                ),
+                "duration_hours": 0.25,
+            },
+        ]
+
+        total_distance = sum(
+            leg["distance_km"]
+            for leg in legs
+        )
+
+        total_duration = sum(
+            leg["duration_hours"]
+            for leg in legs
+        )
+
+    # -------------------------------------------------
+    # TRAIN
+    # -------------------------------------------------
+
+    elif travel_mode == "train":
+
+        train_duration = road_duration_hours * 1.10
+
+        legs = [
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer to Railway Station",
+                "from": source,
+                "to": "Railway Station",
+                "distance_km": round(
+                    road_distance_km * 0.03,
+                    2,
+                ),
+                "duration_hours": 0.25,
+            },
+            {
+                "type": "main",
+                "mode": "train",
+                "label": "Train Journey",
+                "from": "Railway Station",
+                "to": "Destination Railway Station",
+                "distance_km": round(
+                    road_distance_km * 0.95,
+                    2,
+                ),
+                "duration_hours": round(
+                    train_duration,
+                    2,
+                ),
+            },
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer from Railway Station",
+                "from": "Destination Railway Station",
+                "to": destination,
+                "distance_km": round(
+                    road_distance_km * 0.03,
+                    2,
+                ),
+                "duration_hours": 0.25,
+            },
+        ]
+
+        total_distance = sum(
+            leg["distance_km"]
+            for leg in legs
+        )
+
+        total_duration = sum(
+            leg["duration_hours"]
+            for leg in legs
+        )
+
+    # -------------------------------------------------
+    # FLIGHT
+    # -------------------------------------------------
+
+    elif travel_mode == "flight":
+
+        flight_distance = road_distance_km * 0.80
+        flight_duration = road_duration_hours * 0.18
+
+        legs = [
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer to Airport",
+                "from": source,
+                "to": "Airport",
+                "distance_km": round(
+                    road_distance_km * 0.04,
+                    2,
+                ),
+                "duration_hours": 0.5,
+            },
+            {
+                "type": "airport",
+                "mode": "check_in",
+                "label": "Airport Check-in",
+                "from": "Airport",
+                "to": "Airport",
+                "distance_km": 0,
+                "duration_hours": 2.0,
+            },
+            {
+                "type": "main",
+                "mode": "flight",
+                "label": "Flight",
+                "from": "Origin Airport",
+                "to": "Destination Airport",
+                "distance_km": round(
+                    flight_distance,
+                    2,
+                ),
+                "duration_hours": round(
+                    flight_duration,
+                    2,
+                ),
+            },
+            {
+                "type": "road",
+                "mode": "local_transfer",
+                "label": "Transfer from Airport",
+                "from": "Destination Airport",
+                "to": destination,
+                "distance_km": round(
+                    road_distance_km * 0.04,
+                    2,
+                ),
+                "duration_hours": 0.5,
+            },
+        ]
+
+        total_distance = sum(
+            leg["distance_km"]
+            for leg in legs
+        )
+
+        total_duration = sum(
+            leg["duration_hours"]
+            for leg in legs
+        )
+
+    else:
+
+        raise ValueError(
+            f"Unsupported travel mode: {travel_mode}"
+        )
+
     return {
-        "mode": travel_mode,
         "label": selected["label"],
         "description": selected["description"],
-        "distance_label": selected["distance_label"],
-        "duration_label": selected["duration_label"],
         "source": source,
         "destination": destination,
-        "distance_km": selected["distance_km"],
-        "road_duration_hours": selected["duration_hours"],
+        "travel_mode": travel_mode,
+        "legs": legs,
+        "distance_km": round(
+            total_distance,
+            2,
+        ),
+        "duration_hours": round(
+            total_duration,
+            2,
+        ),
     }
