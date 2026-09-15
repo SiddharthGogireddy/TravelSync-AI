@@ -25,7 +25,7 @@ export default function Dashboard({ dashboard }: Props) {
         <div> {dashboard.hotel_count} Hotels</div>
 <div> {dashboard.attraction_count} Attractions</div>
 <div> {dashboard.mandatory_count} Mandatory Visits</div>
-<div> {dashboard.distance} km Road Distance</div>
+<div> {dashboard.distance} km Total Journey Distance</div>
 <div> {dashboard.duration} hrs Total Journey Time</div>
 <div> ₹{dashboard.budget} Estimated Cost</div>
 

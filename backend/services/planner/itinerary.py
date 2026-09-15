@@ -4,7 +4,7 @@ from backend.services.external.weather_service import get_weather
 from backend.services.external.place_service import get_places
 from backend.services.external.hotel_service import get_hotels
 from backend.services.planner.transport_planner import (
-    build_transport_summary,
+    build_transport_plan,
 )
 from backend.services.planner import travel_mode
 from backend.services.planner.attraction_ranker import rank_places
@@ -82,7 +82,7 @@ async def build_trip(request):
             2,
         ),
     }
-    transport_summary = build_transport_summary(
+    transport_summary = build_transport_plan(
     source,
     destination,
     travel_mode,

@@ -262,8 +262,7 @@ export default function TripView() {
             />
           )
         )}
-      </div>
-        {trip.transport && (
+      {trip.transport && (
     <div className="card">
         <h2>Transportation</h2>
 
@@ -282,63 +281,93 @@ export default function TripView() {
             {trip.transport.destination}
         </p>
 
-        <strong>{trip.transport.distance_label}:</strong>{" "}
-{trip.transport.distance_km} km
+        <p>
+            <strong>Total Distance:</strong>{" "}
+            {trip.transport.distance_km} km
+        </p>
 
         <p>
-            <strong>{trip.transport.duration_label}:</strong>{" "}
-            {trip.transport.road_duration_hours} hours
+            <strong>Total Journey Time:</strong>{" "}
+            {trip.transport.duration_hours} hours
         </p>
 
         <p>
             {trip.transport.description}
         </p>
+
+        <h3>Journey</h3>
+
+        <div>
+          {trip.transport && (
+    <div className="card">
+        <h2>Transportation</h2>
+
+        <p>
+            <strong>Mode:</strong>{" "}
+            {trip.transport.label}
+        </p>
+
+        <p>
+            <strong>From:</strong>{" "}
+            {trip.transport.source}
+        </p>
+
+        <p>
+            <strong>To:</strong>{" "}
+            {trip.transport.destination}
+        </p>
+
+        <p>
+            <strong>Total Distance:</strong>{" "}
+            {trip.transport.distance_km} km
+        </p>
+
+        <p>
+            <strong>Total Journey Time:</strong>{" "}
+            {trip.transport.duration_hours} hours
+        </p>
+
+        <p>
+            {trip.transport.description}
+        </p>
+
+        <h3>Journey</h3>
+
+        {trip.transport.legs.map((leg, index) => (
+            <div
+                key={index}
+                style={{
+                    marginBottom: "12px",
+                    padding: "12px",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                }}
+            >
+                <h4>
+                    {index + 1}. {leg.label}
+                </h4>
+
+                <p>
+                    <strong>Route:</strong>{" "}
+                    {leg.from} → {leg.to}
+                </p>
+
+                <p>
+                    <strong>Distance:</strong>{" "}
+                    {leg.distance_km} km
+                </p>
+
+                <p>
+                    <strong>Duration:</strong>{" "}
+                    {leg.duration_hours} hours
+                </p>
+            </div>
+        ))}
     </div>
 )}
-      <div className="section card">
-        <h2 className="section-title">
-          Hotels
-        </h2>
-
-        {trip.hotels.map(
-          (hotel, index) => (
-            <div
-              key={index}
-              style={{
-                marginBottom: 10,
-              }}
-            >
-              <a
-                href={`https://www.google.com/maps?q=${hotel.lat},${hotel.lon}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {hotel.name}
-              </a>
-            </div>
-          )
-        )}
-      </div>
-        <div className="section card">
-    <h2 className="section-title">
-        Edit Your Trip
-    </h2>
-
-    <input
-        type="text"
-        value={prompt}
-        onChange={(e) =>
-            setPrompt(e.target.value)
-        }
-        placeholder="e.g. Regenerate Day 2 and keep the budget under ₹30000"
-        style={{
-            width: "100%",
-            padding: "12px",
-            marginBottom: "12px",
-            boxSizing: "border-box",
-        }}
-    />
-
+        </div>
+    </div>
+)}
     <button
         className="regenerate-button"
         onClick={handlePromptUpdate}

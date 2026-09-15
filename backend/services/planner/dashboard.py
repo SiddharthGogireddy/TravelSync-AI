@@ -12,6 +12,6 @@ def build_dashboard(trip_data):
             for v in trip_data["mandatory_schedule"].values()
         ),
         "distance": trip_data["transport"]["distance_km"],
-        "duration": trip_data["transport"]["road_duration_hours"],
+        "duration": trip_data["transport"]["duration_hours"],
         "budget": trip_data["budget"]["total_budget"],
     }
