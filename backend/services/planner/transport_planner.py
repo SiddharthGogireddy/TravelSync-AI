@@ -1,3 +1,33 @@
+TRANSPORT_HUBS = {
+    "airport": {
+        "Hyderabad, Telangana, India": "Rajiv Gandhi International Airport",
+        "Bengaluru, Karnataka, India": "Kempegowda International Airport",
+        "Mumbai, Maharashtra, India": "Chhatrapati Shivaji Maharaj International Airport",
+        "Delhi, India": "Indira Gandhi International Airport",
+        "Chennai, Tamil Nadu, India": "Chennai International Airport",
+    },
+
+    "railway": {
+        "Hyderabad, Telangana, India": "Hyderabad Deccan Railway Station",
+        "Bengaluru, Karnataka, India": "KSR Bengaluru City Junction",
+        "Mumbai, Maharashtra, India": "Mumbai Central Railway Station",
+        "Delhi, India": "New Delhi Railway Station",
+        "Chennai, Tamil Nadu, India": "Chennai Central Railway Station",
+    },
+
+    "bus": {
+        "Hyderabad, Telangana, India": "Mahatma Gandhi Bus Station",
+        "Bengaluru, Karnataka, India": "Kempegowda Bus Station",
+        "Mumbai, Maharashtra, India": "Mumbai Central Bus Station",
+        "Delhi, India": "Kashmere Gate ISBT",
+        "Chennai, Tamil Nadu, India": "Chennai Mofussil Bus Terminus",
+    },
+}
+def get_transport_hub(location, hub_type):
+    return TRANSPORT_HUBS.get(hub_type, {}).get(
+        location,
+        f"{hub_type.title()} Station"
+    )
 def build_transport_plan(
     source,
     destination,
@@ -134,10 +164,10 @@ def build_transport_plan(
                 "from": source,
                 "to": "Railway Station",
                 "distance_km": round(
-                    road_distance_km * 0.03,
+                    road_distance_km * 0.04,
                     2,
                 ),
-                "duration_hours": 0.25,
+                "duration_hours": 0.5,
             },
             {
                 "type": "main",
@@ -186,14 +216,22 @@ def build_transport_plan(
 
         flight_distance = road_distance_km * 0.80
         flight_duration = road_duration_hours * 0.18
+        origin_airport = get_transport_hub(
+            source,
+            "airport",
+        )
 
+        destination_airport = get_transport_hub(
+            destination,
+            "airport",
+        )
         legs = [
             {
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer to Airport",
                 "from": source,
-                "to": "Airport",
+                "to": origin_airport,
                 "distance_km": round(
                     road_distance_km * 0.04,
                     2,
@@ -204,8 +242,8 @@ def build_transport_plan(
                 "type": "airport",
                 "mode": "check_in",
                 "label": "Airport Check-in",
-                "from": "Airport",
-                "to": "Airport",
+                "from": origin_airport,
+                "to": origin_airport,
                 "distance_km": 0,
                 "duration_hours": 2.0,
             },
@@ -213,8 +251,8 @@ def build_transport_plan(
                 "type": "main",
                 "mode": "flight",
                 "label": "Flight",
-                "from": "Origin Airport",
-                "to": "Destination Airport",
+                "from": origin_airport,
+                "to": destination_airport,
                 "distance_km": round(
                     flight_distance,
                     2,
@@ -228,7 +266,7 @@ def build_transport_plan(
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer from Airport",
-                "from": "Destination Airport",
+                "from": destination_airport,
                 "to": destination,
                 "distance_km": round(
                     road_distance_km * 0.04,
