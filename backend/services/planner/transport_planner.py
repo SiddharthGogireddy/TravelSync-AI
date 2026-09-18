@@ -95,14 +95,22 @@ def build_transport_plan(
     elif travel_mode == "bus":
 
         bus_duration = road_duration_hours * 1.15
+        origin_station = get_transport_hub(
+            source,
+            "bus",
+        )
 
+        destination_station = get_transport_hub(
+            destination,
+            "bus",
+        )
         legs = [
             {
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer to Bus Station",
                 "from": source,
-                "to": "Bus Station",
+                "to": origin_station,
                 "distance_km": round(
                     road_distance_km * 0.03,
                     2,
@@ -113,8 +121,8 @@ def build_transport_plan(
                 "type": "main",
                 "mode": "bus",
                 "label": "Intercity Bus",
-                "from": "Bus Station",
-                "to": "Destination Bus Station",
+                "from": origin_station,
+                "to": destination_station,
                 "distance_km": round(
                     road_distance_km * 0.94,
                     2,
@@ -128,7 +136,7 @@ def build_transport_plan(
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer from Bus Station",
-                "from": "Destination Bus Station",
+                "from": destination_station,
                 "to": destination,
                 "distance_km": round(
                     road_distance_km * 0.03,
@@ -155,14 +163,22 @@ def build_transport_plan(
     elif travel_mode == "train":
 
         train_duration = road_duration_hours * 1.10
+        origin_station = get_transport_hub(
+            source,
+            "railway",
+        )
 
+        destination_station = get_transport_hub(
+            destination,
+            "railway",
+        )
         legs = [
             {
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer to Railway Station",
                 "from": source,
-                "to": "Railway Station",
+                "to": origin_station,
                 "distance_km": round(
                     road_distance_km * 0.04,
                     2,
@@ -173,8 +189,8 @@ def build_transport_plan(
                 "type": "main",
                 "mode": "train",
                 "label": "Train Journey",
-                "from": "Railway Station",
-                "to": "Destination Railway Station",
+                "from": origin_station,
+                "to": destination_station,
                 "distance_km": round(
                     road_distance_km * 0.95,
                     2,
@@ -188,7 +204,7 @@ def build_transport_plan(
                 "type": "road",
                 "mode": "local_transfer",
                 "label": "Transfer from Railway Station",
-                "from": "Destination Railway Station",
+                "from": destination_station,
                 "to": destination,
                 "distance_km": round(
                     road_distance_km * 0.03,
