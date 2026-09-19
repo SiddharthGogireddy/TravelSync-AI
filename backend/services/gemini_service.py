@@ -9,19 +9,18 @@ client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY")
 )
 
-
 def generate(prompt: str):
     try:
         response = client.models.generate_content(
-            model="gemini-3.5-flash",
+            model="gemini-3.8-flash",
             contents=prompt
         )
 
         text = response.text.strip()
 
         if text.startswith("```json"):
-            text = text.replace("```json", "")
-            text = text.replace("```", "")
+            text = text.replace("```json", "", 1)
+            text = text.replace("```", "", 1)
             text = text.strip()
 
         return json.loads(text)

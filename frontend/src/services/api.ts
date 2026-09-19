@@ -22,3 +22,26 @@ export async function generateTrip(
 
     return result;
 }
+export async function updateTrip(
+    tripId: string,
+    prompt: string
+): Promise<TripResponse> {
+    const res = await fetch(`${API}/trip/${tripId}`, {
+        method: "PATCH",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt,
+        }),
+    });
+
+    if (!res.ok) {
+        const error = await res.text();
+        throw new Error(error || "Failed to update trip");
+    }
+
+    const result = await res.json();
+
+    return result;
+}

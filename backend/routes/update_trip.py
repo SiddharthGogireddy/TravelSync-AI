@@ -92,16 +92,7 @@ async def update_trip(
                 [],
             )
 
-            print(
-                "PROMPT:",
-                update.prompt,
-            )
-
-            print(
-                "LLM RESULT:",
-                llm_result,
-            )
-
+            
         except Exception as e:
 
             print(

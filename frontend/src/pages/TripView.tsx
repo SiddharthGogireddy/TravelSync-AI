@@ -14,7 +14,7 @@ import SettlementCard from "../components/SettlementCard";
 import WeatherCard from "../components/WeatherCard";
 import { useNavigate } from "react-router-dom";
 import { addExpense, getExpenses } from "../services/expense";
-
+import { updateTrip } from "../services/api";
 import type {
   Place,
   Traveler,
@@ -35,6 +35,8 @@ function getTripIdFromUrl(): string | undefined {
 }
 
 export default function TripView() {
+  const [editPrompt, setEditPrompt] = useState("");
+  const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
   const [selectedPlace, setSelectedPlace] =
     useState<Place | null>(null);
@@ -44,8 +46,37 @@ export default function TripView() {
 
   const [expenseData, setExpenseData] =
     useState<ExpenseResponse | null>(null);
-  const [prompt, setPrompt] = useState("");
-  const [updating, setUpdating] = useState(false);
+  const handleTripEdit = async () => {
+    if (!editPrompt.trim()) {
+        return;
+    }
+
+    const tripId = getTripIdFromUrl();
+
+    if (!tripId) {
+        return;
+    }
+
+    try {
+        setUpdating(true);
+
+        const updatedTrip = await updateTrip(
+            tripId,
+            editPrompt
+        );
+
+        setData(updatedTrip);
+        setEditPrompt("");
+
+    } catch (error) {
+        console.error(
+            "Trip update failed:",
+            error
+        );
+    } finally {
+        setUpdating(false);
+    }
+};
   async function handleAddExpense(
     title: string,
     amount: number,
@@ -102,45 +133,7 @@ export default function TripView() {
         );
     }
 }
-  async function handlePromptUpdate() {
-    const tripId = getTripIdFromUrl();
-
-    if (!tripId || !prompt.trim()) return;
-
-    try {
-        setUpdating(true);
-
-        const response = await fetch(
-            `http://127.0.0.1:8000/trip/${tripId}`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    prompt: prompt.trim(),
-                }),
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error("Failed to update trip");
-        }
-
-        const updatedTrip: TripResponse =
-            await response.json();
-
-        setData(updatedTrip);
-        setPrompt("");
-    } catch (error) {
-        console.error(
-            "Trip update failed:",
-            error
-        );
-    } finally {
-        setUpdating(false);
-    }
-}
+  
   useEffect(() => {
     const tripId = getTripIdFromUrl();
 
@@ -264,124 +257,88 @@ export default function TripView() {
         )}
       {trip.transport && (
     <div className="card">
-        <h2>Transportation</h2>
+        <h3>Transportation</h3>
 
         <p>
-            <strong>Mode:</strong>{" "}
-            {trip.transport.label}
+            <strong>{trip.transport.label}</strong>
         </p>
 
-        <p>
-            <strong>From:</strong>{" "}
-            {trip.transport.source}
-        </p>
+        <p>{trip.transport.description}</p>
 
-        <p>
-            <strong>To:</strong>{" "}
-            {trip.transport.destination}
-        </p>
-
-        <p>
-            <strong>Total Distance:</strong>{" "}
-            {trip.transport.distance_km} km
-        </p>
-
-        <p>
-            <strong>Total Journey Time:</strong>{" "}
-            {trip.transport.duration_hours} hours
-        </p>
-
-        <p>
-            {trip.transport.description}
-        </p>
-
-        <h3>Journey</h3>
-
-        <div>
-          {trip.transport && (
-    <div className="card">
-        <h2>Transportation</h2>
-
-        <p>
-            <strong>Mode:</strong>{" "}
-            {trip.transport.label}
-        </p>
-
-        <p>
-            <strong>From:</strong>{" "}
-            {trip.transport.source}
-        </p>
-
-        <p>
-            <strong>To:</strong>{" "}
-            {trip.transport.destination}
-        </p>
-
-        <p>
-            <strong>Total Distance:</strong>{" "}
-            {trip.transport.distance_km} km
-        </p>
-
-        <p>
-            <strong>Total Journey Time:</strong>{" "}
-            {trip.transport.duration_hours} hours
-        </p>
-
-        <p>
-            {trip.transport.description}
-        </p>
-
-        <h3>Journey</h3>
-
-        {trip.transport.legs.map((leg, index) => (
-            <div
-                key={index}
-                style={{
-                    marginBottom: "12px",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                }}
-            >
-                <h4>
-                    {index + 1}. {leg.label}
-                </h4>
-
-                <p>
-                    <strong>Route:</strong>{" "}
-                    {leg.from} → {leg.to}
-                </p>
-
-                <p>
-                    <strong>Distance:</strong>{" "}
-                    {leg.distance_km} km
-                </p>
-
-                <p>
-                    <strong>Duration:</strong>{" "}
-                    {leg.duration_hours} hours
-                </p>
+        <div className="transport-summary">
+            <div>
+                <strong>{trip.transport.distance_km} km</strong>
+                <span>Total Distance</span>
             </div>
-        ))}
-    </div>
-)}
+
+            <div>
+                <strong>{trip.transport.duration_hours} hrs</strong>
+                <span>Total Duration</span>
+            </div>
+        </div>
+
+        <div className="transport-legs">
+            {trip.transport.legs.map((leg, index) => (
+                <div key={index} className="transport-leg">
+                    <div>
+                        <strong>{leg.type}</strong>
+                        <p>
+                            {leg.from} → {leg.to}
+                        </p>
+                    </div>
+
+                    <div>
+                        <span>{leg.distance_km} km</span>
+                        <span>{leg.duration_hours} hrs</span>
+                    </div>
+                </div>
+            ))}
         </div>
     </div>
 )}
+
+    
+    <div className="section card">
+    <h2>Edit Your Trip</h2>
+
+    <p>
+        Tell TravelSync AI what you want to change.
+    </p>
+
+    <textarea
+        value={editPrompt}
+        onChange={(e) =>
+            setEditPrompt(e.target.value)
+        }
+        placeholder='Try: "Add Charminar"'
+        rows={3}
+        style={{
+            width: "100%",
+            padding: "10px",
+            marginTop: "10px",
+            marginBottom: "10px",
+            resize: "vertical",
+        }}
+    />
+
     <button
         className="regenerate-button"
-        onClick={handlePromptUpdate}
-        disabled={updating || !prompt.trim()}
+        onClick={handleTripEdit}
+        disabled={
+            updating ||
+            !editPrompt.trim()
+        }
     >
         {updating
             ? "Updating..."
-            : "Update Trip"}
+            : "Apply Changes"}
     </button>
 
     <p style={{ marginTop: "10px" }}>
         Try: "Add Charminar", "Remove Charminar",
         "Regenerate Day 2", or "Keep budget under ₹30000"
     </p>
+</div>
 </div>
       <div className="section">
         <h2 className="section-title">

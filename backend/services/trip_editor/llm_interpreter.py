@@ -91,7 +91,11 @@ USER REQUEST:
 {prompt}
 """
 
+    print("LLM PROMPT:", prompt)
+
     result = generate(full_prompt)
+
+    print("LLM RESULT:", result)
 
     if not isinstance(result, dict):
         return {"actions": []}

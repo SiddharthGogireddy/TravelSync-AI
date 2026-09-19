@@ -11,7 +11,7 @@ from backend.routes.update_trip import (
 )
 from backend.services.trip_editor.llm_interpreter import interpret_trip_prompt
 load_dotenv()
-
+from backend.routes.explanation import router as explanation_router
 app = FastAPI(title="TravelSync AI")
 
 app.include_router(planner_router)
@@ -28,6 +28,11 @@ app.add_middleware(
 )
 app.include_router(
     update_trip_router
+)
+app.include_router(
+    explanation_router,
+    prefix="/explanation",
+    tags=["Explanation"],
 )
 @app.get("/test-llm")
 async def test_llm():
