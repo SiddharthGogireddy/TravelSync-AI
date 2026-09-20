@@ -2,8 +2,67 @@ from backend.services.planner.budget_tracker import (
     calculate_budget,
 )
 
+INTEREST_MAP = {
+    "Beaches": [
+        "Beach",
+        "Waterfall",
+        "Fountains"
+    ],
 
-def regenerate_day(trip, day_number):
+    "Food": [
+        "Restaurant",
+        "Cafe",
+        "Market",
+        "Foods"
+    ],
+    "Culture": [
+        "Cultural",
+        "Historic",
+        "Historic Architecture",
+        "Palaces"
+    ],
+    "Photography": [
+        "Historic",
+        "Historic Architecture",
+        "Cultural",
+        "Viewpoint",
+        "Palaces"
+    ],
+
+    "Adventure": [
+        "Adventure",
+        "Waterfall"
+    ],
+
+    "Water Sports": [
+        "Beach",
+        "Waterfall",
+        "Fountains"
+    ],
+
+    "Religion": [
+        "Religion"
+    ],
+
+    "History": [
+        "Historic",
+        "Historic Architecture",
+        "Palaces",
+        "Fortifications"
+    ],
+
+    "Nature": [
+        "Nature",
+        "Waterfall",
+        "Park"
+    ]
+}
+def regenerate_day(
+    trip,
+    day_number,
+    preferred_interests=None,
+    avoid_categories=None,
+):
 
     trip_data = trip["trip"]
 
@@ -206,21 +265,39 @@ def regenerate_day(trip, day_number):
     # --------------------------------
     # Best remaining alternatives
     # --------------------------------
+    preferred_interests = preferred_interests or []
+    avoid_categories = avoid_categories or []
+    preferred_categories = set()
+    for interest in preferred_interests:
+        preferred_categories.update(
+            INTEREST_MAP.get(interest, [])
+        )
+        
+    def regeneration_score(place):
+        score = place.get("score", 0)
+        match_count = place.get("match_count", 0)
+
+        category = place.get("category", "")
+
+        # Prefer requested interests/categories
+        if category in preferred_categories:
+            score += 10
+
+        # Strongly discourage categories the user wants to avoid
+        if category in avoid_categories:
+            score -= 20
+
+        return (
+            score,
+            match_count,
+            -place.get("distance_km", 0),
+        )
+
 
     candidates.sort(
-        key=lambda place: (
-            place.get(
-                "score",
-                0
-            ),
-            place.get(
-                "match_count",
-                0
-            ),
-        ),
+        key=regeneration_score,
         reverse=True,
     )
-
     # --------------------------------
     # Determine target activity count
     # --------------------------------

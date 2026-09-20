@@ -13,9 +13,9 @@ Do not change or calculate scores.
 Keep the explanation concise and easy to understand.
 Return valid JSON only in this exact format:
 
-{
+{{
   "explanation": "your explanation here"
-}
+}}
 Attraction:
 {place.get("name")}
 

@@ -31,10 +31,42 @@ def parse_prompt(prompt: str):
         re.IGNORECASE,
     )
 
-    if regenerate:
+    # Also support:
+    # "Make day 2 more about food and history"
+    make_day = re.search(
+        r"(?:make|change|adjust|plan|replan)"
+        r".*?"
+        r"day\s*(\d+)",
+        text,
+        re.IGNORECASE,
+    )
+
+    day_match = regenerate or make_day
+
+    if day_match:
         changes["regenerate_day"] = int(
-            regenerate.group(1)
+            day_match.group(1)
         )
+
+        preferred_interests = []
+
+        interest_patterns = {
+            "Food": r"\bfood\b",
+            "History": r"\bhistory\b",
+            "Culture": r"\bculture\b",
+            "Nature": r"\bnature\b",
+            "Adventure": r"\badventure\b",
+            "Beaches": r"\bbeaches?\b",
+            "Shopping": r"\bshopping\b",
+            "Religion": r"\breligion\b",
+        }
+
+        for interest, pattern in interest_patterns.items():
+            if re.search(pattern, text):
+                preferred_interests.append(interest)
+
+        if preferred_interests:
+            changes["preferred_interests"] = preferred_interests
 
     # -------------------------
     # ADD PLACE

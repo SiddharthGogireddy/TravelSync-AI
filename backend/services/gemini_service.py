@@ -17,7 +17,8 @@ def generate(prompt: str):
         )
 
         text = response.text.strip()
-
+        print("GEMINI RAW RESPONSE:")
+        print(text)
         if text.startswith("```json"):
             text = text.replace("```json", "", 1)
             text = text.replace("```", "", 1)
@@ -28,6 +29,5 @@ def generate(prompt: str):
     except Exception as e:
         print("Gemini error:", e)
 
-        return {
-            "actions": []
-        }
+        return None
+       

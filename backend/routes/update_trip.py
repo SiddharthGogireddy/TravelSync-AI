@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from backend.models.trip_update import (
     TripUpdateRequest,
 )
-
+from backend.utils.helpers import normalize_place_name
 from backend.services.trip_editor.prompt_parser import (
     parse_prompt,
 )
@@ -45,12 +45,6 @@ router = APIRouter(
 )
 
 
-def normalize_place_name(name):
-    return re.sub(
-        r"[^a-z0-9]",
-        "",
-        name.lower(),
-    )
 
 
 @router.patch("/{trip_id}")
@@ -410,7 +404,10 @@ async def update_trip(
             trip = regenerate_day(
                 trip,
                 day_number,
+                preferred_interests=parsed.get("preferred_interests", []),
+                avoid_categories=parsed.get("avoid_categories", []),
             )
+            
 
             print(
                 "AFTER REGENERATE:"
