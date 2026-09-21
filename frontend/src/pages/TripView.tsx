@@ -200,8 +200,9 @@ export default function TripView() {
         <BudgetCard budget={trip.budget} />
 
         <BudgetStatus
-          status={trip.budget.status}
-        />
+    status={trip.budget.status}
+    remaining={trip.budget.remaining}
+/>
 
         <BudgetBreakdown
           categories={
@@ -217,14 +218,9 @@ export default function TripView() {
       </div>
 
       <div className="section card">
-        <h2
-    style={{
-        marginTop: "40px",
-        marginBottom: "20px",
-    }}
->
-    Travelers
-</h2>
+        <h2 className="section-title">
+          Travelers
+        </h2>
 
         {trip.travelers.map(
           (

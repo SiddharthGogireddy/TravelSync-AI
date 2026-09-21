@@ -14,7 +14,7 @@ type BudgetProps = {
 export default function BudgetCard({ budget }: BudgetProps) {
   return (
     <div className="budget-card">
-      <h2> Budget Overview</h2>
+      
 
       <div className="budget-grid">
         <div className="budget-item">

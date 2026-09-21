@@ -5,12 +5,32 @@ export interface Dashboard {
     destination: string;
     days: number;
     travel_mode: string;
+
+    weather: string;
+
     hotel_count: number;
     attraction_count: number;
     mandatory_count: number;
+
+    total_activities: number;
+    activities_per_day: number;
+
     distance: number;
     duration: number;
+
     budget: number;
+    estimated_cost: number;
+    remaining: number;
+    budget_status: string;
+
+    hotel_cost: number;
+    food_cost: number;
+    transport_cost: number;
+    activity_cost: number;
+    emergency_cost: number;
+
+    average_per_day: number;
+    average_per_person: number;
 }
 
 export interface Summary {

@@ -5,3 +5,28 @@
     border-radius: 12px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.08);
 }
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.dashboard-item {
+    background: #f8f9fa;
+    padding: 14px;
+    border-radius: 10px;
+    font-size: 15px;
+}
+
+.dashboard-item strong {
+    display: block;
+    font-size: 18px;
+    margin-top: 5px;
+}
+
+@media (max-width: 700px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
