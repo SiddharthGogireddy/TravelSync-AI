@@ -350,6 +350,7 @@ export default function TripView() {
                 key={day}
                 day={day}
                 places={places}
+                TravelMode={trip.transport.mode}
                 onSelect={
                   setSelectedPlace
                 }

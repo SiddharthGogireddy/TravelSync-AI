@@ -42,3 +42,18 @@
 .attraction-card {
     cursor: pointer;
 }
+.day-travel-summary {
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 10px 0 15px;
+    padding: 10px 14px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.day-travel-summary span {
+    color: #666;
+}
