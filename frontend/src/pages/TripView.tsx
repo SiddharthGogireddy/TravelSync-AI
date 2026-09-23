@@ -371,13 +371,14 @@ export default function TripView() {
           lon={
             trip.destination_location.lon
           }
+          
           places={trip.places}
           hotels={trip.hotels}
           selectedPlace={
             selectedPlace
           }
           routeCoordinates={
-          []
+          trip.route_coordinates
           }
         />
       </div>

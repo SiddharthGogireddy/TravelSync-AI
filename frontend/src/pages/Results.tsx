@@ -155,13 +155,13 @@ export default function Results({ data }: Props) {
                         .destination_location
                         .lon
                 }
+                
                 places={trip.places}
                 hotels={trip.hotels}
                 selectedPlace={
                     selectedPlace
                 }
-                routeCoordinates={[]}
-                 
+                routeCoordinates={trip.route_coordinates}
             />
 
             <h2>Total Expenses</h2>
