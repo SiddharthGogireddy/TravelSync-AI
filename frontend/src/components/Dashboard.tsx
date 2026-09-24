@@ -10,7 +10,9 @@ export default function Dashboard({ dashboard }: Props) {
         <div className="dashboard">
             <div className="card">
                 <h2>Trip Dashboard</h2>
-
+                <p className="dashboard-updated">
+    Trip plan generated successfully
+</p>
                 <div className="dashboard-grid">
 
     <div className="dashboard-item">
