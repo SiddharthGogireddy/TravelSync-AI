@@ -12,7 +12,9 @@ from reportlab.lib.styles import (
     getSampleStyleSheet,
 )
 import os
-
+import re
+def clean_filename(value):
+    return re.sub(r'[<>:"/\\|?*]', '', value)
 os.makedirs(
     "backend/pdfs",
     exist_ok=True,
@@ -49,15 +51,18 @@ def add_page_number(canvas, doc):
     )
 
 def generate_pdf(trip):
-  
+    source = trip["source"].split(",")[0].strip()
+    destination = trip["destination"].split(",")[0].strip()
+
+    filename = (
+        f"backend/pdfs/"
+        f"{source} to {destination} trip.pdf"
+    )
     os.makedirs(
         "backend/pdfs",
         exist_ok=True,
     )
-    filename = (
-        f"backend/pdfs/"
-        f"{trip_data['destination']}_trip.pdf"
-    )
+    
 
     if os.path.exists(filename):
 
@@ -509,13 +514,13 @@ def generate_pdf(trip):
         f"{trip['destination']} by "
         f"{trip['travel_mode']}."
     )
-
     elements.append(
         Paragraph(
             overview,
             styles["Normal"],
         )
     )
+
     for day, places in trip["day_schedule"].items():
 
         elements.append(
@@ -525,40 +530,61 @@ def generate_pdf(trip):
             )
         )
 
-    for place in places:
+        for place in places:
+            text = f"<b>{place['name']}</b>"
 
-        text = (
-            f"<b>{place['name']}</b>"
-        )
+            if "category" in place:
+                text += f" ({place['category']})"
 
-        if "category" in place:
+            if place.get("travel_from_previous_km") is not None:
+                distance = place["travel_from_previous_km"]
 
-            text += (
-                f" ({place['category']})"
+                speeds = {
+                    "car": 35,
+                    "bus": 25,
+                    "train": 40,
+                    "flight": 500,
+                }
+
+                mode = trip.get("travel_mode", "car").lower()
+                speed = speeds.get(mode, 30)
+
+                minutes = max(1, round((distance / speed) * 60))
+
+                text += (
+                    f" — {distance:.1f} km"
+                    f" • ~{minutes} min"
+                    " from previous stop"
+                )
+
+            elements.append(
+                Paragraph(
+                    text,
+                    styles["Normal"],
+                )
             )
 
-        elements.append(
-            Paragraph(
-                text,
-                styles["Normal"],
-            )
-        )
     elements.append(Spacer(1, 20))
+
     elements.append(
-    Paragraph(
-        f"Trip ID: {filename.replace('.pdf', '')}",
-        styles["Normal"],
+        Paragraph(
+            f"Trip ID: {trip.get('trip_id', 'N/A')}",
+            styles["Normal"],
+        )
     )
-)
+
     elements.append(
         Paragraph(
             "Thank you for using TravelSync AI.",
             styles["Heading2"],
         )
     )
+
     doc.build(
         elements,
         onFirstPage=add_footer,
         onLaterPages=add_footer,
     )
+
     return filename
+   

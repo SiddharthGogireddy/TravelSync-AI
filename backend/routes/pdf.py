@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
-
+import os
 from backend.services.storage.trip_store import load_trip
 from backend.services.pdf.pdf_generator import generate_pdf
 
@@ -25,18 +25,14 @@ def download_pdf(trip_id: str):
             detail="Trip not found",
         )
 
+    trip_data = trip["trip"].copy()
+    trip_data["trip_id"] = trip_id
 
-    filename = (
-    f"{trip['trip']['destination']}_trip.pdf"
-)
-
-    generate_pdf(
-        trip["trip"],
-        filename,
-    )
+    filename = generate_pdf(trip_data)
+    
 
     return FileResponse(
         filename,
         media_type="application/pdf",
-        filename="trip.pdf",
+        filename=os.path.basename(filename)
     )
