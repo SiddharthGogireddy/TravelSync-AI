@@ -41,3 +41,65 @@ def get_expenses(trip_id):
     data = load_expenses()
 
     return data.get(trip_id, [])
+def get_category_totals(trip_id):
+    expenses = get_expenses(trip_id)
+
+    totals = {
+        "hotel": 0,
+        "food": 0,
+        "transport": 0,
+        "activities": 0,
+        "emergency": 0,
+        "other": 0,
+    }
+
+    for expense in expenses:
+        category = expense.get("category", "other")
+
+        if category not in totals:
+            category = "other"
+
+        totals[category] += expense["amount"]
+
+    return {
+        category: round(amount, 2)
+        for category, amount in totals.items()
+    }
+def get_budget_comparison(trip_id, trip):
+
+    actual = get_category_totals(trip_id)
+
+    planned = trip["budget"].get(
+        "categories",
+        {}
+    )
+
+    comparison = {}
+
+    for category in [
+        "hotel",
+        "food",
+        "transport",
+        "activities",
+        "emergency",
+    ]:
+        planned_amount = planned.get(
+            category,
+            0,
+        )
+
+        actual_amount = actual.get(
+            category,
+            0,
+        )
+
+        comparison[category] = {
+            "planned": planned_amount,
+            "actual": actual_amount,
+            "remaining": round(
+                planned_amount - actual_amount,
+                2,
+            ),
+        }
+
+    return comparison

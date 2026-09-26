@@ -296,7 +296,7 @@ async def build_trip(request):
             scheduled_activity_count,
         )
 
-
+    trip_data["expenses"] = []
     trip_data = {
         "planner_version": "1.0",
 

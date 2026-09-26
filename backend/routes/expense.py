@@ -4,7 +4,9 @@ from backend.models.expense import ExpenseRequest
 
 from backend.services.expense.expense_store import (
     add_expense,
+    get_budget_comparison,
     get_expenses,
+    get_category_totals,
 )
 
 from backend.services.expense.splitter import split_equally
@@ -51,4 +53,6 @@ def expense_summary(trip_id: str):
         "expenses": expenses,
         "balances": balances,
         "settlements": settlements,
+        "category_totals": get_category_totals(trip_id),
+        "budget_comparison": get_budget_comparison(trip_id, trip),
     }
