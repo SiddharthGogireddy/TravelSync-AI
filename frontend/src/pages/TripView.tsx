@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import ExpenseTracker from "../components/ExpenseTracker";
 import AddExpenseModal from "../components/AddExpenseModal";
 import BudgetBreakdown from "../components/BudgetBreakdown";
 import BudgetCard from "../components/BudgetCard";
@@ -40,7 +40,7 @@ export default function TripView() {
   const navigate = useNavigate();
   const [selectedPlace, setSelectedPlace] =
     useState<Place | null>(null);
-
+  const tripId = getTripIdFromUrl();
   const [data, setData] =
     useState<TripResponse | null>(null);
 
@@ -51,7 +51,7 @@ export default function TripView() {
         return;
     }
 
-    const tripId = getTripIdFromUrl();
+    
 
     if (!tripId) {
         return;
@@ -216,7 +216,53 @@ export default function TripView() {
           }
         />
       </div>
+          <div className="section">
+  <h2 className="section-title">
+    Budget Overview
+  </h2>
 
+  <BudgetCard budget={trip.budget} />
+
+  <BudgetStatus
+    status={trip.budget.status}
+    remaining={trip.budget.remaining}
+  />
+
+  <BudgetBreakdown
+    categories={trip.budget.categories}
+  />
+
+  <BudgetPieChart
+    categories={trip.budget.categories}
+  />
+
+  {tripId && (
+  <ExpenseTracker
+    tripId={tripId}
+  />
+)}
+</div>
+
+<div className="section card">
+  <h2 className="section-title">
+    Travelers
+  </h2>
+
+  {trip.travelers.map(
+    (
+      traveler: Traveler,
+      index: number
+    ) => (
+      <div key={index}>
+        <strong>
+          {traveler.name}
+        </strong>
+        {" - "}
+        {traveler.budget}
+      </div>
+    )
+  )}
+</div>
       <div className="section card">
         <h2 className="section-title">
           Travelers

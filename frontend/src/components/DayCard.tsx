@@ -24,7 +24,7 @@ function estimateTravelTime(distance: number, mode: string) {
         flight: 500,
     };
 
-    const speed = speeds[mode.toLowerCase()] ?? 35;
+    const speed = speeds[mode?.toLowerCase()] ?? 35;
 
     const hours = distance / speed;
 
@@ -60,7 +60,7 @@ export default function DayCard({
         };
 
         const speed =
-            speeds[TravelMode.toLowerCase()] ?? 30;
+            speeds[TravelMode?.toLowerCase()] ?? 30;
 
         return total + place.travel_from_previous_km / speed;
     },

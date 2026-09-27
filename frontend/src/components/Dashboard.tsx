@@ -88,14 +88,14 @@ export default function Dashboard({ dashboard }: Props) {
     <div className="dashboard-item">
         <span>Total Budget</span>
         <strong>
-            ₹{dashboard.budget.toLocaleString()}
+           ₹{(dashboard.budget ?? 0).toLocaleString()}
         </strong>
     </div>
 
     <div className="dashboard-item">
         <span>Estimated Cost</span>
         <strong>
-            ₹{dashboard.estimated_cost.toLocaleString()}
+            ₹{(dashboard.estimated_cost ?? 0).toLocaleString()}
         </strong>
     </div>
 

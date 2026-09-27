@@ -10,5 +10,13 @@
             "amount": 5000.0,
             "paid_by": "king 2"
         }
+    ],
+    "b6a4f10c-4c69-4c3d-8156-26b7fbe95f7b": [
+        {
+            "title": "Lunch",
+            "amount": 450.0,
+            "paid_by": "king",
+            "category": "food"
+        }
     ]
 }

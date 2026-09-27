@@ -32,7 +32,6 @@ def create_expense(request: ExpenseRequest):
         "message": "Expense Added"
     }
 
-
 @router.get("/{trip_id}")
 def expense_summary(trip_id: str):
 
@@ -49,10 +48,19 @@ def expense_summary(trip_id: str):
         balances
     )
 
+    category_totals = get_category_totals(
+        trip_id
+    )
+
+    budget_comparison = get_budget_comparison(
+        trip_id,
+        trip["trip"],
+    )
+
     return {
         "expenses": expenses,
         "balances": balances,
         "settlements": settlements,
-        "category_totals": get_category_totals(trip_id),
-        "budget_comparison": get_budget_comparison(trip_id, trip),
+        "category_totals": category_totals,
+        "budget_comparison": budget_comparison,
     }

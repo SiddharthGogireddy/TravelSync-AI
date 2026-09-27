@@ -113,7 +113,7 @@ export default function MapView({
             <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-      {routeCoordinates.length > 0 && (
+      {(routeCoordinates?.length ?? 0 )> 0 && (
     <>
         <Marker
             position={[
