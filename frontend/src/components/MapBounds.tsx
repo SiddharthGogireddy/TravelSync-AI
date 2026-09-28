@@ -1,22 +1,23 @@
 import { useEffect } from "react";
 import { useMap } from "react-leaflet";
-import type { LatLngBoundsExpression } from "leaflet";
 
 interface Props {
-    routeCoordinates: number[][];
+    routeCoordinates?: [number, number][];
     fitRoute: boolean;
 }
 
 export default function MapBounds({
-    routeCoordinates,
+    routeCoordinates = [],
     fitRoute
 }: Props) {
     const map = useMap();
 
     useEffect(() => {
-        if (!fitRoute || !routeCoordinates.length) return;
+        if (!fitRoute || routeCoordinates.length === 0) {
+            return;
+        }
 
-        const bounds: LatLngBoundsExpression = routeCoordinates.map(
+        const bounds = routeCoordinates.map(
             ([lat, lon]) => [lat, lon] as [number, number]
         );
 

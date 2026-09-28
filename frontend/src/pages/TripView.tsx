@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import ExpenseTracker from "../components/ExpenseTracker";
+
 import AddExpenseModal from "../components/AddExpenseModal";
 import BudgetBreakdown from "../components/BudgetBreakdown";
 import BudgetCard from "../components/BudgetCard";
@@ -192,30 +192,7 @@ export default function TripView() {
 </button>
       <Dashboard dashboard={dashboard} />
         
-      <div className="section">
-        <h2 className="section-title">
-          Budget Overview
-        </h2>
-
-        <BudgetCard budget={trip.budget} />
-
-        <BudgetStatus
-    status={trip.budget.status}
-    remaining={trip.budget.remaining}
-/>
-
-        <BudgetBreakdown
-          categories={
-            trip.budget.categories
-          }
-        />
-
-        <BudgetPieChart
-          categories={
-            trip.budget.categories
-          }
-        />
-      </div>
+      
           <div className="section">
   <h2 className="section-title">
     Budget Overview
@@ -236,11 +213,7 @@ export default function TripView() {
     categories={trip.budget.categories}
   />
 
-  {tripId && (
-  <ExpenseTracker
-    tripId={tripId}
-  />
-)}
+  
 </div>
 
 <div className="section card">

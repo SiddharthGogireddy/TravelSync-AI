@@ -122,7 +122,7 @@ export interface TripResponse {
         travelers: Traveler[];
         places: Place[];
         budget: Budget;
-        route_coordinates: number[][];
+        route_coordinates: [number, number][];
         day_schedule: Record<
             string,
             Place[]

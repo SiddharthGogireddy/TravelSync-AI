@@ -18,5 +18,57 @@
             "paid_by": "king",
             "category": "food"
         }
+    ],
+    "5caad03e-e16e-4da0-80ce-280044d2ba93": [
+        {
+            "title": "room",
+            "amount": 1000.0,
+            "paid_by": "king",
+            "category": "food"
+        }
+    ],
+    "cad34c2b-e043-4d10-bdee-5e4a238ba271": [
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "king",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "king",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "king",
+            "category": "other"
+        },
+        {
+            "title": "food",
+            "amount": 10000.0,
+            "paid_by": "king",
+            "category": "other"
+        }
     ]
 }
