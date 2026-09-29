@@ -17,6 +17,12 @@
             "amount": 450.0,
             "paid_by": "king",
             "category": "food"
+        },
+        {
+            "title": "food",
+            "amount": 5000.0,
+            "paid_by": "king",
+            "category": "food"
         }
     ],
     "5caad03e-e16e-4da0-80ce-280044d2ba93": [

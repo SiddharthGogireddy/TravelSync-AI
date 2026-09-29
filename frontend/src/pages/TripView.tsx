@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-
+import BudgetAlerts from "../components/BudgetAlerts";
 import AddExpenseModal from "../components/AddExpenseModal";
 import BudgetBreakdown from "../components/BudgetBreakdown";
 import BudgetCard from "../components/BudgetCard";
@@ -494,6 +494,34 @@ export default function TripView() {
               expenseData.settlements
             }
           />
+          {expenseData && (
+    <>
+        <BudgetAlerts
+            alerts={expenseData.alerts}
+        />
+
+        <div className="section">
+            <h2 className="section-title">
+                Trip Expenses
+            </h2>
+
+            <ExpenseCard
+                total={expenseData.expenses.reduce(
+                    (sum, expense) => sum + expense.amount,
+                    0
+                )}
+            />
+
+            <ExpenseTable
+                expenses={expenseData.expenses}
+            />
+
+            <SettlementCard
+                settlements={expenseData.settlements}
+            />
+        </div>
+    </>
+)}
         </div>
       )}
 

@@ -8,7 +8,7 @@ from backend.services.expense.expense_store import (
     get_expenses,
     get_category_totals,
 )
-
+from backend.services.expense.budget_alerts import get_budget_alerts
 from backend.services.expense.splitter import split_equally
 from backend.services.expense.settlement import calculate_settlements
 
@@ -56,11 +56,14 @@ def expense_summary(trip_id: str):
         trip_id,
         trip["trip"],
     )
-
+    alerts = get_budget_alerts(
+        budget_comparison
+    )
     return {
         "expenses": expenses,
         "balances": balances,
         "settlements": settlements,
         "category_totals": category_totals,
         "budget_comparison": budget_comparison,
+        "alerts": alerts,
     }

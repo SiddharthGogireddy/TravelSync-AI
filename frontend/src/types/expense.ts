@@ -13,7 +13,12 @@ export interface Expense {
 
     custom_split?: Record<string, number>;
 }
-
+export interface BudgetAlert {
+    category: string;
+    status: "warning" | "over_budget";
+    message: string;
+    percentage_used: number;
+}
 export interface Settlement {
     from: string;
 
@@ -21,11 +26,15 @@ export interface Settlement {
 
     amount: number;
 }
-
 export interface ExpenseResponse {
     expenses: Expense[];
-
     balances: Record<string, number>;
-
     settlements: Settlement[];
+    category_totals: Record<string, number>;
+    budget_comparison: Record<string, {
+        planned: number;
+        actual: number;
+        remaining: number;
+    }>;
+    alerts: BudgetAlert[];
 }
