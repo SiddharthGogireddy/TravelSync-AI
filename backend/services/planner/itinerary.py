@@ -1,3 +1,4 @@
+
 from backend.services.external.location_service import search_location
 from backend.services.external.route_service import get_route
 from backend.services.external.weather_service import get_weather
@@ -18,7 +19,10 @@ from backend.services.planner.trip_optimizer import optimize_trip
 from backend.services.planner.trip_summary import build_summary
 from backend.services.planner.budget_tracker import calculate_budget
 from backend.services.planner.dashboard import build_dashboard
-from backend.services.planner.best_time_suggester import suggest_best_days
+from backend.services.planner.best_time_suggester import (
+    suggest_best_days,
+    suggest_best_time,
+)
 
 from backend.services.storage.trip_store import save_trip
 
@@ -101,7 +105,6 @@ async def build_trip(request):
     daily = weather["daily"]
 
     for i in range(len(daily["time"])):
-
         weather_summary.append(
             {
                 "date": daily["time"][i],
@@ -112,7 +115,6 @@ async def build_trip(request):
         )
 
     best_time = suggest_best_days(weather_summary)
-
 
     
 
@@ -228,10 +230,15 @@ async def build_trip(request):
     matched_places = cleaned_places
     print("Unique places before route attractions:", len(matched_places))
     matched_places = await get_route_attractions(
-    route,
-    matched_places,
-    travel_mode,
+        route,
+        matched_places,
+        travel_mode,
     )
+    for place in matched_places:
+        time_suggestion = suggest_best_time(place)
+
+        place["best_time"] = time_suggestion["best_time"]
+        place["best_time_reason"] = time_suggestion["reason"]
     print("Route attractions after:", len(matched_places))
 
     print(
