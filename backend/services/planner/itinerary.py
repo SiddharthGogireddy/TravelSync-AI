@@ -23,6 +23,9 @@ from backend.services.planner.best_time_suggester import (
     suggest_best_days,
     suggest_best_time,
 )
+from backend.services.planner.weather_planner import (
+    adjust_schedule_for_weather,
+)
 
 from backend.services.storage.trip_store import save_trip
 
@@ -206,6 +209,28 @@ async def build_trip(request):
         mandatory_schedule,
         pace=traveler_profiles[0]["pace"],
     )
+    day_schedule = adjust_schedule_for_weather(
+        day_schedule,
+        weather_summary,
+    )
+    print("\nWEATHER-AWARE SCHEDULE:")
+
+    for index, (day, places) in enumerate(day_schedule.items()):
+        if index >= len(weather_summary):
+            break
+
+        print(
+            f"Day {day}:",
+            weather_summary[index]["date"],
+            "| Weather code:",
+            weather_summary[index]["weather_code"],
+        )
+
+        for place in places:
+            print(
+                " -",
+                place["name"],
+            )
     print(
         "Scheduled attractions:",
         sum(len(day) for day in day_schedule.values())
