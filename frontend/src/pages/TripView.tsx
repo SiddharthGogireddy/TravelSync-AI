@@ -15,6 +15,8 @@ import WeatherCard from "../components/WeatherCard";
 import { useNavigate } from "react-router-dom";
 import { addExpense, getExpenses } from "../services/expense";
 import { updateTrip } from "../services/api";
+import TravelerConflicts from "../components/TravelerConflicts";
+
 import type {
   Place,
   Traveler,
@@ -192,11 +194,14 @@ export default function TripView() {
 </button>
       <Dashboard dashboard={dashboard} />
         
-      
+      <TravelerConflicts
+    conflicts={trip.traveler_conflicts}
+/>
           <div className="section">
   <h2 className="section-title">
     Budget Overview
   </h2>
+  
 
   <BudgetCard budget={trip.budget} />
 

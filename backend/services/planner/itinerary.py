@@ -4,6 +4,7 @@ from backend.services.external.route_service import get_route
 from backend.services.external.weather_service import get_weather
 from backend.services.external.place_service import get_places
 from backend.services.external.hotel_service import get_hotels
+from backend.services.planner import traveler_conflicts
 from backend.services.planner.transport_planner import (
     build_transport_plan,
 )
@@ -22,6 +23,11 @@ from backend.services.planner.dashboard import build_dashboard
 from backend.services.planner.best_time_suggester import (
     suggest_best_days,
     suggest_best_time,
+)
+from backend.services.planner.traveler_conflicts import (
+    detect_traveler_conflicts,
+    get_shared_interests,
+    get_interest_priority,
 )
 from backend.services.planner.weather_planner import (
     adjust_schedule_for_weather,
@@ -157,9 +163,30 @@ async def build_trip(request):
 
     print("Ranked places:", len(ranked_places))
     matched_places = match_preferences(
-    ranked_places,
-    [traveler.dict() for traveler in travelers]
-)
+        ranked_places,
+        [traveler.dict() for traveler in travelers]
+    )
+    traveler_data = [
+        traveler.dict()
+        for traveler in travelers
+    ]
+
+    interest_counts = get_shared_interests(
+        traveler_data
+    )
+    traveler_conflicts = detect_traveler_conflicts(
+        [traveler.dict() for traveler in travelers],
+        matched_places,
+    )
+
+    print("\nTRAVELER CONFLICTS:")
+
+    for conflict in traveler_conflicts:
+        print(
+            conflict["type"],
+            "|",
+            conflict["message"],
+        )
 
     print(
         "Matched places:",
@@ -171,7 +198,17 @@ async def build_trip(request):
     unique_places = []
 
     for place in matched_places:
-
+        place["interest_priority"] = get_interest_priority(
+            place,
+            interest_counts,
+        )
+        matched_places.sort(
+            key=lambda place: (
+                place.get("interest_priority", 0),
+                place.get("score", 0),
+            ),
+            reverse=True,
+        )
         normalized_name = (
             place["name"]
             .lower()
@@ -335,9 +372,9 @@ async def build_trip(request):
         "source": source,
         "destination": destination,
         "days": days,
-
+        
         "travelers": traveler_profiles,
-
+        "traveler_conflicts": traveler_conflicts,
         "mandatory_visits": [
             visit.dict()
             for visit in mandatory_visits

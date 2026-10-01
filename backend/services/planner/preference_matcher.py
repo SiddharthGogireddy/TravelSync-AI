@@ -12,10 +12,19 @@ INTEREST_MAP = {
         "Foods"
     ],
     "Culture": [
-        "Cultural",
-        "Historic",
-        "Historic Architecture",
-        "Palaces"
+    "Cultural",
+    "Historic",
+    "Historic Architecture",
+    "Palaces"
+    ],
+
+    "Museums": [
+        "Science Museums",
+        "Museums"
+    ],
+    "Parks": [
+        "Park",
+        "Urban Environment"
     ],
     "Photography": [
         "Historic",
@@ -69,7 +78,12 @@ def match_preferences(places, travelers):
 
             for interest in traveler["interests"]:
 
-                if place["category"] in INTEREST_MAP.get(interest, []):
+                mapped_categories = INTEREST_MAP.get(
+                    interest.title(),
+                    []
+                )
+
+                if place["category"] in mapped_categories:
 
                     if traveler["name"] not in satisfied:
                         satisfied.append(traveler["name"])

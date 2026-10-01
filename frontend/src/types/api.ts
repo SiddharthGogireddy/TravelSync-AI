@@ -107,6 +107,12 @@ export interface BestTime {
     best_days: string[];
     reason: string;
 }
+export interface TravelerConflict {
+    type: string;
+    travelers: string[];
+    message: string;
+    interest?: string;
+}
 
 export interface TripResponse {
     trip_id: string;
@@ -120,6 +126,7 @@ export interface TripResponse {
         weather: Weather[];
         hotels: Hotel[];
         travelers: Traveler[];
+        traveler_conflicts: TravelerConflict[];
         places: Place[];
         budget: Budget;
         route_coordinates: [number, number][];
