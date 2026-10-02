@@ -193,7 +193,15 @@ export default function TripView() {
     ← Plan Another Trip
 </button>
       <Dashboard dashboard={dashboard} />
-        
+        <button
+    onClick={() => {
+        const url = `${window.location.origin}/trip/${tripId}`;
+        navigator.clipboard.writeText(url);
+        alert("Trip link copied!");
+    }}
+>
+    Share Trip
+</button>
       <TravelerConflicts
     conflicts={trip.traveler_conflicts}
 />
