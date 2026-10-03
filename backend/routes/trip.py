@@ -13,11 +13,20 @@ from backend.services.storage.favorite_store import (
     remove_favorite,
     is_favorite,
 )
-from backend.services.storage.trip_store import load_trip
+from backend.services.storage.trip_store import (
+    load_trip,
+    save_trip,
+    update_saved_trip,
+    load_all_trips,
+)
 
 router = APIRouter(
     prefix="/trip",
     tags=["Trip"]
+)
+from backend.services.storage.rating_store import (
+    get_rating,
+    save_rating,
 )
 
 
@@ -132,4 +141,57 @@ def remove_trip_note(
     return {
         "trip_id": trip_id,
         "deleted": True
+    }
+@router.get("/{trip_id}/rating")
+def get_trip_rating(trip_id: str):
+    trip = load_trip(trip_id)
+
+    if trip is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    return {
+        "trip_id": trip_id,
+        "rating": get_rating(trip_id)
+    }
+
+
+@router.post("/{trip_id}/rating")
+def rate_trip(
+    trip_id: str,
+    rating: int,
+    feedback: str = ""
+):
+    trip = load_trip(trip_id)
+
+    if trip is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    if rating < 1 or rating > 5:
+        raise HTTPException(
+            status_code=400,
+            detail="Rating must be between 1 and 5"
+        )
+
+    result = save_rating(
+        trip_id,
+        rating,
+        feedback.strip()
+    )
+
+    return {
+        "trip_id": trip_id,
+        **result
+    }
+@router.get("/history")
+def get_trip_history():
+    trips = load_all_trips()
+
+    return {
+        "trips": trips
     }

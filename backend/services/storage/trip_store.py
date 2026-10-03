@@ -54,3 +54,8 @@ def update_saved_trip(
             return True
 
     return False
+def load_all_trips():
+    with open(FILE, "r") as f:
+        trips = json.load(f)
+
+    return trips
