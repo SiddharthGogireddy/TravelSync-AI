@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, } from "react-router-dom";
 
 import TripForm from "./components/TripForm";
 import Results from "./pages/Results";
-
+import LoadTrip from "./pages/LoadTrip";
 import TripView from "./pages/TripView";
 
 import { generateTrip } from "./services/api";
@@ -73,6 +73,10 @@ export default function App() {
                     />
 
                     <Route path="/trip/:id" element={<TripView />} />
+                    <Route
+    path="/load-trip"
+    element={<LoadTrip />}
+/>
                 </Routes>
             </div>
         </BrowserRouter>

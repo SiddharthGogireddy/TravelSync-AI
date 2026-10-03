@@ -45,3 +45,19 @@ export async function updateTrip(
 
     return result;
 }
+export async function getTrip(
+    tripId: string
+): Promise<TripResponse> {
+    const res = await fetch(`${API}/trip/${tripId}`);
+
+    if (!res.ok) {
+        const error = await res.text();
+        throw new Error(
+            error || "Failed to load trip"
+        );
+    }
+
+    const result = await res.json();
+
+    return result;
+}
