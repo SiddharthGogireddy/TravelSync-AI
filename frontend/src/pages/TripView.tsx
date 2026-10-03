@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import BudgetAlerts from "../components/BudgetAlerts";
 import AddExpenseModal from "../components/AddExpenseModal";
 import BudgetBreakdown from "../components/BudgetBreakdown";
@@ -12,10 +13,21 @@ import ExpenseTable from "../components/ExpenseTable";
 import MapView from "../components/MapView";
 import SettlementCard from "../components/SettlementCard";
 import WeatherCard from "../components/WeatherCard";
-import { useNavigate } from "react-router-dom";
-import { addExpense, getExpenses } from "../services/expense";
-import { updateTrip } from "../services/api";
 import TravelerConflicts from "../components/TravelerConflicts";
+
+import { useNavigate } from "react-router-dom";
+
+import {
+  addExpense,
+  getExpenses,
+} from "../services/expense";
+
+import {
+  updateTrip,
+  checkFavorite,
+  favoriteTrip,
+  unfavoriteTrip,
+} from "../services/api";
 
 import type {
   Place,
@@ -26,8 +38,11 @@ import type {
 
 import type { ExpenseResponse } from "../types/expense";
 
+
 function getTripIdFromUrl(): string | undefined {
-  if (typeof window === "undefined") return undefined;
+  if (typeof window === "undefined") {
+    return undefined;
+  }
 
   const match = window.location.pathname.match(
     /\/trip\/([^/]+)/
@@ -36,116 +51,57 @@ function getTripIdFromUrl(): string | undefined {
   return match?.[1];
 }
 
+
 export default function TripView() {
   const [editPrompt, setEditPrompt] = useState("");
   const [updating, setUpdating] = useState(false);
+
   const navigate = useNavigate();
+
   const [selectedPlace, setSelectedPlace] =
     useState<Place | null>(null);
+
   const tripId = getTripIdFromUrl();
+
+  const [isFavorite, setIsFavorite] =
+    useState(false);
+
   const [data, setData] =
     useState<TripResponse | null>(null);
 
   const [expenseData, setExpenseData] =
     useState<ExpenseResponse | null>(null);
-  const handleTripEdit = async () => {
-    if (!editPrompt.trim()) {
-        return;
-    }
 
-    
 
-    if (!tripId) {
-        return;
-    }
-
-    try {
-        setUpdating(true);
-
-        const updatedTrip = await updateTrip(
-            tripId,
-            editPrompt
-        );
-
-        setData(updatedTrip);
-        setEditPrompt("");
-
-    } catch (error) {
-        console.error(
-            "Trip update failed:",
-            error
-        );
-    } finally {
-        setUpdating(false);
-    }
-};
-  async function handleAddExpense(
-    title: string,
-    amount: number,
-    paidBy: string
-  ) {
-    const tripId = getTripIdFromUrl();
-
-    if (!tripId) return;
-
-    await addExpense(tripId, {
-      title,
-      amount,
-      paid_by: paidBy,
-    });
-
-    const updated =
-      await getExpenses(tripId);
-
-    setExpenseData(updated);
-  }
-  async function handleRegenerateDay(day: string) {
-    const tripId = getTripIdFromUrl();
-
-    if (!tripId) return;
-
-    try {
-        const response = await fetch(
-            `http://127.0.0.1:8000/trip/${tripId}`,
-            {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    prompt: `Regenerate Day ${day}`,
-                }),
-            }
-        );
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to regenerate Day ${day}`
-            );
-        }
-
-        const updatedTrip: TripResponse =
-            await response.json();
-
-        setData(updatedTrip);
-    } catch (error) {
-        console.error(
-            "Regeneration failed:",
-            error
-        );
-    }
-}
-  
+  /*
+   * Check whether this trip is already a favorite.
+   */
   useEffect(() => {
-    const tripId = getTripIdFromUrl();
-
     if (!tripId) return;
 
-    async function fetchTrip(id: string) {
+    checkFavorite(tripId)
+      .then(setIsFavorite)
+      .catch(() => {});
+  }, [tripId]);
+
+
+  /*
+   * Load trip and expense data.
+   */
+  useEffect(() => {
+    const id = getTripIdFromUrl();
+
+    if (!id) return;
+
+    async function fetchTrip(tripId: string) {
       try {
         const res = await fetch(
-          `http://127.0.0.1:8000/trip/${id}`
+          `http://127.0.0.1:8000/trip/${tripId}`
         );
+
+        if (!res.ok) {
+          throw new Error("Failed to load trip");
+        }
 
         const json: TripResponse =
           await res.json();
@@ -153,7 +109,7 @@ export default function TripView() {
         setData(json);
 
         const expenses =
-          await getExpenses(id);
+          await getExpenses(tripId);
 
         setExpenseData(expenses);
       } catch (err) {
@@ -161,14 +117,112 @@ export default function TripView() {
       }
     }
 
-    fetchTrip(tripId);
+    fetchTrip(id);
   }, []);
+
+
+  /*
+   * All hooks must be above this conditional return.
+   */
+  if (!tripId) {
+    return <p>Trip ID not found</p>;
+  }
+
+
+  const handleTripEdit = async () => {
+    if (!editPrompt.trim()) {
+      return;
+    }
+
+    try {
+      setUpdating(true);
+
+      const updatedTrip =
+        await updateTrip(
+          tripId,
+          editPrompt
+        );
+
+      setData(updatedTrip);
+      setEditPrompt("");
+
+    } catch (error) {
+      console.error(
+        "Trip update failed:",
+        error
+      );
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+
+  
+    async function handleAddExpense(
+  title: string,
+  amount: number,
+  paidBy: string
+) {if (!tripId) {
+    return;
+  }
+
+  
+  await addExpense(tripId, {
+    title,
+    amount,
+    paid_by: paidBy,
+  });
+
+  const updated = await getExpenses(tripId);
+
+  setExpenseData(updated);
+}
+
+
+  async function handleRegenerateDay(
+    day: string
+  ) {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/trip/${tripId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: `Regenerate Day ${day}`,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to regenerate Day ${day}`
+        );
+      }
+
+      const updatedTrip: TripResponse =
+        await response.json();
+
+      setData(updatedTrip);
+
+    } catch (error) {
+      console.error(
+        "Regeneration failed:",
+        error
+      );
+    }
+  }
+
 
   if (!data) {
     return <div>Loading...</div>;
   }
 
+
   const { trip, dashboard } = data;
+
 
   const normalizedWeather: Weather[] =
     trip.weather.map((w) => ({
@@ -176,80 +230,94 @@ export default function TripView() {
       description: w.description ?? "",
     }));
 
+
   return (
-    
     <div className="page-container">
-    <button
-    type="button"
-    className="plan-another-button"
-    onClick={() =>
-    navigate("/", {
-        state: {
-            trip: trip,
-        },
-    })
-}
->
-    ← Plan Another Trip
-</button>
+
+      <button
+        type="button"
+        className="plan-another-button"
+        onClick={() =>
+          navigate("/", {
+            state: {
+              trip: trip,
+            },
+          })
+        }
+      >
+        ← Plan Another Trip
+      </button>
+
+
       <Dashboard dashboard={dashboard} />
-        <button
-    onClick={() => {
-        const url = `${window.location.origin}/trip/${tripId}`;
-        navigator.clipboard.writeText(url);
-        alert("Trip link copied!");
-    }}
->
-    Share Trip
-</button>
+
+
+      {/* Share Trip */}
+      <button
+        onClick={() => {
+          const url =
+            `${window.location.origin}/trip/${tripId}`;
+
+          navigator.clipboard.writeText(url);
+
+          alert("Trip link copied!");
+        }}
+      >
+        Share Trip
+      </button>
+
+
+      {/* Favorite Trip */}
+      <button
+        onClick={async () => {
+          if (isFavorite) {
+            await unfavoriteTrip(tripId);
+            setIsFavorite(false);
+          } else {
+            await favoriteTrip(tripId);
+            setIsFavorite(true);
+          }
+        }}
+      >
+        {isFavorite
+          ? "★ Favorited"
+          : "☆ Favorite"}
+      </button>
+
+
       <TravelerConflicts
-    conflicts={trip.traveler_conflicts}
-/>
-          <div className="section">
-  <h2 className="section-title">
-    Budget Overview
-  </h2>
-  
+        conflicts={trip.traveler_conflicts}
+      />
 
-  <BudgetCard budget={trip.budget} />
 
-  <BudgetStatus
-    status={trip.budget.status}
-    remaining={trip.budget.remaining}
-  />
+      <div className="section">
 
-  <BudgetBreakdown
-    categories={trip.budget.categories}
-  />
+        <h2 className="section-title">
+          Budget Overview
+        </h2>
 
-  <BudgetPieChart
-    categories={trip.budget.categories}
-  />
+        <BudgetCard
+          budget={trip.budget}
+        />
 
-  
-</div>
+        <BudgetStatus
+          status={trip.budget.status}
+          remaining={trip.budget.remaining}
+        />
 
-<div className="section card">
-  <h2 className="section-title">
-    Travelers
-  </h2>
+        <BudgetBreakdown
+          categories={trip.budget.categories}
+        />
 
-  {trip.travelers.map(
-    (
-      traveler: Traveler,
-      index: number
-    ) => (
-      <div key={index}>
-        <strong>
-          {traveler.name}
-        </strong>
-        {" - "}
-        {traveler.budget}
+        <BudgetPieChart
+          categories={trip.budget.categories}
+        />
+
       </div>
-    )
-  )}
-</div>
+
+
       <div className="section card">
+
         <h2 className="section-title">
           Travelers
         </h2>
@@ -263,14 +331,45 @@ export default function TripView() {
               <strong>
                 {traveler.name}
               </strong>
+
               {" - "}
+
               {traveler.budget}
             </div>
           )
         )}
+
       </div>
 
+
+      <div className="section card">
+
+        <h2 className="section-title">
+          Travelers
+        </h2>
+
+        {trip.travelers.map(
+          (
+            traveler: Traveler,
+            index: number
+          ) => (
+            <div key={index}>
+              <strong>
+                {traveler.name}
+              </strong>
+
+              {" - "}
+
+              {traveler.budget}
+            </div>
+          )
+        )}
+
+      </div>
+
+
       <div className="section">
+
         <h2 className="section-title">
           Weather
         </h2>
@@ -283,92 +382,144 @@ export default function TripView() {
             />
           )
         )}
-      {trip.transport && (
-    <div className="card">
-        <h3>Transportation</h3>
+
+
+        {trip.transport && (
+          <div className="card">
+
+            <h3>Transportation</h3>
+
+            <p>
+              <strong>
+                {trip.transport.label}
+              </strong>
+            </p>
+
+            <p>
+              {trip.transport.description}
+            </p>
+
+            <div className="transport-summary">
+
+              <div>
+                <strong>
+                  {trip.transport.distance_km} km
+                </strong>
+
+                <span>
+                  Total Distance
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  {trip.transport.duration_hours} hrs
+                </strong>
+
+                <span>
+                  Total Duration
+                </span>
+              </div>
+
+            </div>
+
+
+            <div className="transport-legs">
+
+              {trip.transport.legs.map(
+                (leg, index) => (
+
+                  <div
+                    key={index}
+                    className="transport-leg"
+                  >
+
+                    <div>
+
+                      <strong>
+                        {leg.type}
+                      </strong>
+
+                      <p>
+                        {leg.from} → {leg.to}
+                      </p>
+
+                    </div>
+
+
+                    <div>
+
+                      <span>
+                        {leg.distance_km} km
+                      </span>
+
+                      <span>
+                        {leg.duration_hours} hrs
+                      </span>
+
+                    </div>
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+          </div>
+        )}
+
+      </div>
+
+
+      <div className="section card">
+
+        <h2>Edit Your Trip</h2>
 
         <p>
-            <strong>{trip.transport.label}</strong>
+          Tell TravelSync AI what you want to change.
         </p>
 
-        <p>{trip.transport.description}</p>
-
-        <div className="transport-summary">
-            <div>
-                <strong>{trip.transport.distance_km} km</strong>
-                <span>Total Distance</span>
-            </div>
-
-            <div>
-                <strong>{trip.transport.duration_hours} hrs</strong>
-                <span>Total Duration</span>
-            </div>
-        </div>
-
-        <div className="transport-legs">
-            {trip.transport.legs.map((leg, index) => (
-                <div key={index} className="transport-leg">
-                    <div>
-                        <strong>{leg.type}</strong>
-                        <p>
-                            {leg.from} → {leg.to}
-                        </p>
-                    </div>
-
-                    <div>
-                        <span>{leg.distance_km} km</span>
-                        <span>{leg.duration_hours} hrs</span>
-                    </div>
-                </div>
-            ))}
-        </div>
-    </div>
-)}
-
-    
-    <div className="section card">
-    <h2>Edit Your Trip</h2>
-
-    <p>
-        Tell TravelSync AI what you want to change.
-    </p>
-
-    <textarea
-        value={editPrompt}
-        onChange={(e) =>
+        <textarea
+          value={editPrompt}
+          onChange={(e) =>
             setEditPrompt(e.target.value)
-        }
-        placeholder='Try: "Add Charminar"'
-        rows={3}
-        style={{
+          }
+          placeholder='Try: "Add Charminar"'
+          rows={3}
+          style={{
             width: "100%",
             padding: "10px",
             marginTop: "10px",
             marginBottom: "10px",
             resize: "vertical",
-        }}
-    />
+          }}
+        />
 
-    <button
-        className="regenerate-button"
-        onClick={handleTripEdit}
-        disabled={
+        <button
+          className="regenerate-button"
+          onClick={handleTripEdit}
+          disabled={
             updating ||
             !editPrompt.trim()
-        }
-    >
-        {updating
+          }
+        >
+          {updating
             ? "Updating..."
             : "Apply Changes"}
-    </button>
+        </button>
 
-    <p style={{ marginTop: "10px" }}>
-        Try: "Add Charminar", "Remove Charminar",
-        "Regenerate Day 2", or "Keep budget under ₹30000"
-    </p>
-</div>
-</div>
+        <p style={{ marginTop: "10px" }}>
+          Try: "Add Charminar", "Remove Charminar",
+          "Regenerate Day 2", or
+          "Keep budget under ₹30000"
+        </p>
+
+      </div>
+
+
       <div className="section">
+
         <h2 className="section-title">
           Daily Plan
         </h2>
@@ -378,6 +529,7 @@ export default function TripView() {
             trip.day_schedule
           ).map(
             ([day, places]) => (
+
               <DayCard
                 key={day}
                 day={day}
@@ -386,13 +538,19 @@ export default function TripView() {
                 onSelect={
                   setSelectedPlace
                 }
-                onRegenerate={handleRegenerateDay}
+                onRegenerate={
+                  handleRegenerateDay
+                }
               />
+
             )
           )}
+
       </div>
 
+
       <div className="section">
+
         <h2 className="section-title">
           Map
         </h2>
@@ -404,36 +562,42 @@ export default function TripView() {
           lon={
             trip.destination_location.lon
           }
-          
           places={trip.places}
           hotels={trip.hotels}
           selectedPlace={
             selectedPlace
           }
           routeCoordinates={
-          trip.route_coordinates
+            trip.route_coordinates
           }
         />
+
       </div>
+
 
       {data.itinerary?.days && (
         <div className="section">
+
           <h2 className="section-title">
             AI Itinerary
           </h2>
 
           {data.itinerary.days.map(
             (day) => (
+
               <div
                 key={day.day}
                 className="card"
               >
+
                 <h3>
                   Day {day.day}:{" "}
                   {day.title}
                 </h3>
 
-                <h4>Activities</h4>
+                <h4>
+                  Activities
+                </h4>
 
                 <ul>
                   {day.activities.map(
@@ -448,7 +612,10 @@ export default function TripView() {
                   )}
                 </ul>
 
-                <h4>Food</h4>
+
+                <h4>
+                  Food
+                </h4>
 
                 <ul>
                   {day.food.map(
@@ -460,19 +627,25 @@ export default function TripView() {
                   )}
                 </ul>
 
+
                 <p>
                   <strong>
                     Budget:
                   </strong>{" "}
                   {day.budget}
                 </p>
+
               </div>
+
             )
           )}
+
         </div>
       )}
 
+
       <div className="section">
+
         <AddExpenseModal
           travelers={trip.travelers.map(
             (traveler) =>
@@ -480,20 +653,29 @@ export default function TripView() {
           )}
           onAdd={handleAddExpense}
         />
+
       </div>
+
 
       {expenseData && (
         <div className="section">
+
+          <BudgetAlerts
+            alerts={expenseData.alerts}
+          />
+
           <h2 className="section-title">
             Trip Expenses
           </h2>
 
           <ExpenseCard
-            total={expenseData.expenses.reduce(
-              (sum, expense) =>
-                sum + expense.amount,
-              0
-            )}
+            total={
+              expenseData.expenses.reduce(
+                (sum, expense) =>
+                  sum + expense.amount,
+                0
+              )
+            }
           />
 
           <ExpenseTable
@@ -507,36 +689,10 @@ export default function TripView() {
               expenseData.settlements
             }
           />
-          {expenseData && (
-    <>
-        <BudgetAlerts
-            alerts={expenseData.alerts}
-        />
 
-        <div className="section">
-            <h2 className="section-title">
-                Trip Expenses
-            </h2>
-
-            <ExpenseCard
-                total={expenseData.expenses.reduce(
-                    (sum, expense) => sum + expense.amount,
-                    0
-                )}
-            />
-
-            <ExpenseTable
-                expenses={expenseData.expenses}
-            />
-
-            <SettlementCard
-                settlements={expenseData.settlements}
-            />
-        </div>
-    </>
-)}
         </div>
       )}
+
 
       <div
         style={{
@@ -545,14 +701,10 @@ export default function TripView() {
           marginTop: 30,
         }}
       >
+
         <button
           className="download-button"
           onClick={() => {
-            const tripId =
-              getTripIdFromUrl();
-
-            if (!tripId) return;
-
             window.open(
               `http://127.0.0.1:8000/trip/${tripId}/pdf`
             );
@@ -560,7 +712,9 @@ export default function TripView() {
         >
           Download PDF
         </button>
+
       </div>
+
     </div>
   );
 }

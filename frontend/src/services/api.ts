@@ -61,3 +61,48 @@ export async function getTrip(
 
     return result;
 }
+export async function checkFavorite(
+    tripId: string
+): Promise<boolean> {
+    const res = await fetch(
+        `${API}/trip/${tripId}/favorite`
+    );
+
+    if (!res.ok) {
+        throw new Error("Failed to check favorite");
+    }
+
+    const result = await res.json();
+
+    return result.favorite;
+}
+
+export async function favoriteTrip(
+    tripId: string
+): Promise<void> {
+    const res = await fetch(
+        `${API}/trip/${tripId}/favorite`,
+        {
+            method: "POST",
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error("Failed to favorite trip");
+    }
+}
+
+export async function unfavoriteTrip(
+    tripId: string
+): Promise<void> {
+    const res = await fetch(
+        `${API}/trip/${tripId}/favorite`,
+        {
+            method: "DELETE",
+        }
+    );
+
+    if (!res.ok) {
+        throw new Error("Failed to unfavorite trip");
+    }
+}
