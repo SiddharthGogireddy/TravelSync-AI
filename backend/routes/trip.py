@@ -29,7 +29,13 @@ from backend.services.storage.rating_store import (
     save_rating,
 )
 
+@router.get("/history")
+def get_trip_history():
+    trips = load_all_trips()
 
+    return {
+        "trips": trips
+    }
 @router.get("/{trip_id}")
 def get_trip(trip_id: str):
     trip = load_trip(trip_id)
@@ -187,11 +193,4 @@ def rate_trip(
     return {
         "trip_id": trip_id,
         **result
-    }
-@router.get("/history")
-def get_trip_history():
-    trips = load_all_trips()
-
-    return {
-        "trips": trips
     }

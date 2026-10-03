@@ -200,3 +200,26 @@ export async function rateTrip(
     throw new Error("Failed to save rating");
   }
 }
+export type TripHistoryItem = {
+  id: string;
+  data: {
+    trip: {
+      destination_location: {
+        lat: number;
+        lon: number;
+      };
+    };
+  };
+};
+
+export async function getTripHistory(): Promise<TripHistoryItem[]> {
+  const res = await fetch(`${API}/trip/history`);
+
+  if (!res.ok) {
+    throw new Error("Failed to load trip history");
+  }
+
+  const result = await res.json();
+
+  return result.trips;
+}

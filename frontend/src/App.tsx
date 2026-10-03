@@ -5,7 +5,7 @@ import TripForm from "./components/TripForm";
 import Results from "./pages/Results";
 import LoadTrip from "./pages/LoadTrip";
 import TripView from "./pages/TripView";
-
+import TripHistory from "./pages/TripHistory";
 import { generateTrip } from "./services/api";
 
 import type { TripRequest } from "./types/trip";
@@ -71,7 +71,10 @@ export default function App() {
                             </>
                         }
                     />
-
+<Route
+  path="/trip-history"
+  element={<TripHistory />}
+/>
                     <Route path="/trip/:id" element={<TripView />} />
                     <Route
     path="/load-trip"
