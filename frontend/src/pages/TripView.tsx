@@ -27,6 +27,9 @@ import {
   checkFavorite,
   favoriteTrip,
   unfavoriteTrip,
+  getTripNotes,
+  addTripNote,
+  deleteTripNote,
 } from "../services/api";
 
 import type {
@@ -65,7 +68,8 @@ export default function TripView() {
 
   const [isFavorite, setIsFavorite] =
     useState(false);
-
+  const [notes, setNotes] = useState<string[]>([]);
+  const [newNote, setNewNote] = useState("");
   const [data, setData] =
     useState<TripResponse | null>(null);
 
@@ -112,6 +116,10 @@ export default function TripView() {
           await getExpenses(tripId);
 
         setExpenseData(expenses);
+        const savedNotes =
+  await getTripNotes(tripId);
+
+setNotes(savedNotes);
       } catch (err) {
         console.error(err);
       }
@@ -166,7 +174,7 @@ export default function TripView() {
     return;
   }
 
-  
+
   await addExpense(tripId, {
     title,
     amount,
@@ -471,7 +479,83 @@ export default function TripView() {
 
       </div>
 
+        <div className="section card">
+  <h2>Trip Notes</h2>
 
+  <div style={{ display: "flex", gap: "10px" }}>
+    <input
+      type="text"
+      value={newNote}
+      onChange={(e) => setNewNote(e.target.value)}
+      placeholder="Add a note..."
+      style={{
+        flex: 1,
+        padding: "10px",
+      }}
+    />
+
+    <button
+      onClick={async () => {
+        if (!newNote.trim()) return;
+
+        try {
+          const updatedNotes = await addTripNote(
+            tripId,
+            newNote
+          );
+
+          setNotes(updatedNotes);
+          setNewNote("");
+        } catch (error) {
+          console.error(
+            "Failed to add note:",
+            error
+          );
+        }
+      }}
+    >
+      Add Note
+    </button>
+  </div>
+
+  {notes.length === 0 ? (
+    <p>No notes yet.</p>
+  ) : (
+    <ul>
+      {notes.map((note, index) => (
+        <li key={index}>
+          <span>{note}</span>
+
+          <button
+            onClick={async () => {
+              try {
+                await deleteTripNote(
+                  tripId,
+                  index
+                );
+
+                const updatedNotes =
+                  await getTripNotes(tripId);
+
+                setNotes(updatedNotes);
+              } catch (error) {
+                console.error(
+                  "Failed to delete note:",
+                  error
+                );
+              }
+            }}
+            style={{
+              marginLeft: "10px",
+            }}
+          >
+            Delete
+          </button>
+        </li>
+      ))}
+    </ul>
+  )}
+</div>
       <div className="section card">
 
         <h2>Edit Your Trip</h2>

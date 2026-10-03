@@ -106,3 +106,56 @@ export async function unfavoriteTrip(
         throw new Error("Failed to unfavorite trip");
     }
 }
+export async function getTripNotes(
+  tripId: string
+): Promise<string[]> {
+  const res = await fetch(
+    `${API}/trip/${tripId}/notes`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load notes");
+  }
+
+  const result = await res.json();
+
+  return result.notes;
+}
+
+
+export async function addTripNote(
+  tripId: string,
+  note: string
+): Promise<string[]> {
+  const res = await fetch(
+    `${API}/trip/${tripId}/notes?note=${encodeURIComponent(note)}`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to add note");
+  }
+
+  const result = await res.json();
+
+  return result.notes;
+}
+
+
+export async function deleteTripNote(
+  tripId: string,
+  noteIndex: number
+): Promise<void> {
+  const res = await fetch(
+    `${API}/trip/${tripId}/notes/${noteIndex}`,
+    {
+      method: "DELETE",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to delete note");
+  }
+}
