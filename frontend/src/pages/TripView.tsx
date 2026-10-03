@@ -30,6 +30,9 @@ import {
   getTripNotes,
   addTripNote,
   deleteTripNote,
+  getTripRating,
+ 
+  rateTrip,
 } from "../services/api";
 
 import type {
@@ -75,7 +78,9 @@ export default function TripView() {
 
   const [expenseData, setExpenseData] =
     useState<ExpenseResponse | null>(null);
-
+  const [tripRating, setTripRating] = useState<number | null>(null);
+  const [ratingFeedback, setRatingFeedback] = useState("");
+  const [ratingSaved, setRatingSaved] = useState(false);
 
   /*
    * Check whether this trip is already a favorite.
@@ -118,8 +123,16 @@ export default function TripView() {
         setExpenseData(expenses);
         const savedNotes =
   await getTripNotes(tripId);
+  
 
 setNotes(savedNotes);
+const savedRating =
+  await getTripRating(tripId);
+
+if (savedRating) {
+  setTripRating(savedRating.rating);
+  setRatingFeedback(savedRating.feedback);
+}
       } catch (err) {
         console.error(err);
       }
@@ -777,7 +790,84 @@ setNotes(savedNotes);
         </div>
       )}
 
+      <div className="section card">
+  <h2>Rate This Trip</h2>
 
+ <div>
+  {[1, 2, 3, 4, 5].map((star) => (
+    <button
+      key={star}
+      type="button"
+      onClick={() => {
+        setTripRating(star);
+        setRatingSaved(false);
+      }}
+      style={{
+        fontSize: "32px",
+        padding: "4px 8px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        color:
+          tripRating !== null && star <= tripRating
+            ? "gold"
+            : "gray",
+      }}
+    >
+      {tripRating !== null && star <= tripRating
+        ? "★"
+        : "☆"}
+    </button>
+  ))}
+</div>
+
+  <textarea
+    value={ratingFeedback}
+    onChange={(e) => {
+      setRatingFeedback(e.target.value);
+      setRatingSaved(false);
+    }}
+    placeholder="Optional feedback..."
+    rows={3}
+    style={{
+      width: "100%",
+      marginTop: "10px",
+      padding: "10px",
+    }}
+  />
+
+  <button
+    type="button"
+    disabled={tripRating === null}
+    onClick={async () => {
+      if (tripRating === null) return;
+
+      try {
+        await rateTrip(
+          tripId,
+          tripRating,
+          ratingFeedback
+        );
+
+        setRatingSaved(true);
+      } catch (error) {
+        console.error(
+          "Failed to save rating:",
+          error
+        );
+      }
+    }}
+    style={{
+      marginTop: "10px",
+    }}
+  >
+    Save Rating
+  </button>
+
+  {ratingSaved && (
+    <p>Rating saved successfully.</p>
+  )}
+</div>
       <div
         style={{
           display: "flex",

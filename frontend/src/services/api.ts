@@ -159,3 +159,44 @@ export async function deleteTripNote(
     throw new Error("Failed to delete note");
   }
 }
+export async function getTripRating(
+  tripId: string
+): Promise<{
+  rating: number | null;
+  feedback: string;
+} | null> {
+  const res = await fetch(
+    `${API}/trip/${tripId}/rating`
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to load rating");
+  }
+
+  const result = await res.json();
+
+  return result.rating;
+}
+
+
+export async function rateTrip(
+  tripId: string,
+  rating: number,
+  feedback: string
+): Promise<void> {
+  const params = new URLSearchParams({
+    rating: rating.toString(),
+    feedback,
+  });
+
+  const res = await fetch(
+    `${API}/trip/${tripId}/rating?${params.toString()}`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to save rating");
+  }
+}
