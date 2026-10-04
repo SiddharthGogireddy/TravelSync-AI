@@ -131,6 +131,11 @@ async def update_trip(
                 parsed["regenerate_day"] = (
                     action.get("day")
                 )
+            elif action_type == "set_interests":
+                parsed["regenerate_day"] = action.get("day")
+                parsed["preferred_interests"] = action.get(
+                    "interests", []
+                )
 
         # --------------------------------
         # Fallback to deterministic parser
@@ -154,7 +159,7 @@ async def update_trip(
             "PARSED COMMANDS:",
             parsed,
         )
-
+       
         # =================================
         # ADD PLACE
         # =================================
@@ -176,7 +181,7 @@ async def update_trip(
                 destination["lat"],
                 destination["lon"],
             )
-
+            
             if place is None:
 
                 raise HTTPException(

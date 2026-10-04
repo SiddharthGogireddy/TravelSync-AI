@@ -98,7 +98,7 @@ def parse_prompt(prompt: str):
     remove_match = re.search(
         r"(?:remove|delete|exclude)"
         r"\s+(?:the\s+)?(.+?)"
-        r"(?:\s+from\s+(?:my\s+)?trip)?$",
+        r"(?=\s+and\s+(?:add|include|visit)\b|\s+from\s+(?:my\s+)?trip\b|$)",
         text,
         re.IGNORECASE,
     )

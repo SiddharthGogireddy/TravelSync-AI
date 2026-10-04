@@ -17,6 +17,7 @@ Supported commands:
 2. remove_place
 3. set_budget
 4. regenerate_day
+5. set_interests
 
 Return this exact structure:
 
@@ -24,6 +25,17 @@ Return this exact structure:
     "actions": [
         {
             "type": "add_place",
+            "place": "Charminar"
+        }
+    ]
+}
+
+For removing a place:
+
+{
+    "actions": [
+        {
+            "type": "remove_place",
             "place": "Charminar"
         }
     ]
@@ -51,6 +63,29 @@ For regenerating a day:
     ]
 }
 
+For changing interests:
+
+{
+    "actions": [
+        {
+            "type": "set_interests",
+            "interests": ["Food", "History"]
+        }
+    ]
+}
+
+For changing interests for a specific day:
+
+{
+    "actions": [
+        {
+            "type": "set_interests",
+            "day": 2,
+            "interests": ["Food", "History"]
+        }
+    ]
+}
+
 Rules:
 
 - Extract only actions that are explicitly requested.
@@ -60,8 +95,28 @@ Rules:
 - Do not modify the trip.
 - If multiple actions are requested, return all of them.
 - For an unclear request, return an empty actions list.
+- Use the existing interest names when possible:
+  Food, History, Culture, Nature, Adventure, Beaches, Shopping, Religion.
 
-Example:
+Examples:
+
+User:
+"Add Charminar and remove Golconda Fort"
+
+Return:
+
+{
+    "actions": [
+        {
+            "type": "add_place",
+            "place": "Charminar"
+        },
+        {
+            "type": "remove_place",
+            "place": "Golconda Fort"
+        }
+    ]
+}
 
 User:
 "Regenerate day 2 and keep the budget under ₹30,000"
@@ -77,6 +132,21 @@ Return:
         {
             "type": "regenerate_day",
             "day": 2
+        }
+    ]
+}
+
+User:
+"Make day 2 more about food and history"
+
+Return:
+
+{
+    "actions": [
+        {
+            "type": "set_interests",
+            "day": 2,
+            "interests": ["Food", "History"]
         }
     ]
 }

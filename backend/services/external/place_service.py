@@ -7,6 +7,7 @@ load_dotenv()
 API_KEY = os.getenv("OPENTRIPMAP_API_KEY")
 
 BASE_URL = "https://api.opentripmap.com/0.1/en/places/radius"
+SEARCH_URL = "https://api.opentripmap.com/0.1/en/places/autosuggest"
 
 async def get_places(lat, lon):
     base_params = {
@@ -87,17 +88,6 @@ async def find_place(
     search_name = name.lower().strip()
 
     for place in places:
-
-        place_name = place.get(
-            "name",
-            ""
-        ).lower().strip()
-
-        if search_name == place_name:
-            return place
-
-    for place in places:
-
         place_name = place.get(
             "name",
             ""
@@ -106,4 +96,50 @@ async def find_place(
         if search_name in place_name:
             return place
 
+    # Fallback: search by place name
+    search_name_query = name
+
+    if name.lower().strip() == "golconda":
+        search_name_query = "Golconda Fort"
+
+    search_params = {
+        "name": search_name_query,
+        "radius": 50000,
+        "lon": lon,
+        "lat": lat,
+        "apikey": API_KEY,
+        "limit": 10,
+        "format": "json",
+    }
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        response = await client.get(
+            SEARCH_URL,
+            params=search_params,
+        )
+
+   
+
+    if response.status_code == 200:
+        result = response.json()
+
+        if result:
+            
+
+            for candidate in result:
+                result_lat = candidate.get("point", {}).get("lat")
+                result_lon = candidate.get("point", {}).get("lon")
+
+                if result_lat is None or result_lon is None:
+                    continue
+
+                distance = (
+                    (float(result_lat) - float(lat)) ** 2
+                    + (float(result_lon) - float(lon)) ** 2
+                ) ** 0.5
+
+                if distance < 1.0:
+                    return candidate
+
+          
     return None
