@@ -23,7 +23,7 @@ Category:
 {place.get("category")}
 
 Distance from previous attraction:
-{place.get("travel_from_previous_km")} km
+{place.get("travel_from_previous_km", place.get("distance_km", 0))} km
 
 Ranking score:
 {place.get("score")}

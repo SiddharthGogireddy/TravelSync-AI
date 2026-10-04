@@ -7,7 +7,7 @@ from backend.utils.helpers import normalize_place_name
 from backend.services.trip_editor.prompt_parser import (
     parse_prompt,
 )
-
+from backend.services.trip_editor.explanation_service import explain_attraction
 from backend.services.trip_editor.llm_interpreter import (
     interpret_trip_prompt,
 )
@@ -412,7 +412,9 @@ async def update_trip(
                 preferred_interests=parsed.get("preferred_interests", []),
                 avoid_categories=parsed.get("avoid_categories", []),
             )
-            
+            # Generate explanations for attractions in the regenerated day
+            for place in trip["trip"]["day_schedule"].get(str(day_number), []):
+                place["explanation"] = explain_attraction(place, trip["trip"])
 
             print(
                 "AFTER REGENERATE:"
