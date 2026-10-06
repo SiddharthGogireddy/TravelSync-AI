@@ -31,8 +31,9 @@ import {
   addTripNote,
   deleteTripNote,
   getTripRating,
- 
+  
   rateTrip,
+  
 } from "../services/api";
 
 import type {
