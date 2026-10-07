@@ -1,3 +1,4 @@
+import copy
 import json
 import re
 from datetime import datetime, timezone
@@ -267,6 +268,43 @@ def get_trip(trip_id: str):
         )
 
     return trip
+
+
+@router.post("/{trip_id}/duplicate")
+def duplicate_trip(trip_id: str):
+    original_trip_data = load_trip(trip_id)
+
+    if original_trip_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    # Deep copy the trip data so changes to the duplicate do not mutate the original
+    new_trip_data = copy.deepcopy(original_trip_data)
+
+    # Save as a new trip with a unique trip ID
+    new_trip_id = save_trip(new_trip_data)
+
+    # Metadata decisions:
+    # 1. Notes: Copy existing notes over to the duplicate under new_trip_id
+    #    so the user keeps their itinerary reminders, but can edit them independently.
+    existing_notes = get_notes(trip_id)
+    if isinstance(existing_notes, list):
+        for note in existing_notes:
+            if isinstance(note, str) and note.strip():
+                add_note(new_trip_id, note.strip())
+
+    # 2. Rating: Reset (do not copy rating to the new clone, it has not yet been experienced)
+    # 3. Favorite state: Reset (do not favorite the new clone by default)
+    # 4. Expenses: Reset (no expenses logged yet on the new clone)
+
+    return {
+        "trip_id": new_trip_id,
+        "original_trip_id": trip_id,
+        "message": "Trip duplicated successfully"
+    }
+
 
 @router.post("/{trip_id}/favorite")
 def favorite_trip(trip_id: str):

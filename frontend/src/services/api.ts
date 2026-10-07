@@ -261,4 +261,24 @@ export async function importTrip(
 
   return await res.json();
 }
+
+export async function duplicateTrip(
+  tripId: string
+): Promise<{
+  trip_id: string;
+  original_trip_id: string;
+  message: string;
+}> {
+  const res = await fetch(`${API}/trip/${tripId}/duplicate`, {
+    method: "POST",
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to duplicate trip");
+  }
+
+  return await res.json();
+}
+
 

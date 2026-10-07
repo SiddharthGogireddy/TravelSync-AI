@@ -36,6 +36,7 @@ import {
   downloadTripPdf,
   exportTrip,
   importTrip,
+  duplicateTrip,
 } from "../services/api";
 
 import type {
@@ -108,6 +109,22 @@ export default function TripView() {
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  const [duplicating, setDuplicating] = useState(false);
+
+  const handleDuplicateTrip = async () => {
+    if (!tripId) return;
+    try {
+      setDuplicating(true);
+      const res = await duplicateTrip(tripId);
+      alert(`Trip duplicated successfully! New ID: ${res.trip_id}`);
+      navigate(`/trip/${res.trip_id}`);
+    } catch (err: any) {
+      alert(err.message || "Failed to duplicate trip");
+    } finally {
+      setDuplicating(false);
+    }
   };
 
   /*
@@ -360,6 +377,15 @@ if (savedRating) {
         }}
       >
         Import Trip
+      </button>
+
+
+      {/* Duplicate Trip */}
+      <button
+        onClick={handleDuplicateTrip}
+        disabled={duplicating}
+      >
+        {duplicating ? "Duplicating..." : "Duplicate Trip"}
       </button>
 
 
@@ -933,6 +959,17 @@ if (savedRating) {
           marginTop: 30,
         }}
       >
+
+        <button
+          className="download-button"
+          onClick={handleDuplicateTrip}
+          disabled={duplicating}
+          style={{
+            background: "#0284c7",
+          }}
+        >
+          {duplicating ? "Duplicating..." : "Duplicate Trip"}
+        </button>
 
         <button
           className="download-button"
