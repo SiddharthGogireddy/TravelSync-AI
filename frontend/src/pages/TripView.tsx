@@ -389,6 +389,18 @@ if (savedRating) {
       </button>
 
 
+      {/* Compare Trip */}
+      <button
+        onClick={() => {
+          if (tripId) {
+            navigate(`/compare?trip1=${tripId}`);
+          }
+        }}
+      >
+        Compare Trip
+      </button>
+
+
       <TravelerConflicts
         conflicts={trip.traveler_conflicts}
       />

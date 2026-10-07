@@ -43,6 +43,157 @@ def get_trip_history():
     }
 
 
+def extract_comparison_metrics(trip_wrapper: dict, trip_id: str) -> dict:
+    trip = trip_wrapper.get("trip", {})
+    route = trip.get("route", {})
+    budget = trip.get("budget", {})
+    travelers = trip.get("travelers", [])
+    hotels = trip.get("hotels", [])
+    places = trip.get("places", [])
+    weather = trip.get("weather", [])
+
+    total_dist = route.get("distance_km")
+    if total_dist is None or not isinstance(total_dist, (int, float)):
+        total_dist = 0.0
+
+    total_budget_val = budget.get("total_budget")
+    if not isinstance(total_budget_val, (int, float)):
+        total_budget_val = 0.0
+
+    estimated_cost_val = budget.get("estimated_cost")
+    if not isinstance(estimated_cost_val, (int, float)):
+        estimated_cost_val = 0.0
+
+    remaining_val = budget.get("remaining")
+    if not isinstance(remaining_val, (int, float)):
+        remaining_val = total_budget_val - estimated_cost_val
+
+    hotel_names = [h.get("name", "Unknown Hotel") for h in hotels if isinstance(h, dict)]
+
+    return {
+        "trip_id": trip_id,
+        "source": trip.get("source", "N/A"),
+        "destination": trip.get("destination", "N/A"),
+        "duration_days": int(trip.get("days", 1)),
+        "travel_mode": trip.get("travel_mode", "car"),
+        "total_distance_km": round(float(total_dist), 2),
+        "traveler_count": len(travelers) if isinstance(travelers, list) else 1,
+        "total_budget": round(float(total_budget_val), 2),
+        "estimated_cost": round(float(estimated_cost_val), 2),
+        "remaining_budget": round(float(remaining_val), 2),
+        "budget_status": budget.get("status", "N/A"),
+        "hotel_count": len(hotels) if isinstance(hotels, list) else 0,
+        "hotels": hotel_names[:5],
+        "attractions_count": len(places) if isinstance(places, list) else 0,
+        "weather_days_available": len(weather) if isinstance(weather, list) else 0,
+        "weather_summary": [
+            {
+                "date": str(w.get("date", "N/A")),
+                "min_temp": w.get("min_temp", "N/A"),
+                "max_temp": w.get("max_temp", "N/A"),
+            }
+            for w in (weather[:int(trip.get("days", len(weather)))] if isinstance(weather, list) else [])
+        ],
+    }
+
+
+def build_comparison(m1: dict, m2: dict) -> dict:
+    c1, c2 = m1["estimated_cost"], m2["estimated_cost"]
+    if c1 < c2:
+        cheaper = m1["trip_id"]
+    elif c2 < c1:
+        cheaper = m2["trip_id"]
+    else:
+        cheaper = "equal"
+
+    d1, d2 = m1["duration_days"], m2["duration_days"]
+    if d1 < d2:
+        shorter_duration = m1["trip_id"]
+        longer_duration = m2["trip_id"]
+    elif d2 < d1:
+        shorter_duration = m2["trip_id"]
+        longer_duration = m1["trip_id"]
+    else:
+        shorter_duration = "equal"
+        longer_duration = "equal"
+
+    dist1, dist2 = m1["total_distance_km"], m2["total_distance_km"]
+    if dist1 < dist2:
+        shorter_distance = m1["trip_id"]
+        longer_distance = m2["trip_id"]
+    elif dist2 < dist1:
+        shorter_distance = m2["trip_id"]
+        longer_distance = m1["trip_id"]
+    else:
+        shorter_distance = "equal"
+        longer_distance = "equal"
+
+    b1, b2 = m1["total_budget"], m2["total_budget"]
+    if b1 > b2:
+        higher_budget = m1["trip_id"]
+    elif b2 > b1:
+        higher_budget = m2["trip_id"]
+    else:
+        higher_budget = "equal"
+
+    a1, a2 = m1["attractions_count"], m2["attractions_count"]
+    if a1 > a2:
+        more_attractions = m1["trip_id"]
+    elif a2 > a1:
+        more_attractions = m2["trip_id"]
+    else:
+        more_attractions = "equal"
+
+    return {
+        "cheaper_trip_id": cheaper,
+        "cost_difference": round(abs(c1 - c2), 2),
+        "shorter_duration_trip_id": shorter_duration,
+        "longer_duration_trip_id": longer_duration,
+        "duration_difference_days": abs(d1 - d2),
+        "shorter_distance_trip_id": shorter_distance,
+        "longer_distance_trip_id": longer_distance,
+        "distance_difference_km": round(abs(dist1 - dist2), 2),
+        "higher_budget_trip_id": higher_budget,
+        "budget_difference": round(abs(b1 - b2), 2),
+        "more_attractions_trip_id": more_attractions,
+        "attractions_difference": abs(a1 - a2),
+    }
+
+
+@router.get("/compare")
+def compare_trips(trip1: str, trip2: str):
+    if not trip1 or not trip2:
+        raise HTTPException(
+            status_code=400,
+            detail="Both 'trip1' and 'trip2' query parameters are required"
+        )
+
+    t1_data = load_trip(trip1)
+    if t1_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trip '{trip1}' not found"
+        )
+
+    t2_data = load_trip(trip2)
+    if t2_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Trip '{trip2}' not found"
+        )
+
+    m1 = extract_comparison_metrics(t1_data, trip1)
+    m2 = extract_comparison_metrics(t2_data, trip2)
+    comparison = build_comparison(m1, m2)
+
+    return {
+        "trip1": m1,
+        "trip2": m2,
+        "comparison": comparison,
+    }
+
+
+
 @router.get("/{trip_id}/export")
 def export_trip(trip_id: str):
     trip_data = load_trip(trip_id)

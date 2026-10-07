@@ -204,6 +204,9 @@ export type TripHistoryItem = {
   id: string;
   data: {
     trip: {
+      source?: string;
+      destination?: string;
+      days?: number;
       destination_location: {
         lat: number;
         lon: number;
@@ -280,5 +283,63 @@ export async function duplicateTrip(
 
   return await res.json();
 }
+
+export interface TripComparisonMetrics {
+  trip_id: string;
+  source: string;
+  destination: string;
+  duration_days: number;
+  travel_mode: string;
+  total_distance_km: number;
+  traveler_count: number;
+  total_budget: number;
+  estimated_cost: number;
+  remaining_budget: number;
+  budget_status: string;
+  hotel_count: number;
+  hotels: string[];
+  attractions_count: number;
+  weather_days_available: number;
+  weather_summary: Array<{
+    date: string;
+    min_temp: number | string;
+    max_temp: number | string;
+  }>;
+}
+
+export interface TripComparisonResult {
+  trip1: TripComparisonMetrics;
+  trip2: TripComparisonMetrics;
+  comparison: {
+    cheaper_trip_id: string;
+    cost_difference: number;
+    shorter_duration_trip_id: string;
+    longer_duration_trip_id: string;
+    duration_difference_days: number;
+    shorter_distance_trip_id: string;
+    longer_distance_trip_id: string;
+    distance_difference_km: number;
+    higher_budget_trip_id: string;
+    budget_difference: number;
+    more_attractions_trip_id: string;
+    attractions_difference: number;
+  };
+}
+
+export async function compareTrips(
+  trip1Id: string,
+  trip2Id: string
+): Promise<TripComparisonResult> {
+  const params = new URLSearchParams({ trip1: trip1Id, trip2: trip2Id });
+  const res = await fetch(`${API}/trip/compare?${params.toString()}`);
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to compare trips");
+  }
+
+  return await res.json();
+}
+
 
 

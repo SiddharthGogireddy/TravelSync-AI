@@ -6,6 +6,7 @@ import Results from "./pages/Results";
 import LoadTrip from "./pages/LoadTrip";
 import TripView from "./pages/TripView";
 import TripHistory from "./pages/TripHistory";
+import TripComparison from "./pages/TripComparison";
 import { generateTrip } from "./services/api";
 
 import type { TripRequest } from "./types/trip";
@@ -91,6 +92,17 @@ export default function App() {
                     >
                         Trip History
                     </Link>
+                    <Link
+                        to="/compare"
+                        style={{
+                            color: "#4f46e5",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                        }}
+                    >
+                        Compare Trips
+                    </Link>
                 </nav>
                 <Routes>
                     <Route
@@ -125,6 +137,10 @@ export default function App() {
     path="/load-trip"
     element={<LoadTrip />}
 />
+                    <Route
+                        path="/compare"
+                        element={<TripComparison />}
+                    />
                 </Routes>
             </div>
         </BrowserRouter>
