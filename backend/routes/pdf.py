@@ -28,6 +28,10 @@ def download_pdf(trip_id: str):
     trip_data = trip["trip"].copy()
     trip_data["trip_id"] = trip_id
 
+    from backend.services.storage.note_store import get_notes
+    if not trip_data.get("notes"):
+        trip_data["notes"] = get_notes(trip_id) or trip.get("notes", [])
+
     filename = generate_pdf(trip_data)
     
 

@@ -3,6 +3,7 @@ import { useState } from "react";
 import Dashboard from "../components/Dashboard";
 import BudgetCard from "../components/BudgetCard";
 import MapView from "../components/MapView";
+import { downloadTripPdf } from "../services/api";
 
 import type {
     TripResponse,
@@ -185,11 +186,11 @@ export default function Results({ data }: Props) {
 </button>
 
 <button
-    onClick={() =>
-        window.open(
-            `http://127.0.0.1:8000/trip/${data.trip_id}/pdf`
-        )
-    }
+    onClick={() => {
+        if (data.trip_id) {
+            downloadTripPdf(data.trip_id);
+        }
+    }}
     style={{
         marginLeft: 10,
     }}

@@ -33,7 +33,7 @@ import {
   getTripRating,
   
   rateTrip,
-  
+  downloadTripPdf,
 } from "../services/api";
 
 import type {
@@ -880,9 +880,9 @@ if (savedRating) {
         <button
           className="download-button"
           onClick={() => {
-            window.open(
-              `http://127.0.0.1:8000/trip/${tripId}/pdf`
-            );
+            if (tripId) {
+              downloadTripPdf(tripId);
+            }
           }}
         >
           Download PDF
