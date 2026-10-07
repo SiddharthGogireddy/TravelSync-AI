@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { BrowserRouter, Routes, Route, } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 
 import TripForm from "./components/TripForm";
 import Results from "./pages/Results";
@@ -47,6 +47,51 @@ export default function App() {
     return (
         <BrowserRouter>
            <div>
+                <nav
+                    style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 24,
+                        padding: "16px 20px",
+                        background: "#fff",
+                        borderBottom: "1px solid #e5e7eb",
+                        marginBottom: 24,
+                    }}
+                >
+                    <Link
+                        to="/"
+                        style={{
+                            color: "#4f46e5",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                        }}
+                    >
+                        Plan Trip
+                    </Link>
+                    <Link
+                        to="/load-trip"
+                        style={{
+                            color: "#4f46e5",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                        }}
+                    >
+                        Load / Restore Trip
+                    </Link>
+                    <Link
+                        to="/trip-history"
+                        style={{
+                            color: "#4f46e5",
+                            textDecoration: "none",
+                            fontWeight: 600,
+                            fontSize: "1rem",
+                        }}
+                    >
+                        Trip History
+                    </Link>
+                </nav>
                 <Routes>
                     <Route
                         path="/"

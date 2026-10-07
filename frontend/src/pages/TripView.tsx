@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import BudgetAlerts from "../components/BudgetAlerts";
 import AddExpenseModal from "../components/AddExpenseModal";
@@ -35,6 +35,7 @@ import {
   rateTrip,
   downloadTripPdf,
   exportTrip,
+  importTrip,
 } from "../services/api";
 
 import type {
@@ -83,6 +84,31 @@ export default function TripView() {
   const [tripRating, setTripRating] = useState<number | null>(null);
   const [ratingFeedback, setRatingFeedback] = useState("");
   const [ratingSaved, setRatingSaved] = useState(false);
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleQuickImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const parsed = JSON.parse(text);
+        const res = await importTrip(parsed);
+        alert(`Trip restored successfully! ID: ${res.trip_id}`);
+        navigate(`/trip/${res.trip_id}`);
+      } catch (err: any) {
+        alert(
+          err instanceof SyntaxError
+            ? "Malformed JSON: invalid syntax"
+            : err.message || "Failed to import trip"
+        );
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
 
   /*
    * Check whether this trip is already a favorite.
@@ -317,6 +343,23 @@ if (savedRating) {
         }}
       >
         Export Trip
+      </button>
+
+
+      {/* Import Trip */}
+      <input
+        type="file"
+        ref={importFileInputRef}
+        accept=".json,application/json"
+        style={{ display: "none" }}
+        onChange={handleQuickImportFile}
+      />
+      <button
+        onClick={() => {
+          importFileInputRef.current?.click();
+        }}
+      >
+        Import Trip
       </button>
 
 

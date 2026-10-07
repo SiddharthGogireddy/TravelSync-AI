@@ -236,4 +236,29 @@ export function exportTrip(tripId: string): void {
     `${API}/trip/${tripId}/export`,
     "_blank"
   );
-}
+}
+
+export async function importTrip(
+  tripData: unknown
+): Promise<{
+  trip_id: string;
+  message: string;
+  source: string;
+  destination: string;
+}> {
+  const res = await fetch(`${API}/trip/import`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(tripData),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to import trip");
+  }
+
+  return await res.json();
+}
+
