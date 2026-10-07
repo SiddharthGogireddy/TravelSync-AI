@@ -34,6 +34,7 @@ import {
   
   rateTrip,
   downloadTripPdf,
+  exportTrip,
 } from "../services/api";
 
 import type {
@@ -304,6 +305,18 @@ if (savedRating) {
         {isFavorite
           ? "★ Favorited"
           : "☆ Favorite"}
+      </button>
+
+
+      {/* Export Trip */}
+      <button
+        onClick={() => {
+          if (tripId) {
+            exportTrip(tripId);
+          }
+        }}
+      >
+        Export Trip
       </button>
 
 
@@ -873,9 +886,24 @@ if (savedRating) {
         style={{
           display: "flex",
           justifyContent: "flex-end",
+          gap: 12,
           marginTop: 30,
         }}
       >
+
+        <button
+          className="download-button"
+          onClick={() => {
+            if (tripId) {
+              exportTrip(tripId);
+            }
+          }}
+          style={{
+            background: "#4f46e5",
+          }}
+        >
+          Export Trip
+        </button>
 
         <button
           className="download-button"

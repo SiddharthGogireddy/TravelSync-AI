@@ -1,17 +1,24 @@
-from fastapi import APIRouter, HTTPException
+import json
+import re
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
-from fastapi.responses import (
-    FileResponse,
+
+from backend.services.expense.expense_store import get_expenses
+from backend.services.storage.favorite_store import (
+    add_favorite,
+    remove_favorite,
+    is_favorite,
 )
 from backend.services.storage.note_store import (
     get_notes,
     add_note,
     delete_note,
 )
-from backend.services.storage.favorite_store import (
-    add_favorite,
-    remove_favorite,
-    is_favorite,
+from backend.services.storage.rating_store import (
+    get_rating,
+    save_rating,
 )
 from backend.services.storage.trip_store import (
     load_trip,
@@ -24,10 +31,7 @@ router = APIRouter(
     prefix="/trip",
     tags=["Trip"]
 )
-from backend.services.storage.rating_store import (
-    get_rating,
-    save_rating,
-)
+
 
 @router.get("/history")
 def get_trip_history():
@@ -36,6 +40,50 @@ def get_trip_history():
     return {
         "trips": trips
     }
+
+
+@router.get("/{trip_id}/export")
+def export_trip(trip_id: str):
+    trip_data = load_trip(trip_id)
+
+    if trip_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    trip_info = trip_data.get("trip", {})
+    source = trip_info.get("source", "trip").split(",")[0].strip()
+    destination = trip_info.get("destination", "destination").split(",")[0].strip()
+
+    safe_source = re.sub(r'[<>:"/\\|?* ]', '_', source)
+    safe_destination = re.sub(r'[<>:"/\\|?* ]', '_', destination)
+    filename = f"{safe_source}_to_{safe_destination}_{trip_id[:8]}_export.json"
+
+    export_payload = {
+        "version": "1.0",
+        "trip_id": trip_id,
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "trip": trip_info,
+        "dashboard": trip_data.get("dashboard", {}),
+        "summary": trip_data.get("summary", {}),
+        "notes": get_notes(trip_id),
+        "rating": get_rating(trip_id),
+        "is_favorite": is_favorite(trip_id),
+        "expenses": get_expenses(trip_id),
+    }
+
+    content = json.dumps(export_payload, indent=2)
+
+    return Response(
+        content=content,
+        media_type="application/json",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+
 @router.get("/{trip_id}")
 def get_trip(trip_id: str):
     trip = load_trip(trip_id)

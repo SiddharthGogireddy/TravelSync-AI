@@ -222,9 +222,18 @@ export async function getTripHistory(): Promise<TripHistoryItem[]> {
   const result = await res.json();
 
   return result.trips;
-}export function downloadTripPdf(tripId: string): void {
-    window.open(
-        `${API}/trip/${tripId}/pdf`,
-        "_blank"
-    );
 }
+
+export function downloadTripPdf(tripId: string): void {
+  window.open(
+    `${API}/trip/${tripId}/pdf`,
+    "_blank"
+  );
+}
+
+export function exportTrip(tripId: string): void {
+  window.open(
+    `${API}/trip/${tripId}/export`,
+    "_blank"
+  );
+}

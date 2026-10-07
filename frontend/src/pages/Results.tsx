@@ -3,7 +3,7 @@ import { useState } from "react";
 import Dashboard from "../components/Dashboard";
 import BudgetCard from "../components/BudgetCard";
 import MapView from "../components/MapView";
-import { downloadTripPdf } from "../services/api";
+import { downloadTripPdf, exportTrip } from "../services/api";
 
 import type {
     TripResponse,
@@ -196,6 +196,19 @@ export default function Results({ data }: Props) {
     }}
 >
     Download PDF
+</button>
+
+<button
+    onClick={() => {
+        if (data.trip_id) {
+            exportTrip(data.trip_id);
+        }
+    }}
+    style={{
+        marginLeft: 10,
+    }}
+>
+    Export Trip
 </button>
 
 {showItinerary && (
