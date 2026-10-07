@@ -236,6 +236,203 @@ def export_trip(trip_id: str):
     )
 
 
+def compute_trip_insights(trip_wrapper: dict, trip_id: str) -> dict:
+    trip = trip_wrapper.get("trip", {})
+    route = trip.get("route", {})
+    budget = trip.get("budget", {})
+    travelers = trip.get("travelers", [])
+    hotels = trip.get("hotels", [])
+    day_schedule = trip.get("day_schedule", {})
+
+    source = trip.get("source", "Origin")
+    destination = trip.get("destination", "Destination")
+    days = int(trip.get("days") or len(day_schedule) or 1)
+    if days < 1:
+        days = 1
+
+    total_cost = float(budget.get("estimated_cost") or budget.get("total_budget") or 0.0)
+    total_budget = float(budget.get("total_budget") or 0.0)
+    traveler_count = max(len(travelers), 1)
+
+    cost_per_traveler = round(total_cost / traveler_count, 2)
+    cost_per_day = round(total_cost / days, 2)
+    distance = float(route.get("distance_km") or 0.0)
+
+    # Day-by-day calculations
+    day_breakdown = []
+    total_attractions = 0
+    inter_stop_distances = []
+    day_travel_distances = {}
+    day_attraction_counts = {}
+
+    for d_key, items in sorted(day_schedule.items(), key=lambda x: int(x[0]) if x[0].isdigit() else 999):
+        if not isinstance(items, list):
+            continue
+        attr_count = len(items)
+        total_attractions += attr_count
+        day_attraction_counts[d_key] = attr_count
+
+        d_dist = 0.0
+        for i, item in enumerate(items):
+            dist_prev = item.get("travel_from_previous_km")
+            if isinstance(dist_prev, (int, float)):
+                d_dist += float(dist_prev)
+                if i > 0:
+                    inter_stop_distances.append(float(dist_prev))
+
+        day_travel_distances[d_key] = round(d_dist, 2)
+        day_breakdown.append({
+            "day": d_key,
+            "attractions_count": attr_count,
+            "travel_distance_km": round(d_dist, 2),
+        })
+
+    attractions_per_day = round(total_attractions / days, 2) if days > 0 else 0.0
+    avg_stop_dist = (
+        round(sum(inter_stop_distances) / len(inter_stop_distances), 2)
+        if inter_stop_distances
+        else 0.0
+    )
+
+    budget_util_pct = (
+        round((total_cost / total_budget) * 100, 1) if total_budget > 0 else 0.0
+    )
+    hotel_count = len(hotels)
+
+    metrics = {
+        "total_trip_cost": total_cost,
+        "cost_per_traveler": cost_per_traveler,
+        "cost_per_day": cost_per_day,
+        "distance": distance,
+        "attractions_per_day": attractions_per_day,
+        "average_distance_between_stops": avg_stop_dist,
+        "traveler_count": traveler_count,
+        "budget_utilization_pct": budget_util_pct,
+        "hotel_count": hotel_count,
+        "total_attractions": total_attractions,
+        "days": days,
+        "planned_budget": total_budget,
+    }
+
+    # Deterministic observations based on actual data
+    observations = []
+
+    # 1. Budget observation
+    if total_budget > 0:
+        if budget_util_pct > 100:
+            over_amount = round(total_cost - total_budget, 2)
+            observations.append({
+                "category": "budget",
+                "type": "warning",
+                "title": "Budget Utilization Alert",
+                "description": f"Budget utilization is high ({budget_util_pct}%). Estimated cost exceeds planned budget by ₹{over_amount:,.2f}."
+            })
+        elif budget_util_pct >= 85:
+            remaining = round(total_budget - total_cost, 2)
+            observations.append({
+                "category": "budget",
+                "type": "success",
+                "title": "Optimal Budget Utilization",
+                "description": f"Budget is well utilized ({budget_util_pct}%). You have a comfortable buffer of ₹{remaining:,.2f} remaining."
+            })
+        else:
+            remaining = round(total_budget - total_cost, 2)
+            observations.append({
+                "category": "budget",
+                "type": "info",
+                "title": "Under Budget",
+                "description": f"Trip is under budget ({budget_util_pct}% utilized) with ₹{remaining:,.2f} unallocated buffer."
+            })
+    else:
+        observations.append({
+            "category": "budget",
+            "type": "info",
+            "title": "Estimated Cost",
+            "description": f"Total estimated trip cost is ₹{total_cost:,.2f} across {days} days."
+        })
+
+    # 2. Sightseeing intensity observation
+    if day_attraction_counts:
+        max_day = max(day_attraction_counts, key=day_attraction_counts.get)
+        min_day = min(day_attraction_counts, key=day_attraction_counts.get)
+        max_count = day_attraction_counts[max_day]
+        min_count = day_attraction_counts[min_day]
+        if max_count > min_count:
+            observations.append({
+                "category": "sightseeing",
+                "type": "info",
+                "title": "Sightseeing Intensity",
+                "description": f"Day {max_day} has the highest number of attractions ({max_count}), while Day {min_day} has a lighter pace with {min_count} attractions."
+            })
+        else:
+            observations.append({
+                "category": "sightseeing",
+                "type": "info",
+                "title": "Sightseeing Balance",
+                "description": f"Sightseeing is evenly paced with {max_count} attractions scheduled per day across all {days} days."
+            })
+
+    # 3. Travel & pacing observation
+    if day_travel_distances:
+        max_travel_day = max(day_travel_distances, key=day_travel_distances.get)
+        max_travel_km = day_travel_distances[max_travel_day]
+        avg_day_travel = round(sum(day_travel_distances.values()) / len(day_travel_distances), 2)
+        if max_travel_km > (avg_day_travel * 1.3) and max_travel_km > 0:
+            observations.append({
+                "category": "travel",
+                "type": "info",
+                "title": "Travel Pacing Variation",
+                "description": f"Day {max_travel_day} has significantly more local travel ({max_travel_km} km) than other days (daily average is {avg_day_travel} km)."
+            })
+        elif max_travel_km > 0:
+            observations.append({
+                "category": "travel",
+                "type": "info",
+                "title": "Even Transit Distribution",
+                "description": f"Local travel between stops is well balanced across days, averaging {avg_day_travel} km per day."
+            })
+
+    if distance > 0:
+        clean_source = source.split(",")[0].strip()
+        clean_dest = destination.split(",")[0].strip()
+        observations.append({
+            "category": "route",
+            "type": "info",
+            "title": "Inter-City Distance",
+            "description": f"Direct itinerary route spans {distance} km from {clean_source} to {clean_dest}."
+        })
+
+    # 4. Lodging & traveler distribution observation
+    traveler_label = "traveler" if traveler_count == 1 else "travelers"
+    hotel_label = "hotel option" if hotel_count == 1 else "hotel options"
+    observations.append({
+        "category": "group",
+        "type": "info",
+        "title": "Group & Lodging Logistics",
+        "description": f"Configured for {traveler_count} {traveler_label} with an average cost of ₹{cost_per_traveler:,.2f} per person and {hotel_count} {hotel_label} identified."
+    })
+
+    return {
+        "trip_id": trip_id,
+        "metrics": metrics,
+        "day_by_day_breakdown": day_breakdown,
+        "observations": observations,
+    }
+
+
+@router.get("/{trip_id}/insights")
+def get_trip_insights(trip_id: str):
+    trip_data = load_trip(trip_id)
+
+    if trip_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    return compute_trip_insights(trip_data, trip_id)
+
+
 @router.post("/import")
 def import_trip(payload: dict = Body(...)):
     if not isinstance(payload, dict):

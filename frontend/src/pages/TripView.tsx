@@ -14,6 +14,7 @@ import MapView from "../components/MapView";
 import SettlementCard from "../components/SettlementCard";
 import WeatherCard from "../components/WeatherCard";
 import TravelerConflicts from "../components/TravelerConflicts";
+import TripInsightsCard from "../components/TripInsightsCard";
 
 import { useNavigate } from "react-router-dom";
 
@@ -400,6 +401,8 @@ if (savedRating) {
         Compare Trip
       </button>
 
+      {/* Trip Analytics & Insights */}
+      <TripInsightsCard tripId={tripId} />
 
       <TravelerConflicts
         conflicts={trip.traveler_conflicts}
@@ -428,32 +431,6 @@ if (savedRating) {
         <BudgetPieChart
           categories={trip.budget.categories}
         />
-
-      </div>
-
-
-      <div className="section card">
-
-        <h2 className="section-title">
-          Travelers
-        </h2>
-
-        {trip.travelers.map(
-          (
-            traveler: Traveler,
-            index: number
-          ) => (
-            <div key={index}>
-              <strong>
-                {traveler.name}
-              </strong>
-
-              {" - "}
-
-              {traveler.budget}
-            </div>
-          )
-        )}
 
       </div>
 

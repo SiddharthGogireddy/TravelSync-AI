@@ -341,5 +341,54 @@ export async function compareTrips(
   return await res.json();
 }
 
+export interface TripInsightsMetrics {
+  total_trip_cost: number;
+  cost_per_traveler: number;
+  cost_per_day: number;
+  distance: number;
+  attractions_per_day: number;
+  average_distance_between_stops: number;
+  traveler_count: number;
+  budget_utilization_pct: number;
+  hotel_count: number;
+  total_attractions: number;
+  days: number;
+  planned_budget: number;
+}
+
+export interface DayBreakdown {
+  day: string;
+  attractions_count: number;
+  travel_distance_km: number;
+}
+
+export interface TripInsightObservation {
+  category: "budget" | "sightseeing" | "travel" | "route" | "group";
+  type: "warning" | "success" | "info";
+  title: string;
+  description: string;
+}
+
+export interface TripInsightsResponse {
+  trip_id: string;
+  metrics: TripInsightsMetrics;
+  day_by_day_breakdown: DayBreakdown[];
+  observations: TripInsightObservation[];
+}
+
+export async function getTripInsights(
+  tripId: string
+): Promise<TripInsightsResponse> {
+  const res = await fetch(`${API}/trip/${tripId}/insights`);
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to fetch trip insights");
+  }
+
+  return await res.json();
+}
+
+
 
 
