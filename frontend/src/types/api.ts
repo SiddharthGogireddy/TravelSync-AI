@@ -86,7 +86,21 @@ export interface Place {
     matched_traveler_preferences?: Array<{ traveler: string; interests: string[] }>;
     match_count?: number;
     travel_from_previous_km?: number | null;
+    travel_time_minutes?: number;
+    time_window?: string;
+    arrival_time?: string;
+    departure_time?: string;
+    is_open_on_arrival?: boolean;
+    timing_status?: string;
+    opening_hours?: {
+        opens: string;
+        closes: string;
+        display: string;
+        visit_duration_minutes?: number;
+        closed_days?: string[];
+    };
 }
+
 export interface ItineraryDay {
     day: number;
     title: string;

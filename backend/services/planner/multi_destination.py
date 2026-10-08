@@ -219,8 +219,16 @@ async def build_multi_destination_trip(request) -> dict:
             })
         stop["hotel_count"] = len(raw_hotels)
 
+    from backend.services.planner.opening_hours_scheduler import apply_opening_hours_to_schedule
+    day_schedule, opening_hours_notes = apply_opening_hours_to_schedule(
+        day_schedule=day_schedule,
+        travel_mode=travel_mode,
+        available_places=all_places,
+    )
+
     # 6. Overall summaries
     route_summary = {
+
         "distance_km": round(total_distance_km, 2),
         "duration_hours": round(total_duration_hours, 2),
     }
@@ -277,7 +285,9 @@ async def build_multi_destination_trip(request) -> dict:
         "hotels": all_hotels,
         "day_schedule": day_schedule,
         "budget": budget,
+        "opening_hours_notes": opening_hours_notes,
     }
+
 
     # 8. Dashboard and Summary
     trip_data["dashboard"] = build_dashboard(trip_data)

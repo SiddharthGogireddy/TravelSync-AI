@@ -286,7 +286,14 @@ async def build_trip(request):
         day_schedule,
         weather_summary,
     )
-    print("\nWEATHER-AWARE SCHEDULE:")
+    from backend.services.planner.opening_hours_scheduler import apply_opening_hours_to_schedule
+    day_schedule, opening_hours_notes = apply_opening_hours_to_schedule(
+        day_schedule=day_schedule,
+        travel_mode=travel_mode,
+        available_places=matched_places,
+    )
+    print("\nWEATHER & OPENING-HOURS-AWARE SCHEDULE:")
+
 
     for index, (day, places) in enumerate(day_schedule.items()):
         if index >= len(weather_summary):
@@ -450,6 +457,7 @@ async def build_trip(request):
     )
     trip_data["constraint_analysis"] = constraint_analysis
     trip_data["constraints"] = constraints_dict
+    trip_data["opening_hours_notes"] = opening_hours_notes
 
     trip_data["dashboard"] = build_dashboard(
         trip_data
