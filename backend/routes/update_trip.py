@@ -739,4 +739,45 @@ async def resolve_group_conflicts_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
+
+
+class AssistantChatRequest(BaseModel):
+    message: str
+
+
+@router.post("/{trip_id}/assistant-chat")
+async def assistant_chat_endpoint(
+    trip_id: str,
+    request: AssistantChatRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.ai_assistant import answer_trip_question
+    result = answer_trip_question(
+        trip_data=inner_trip,
+        message=request.message,
+    )
+
+    # Store message in history if exists
+    history = inner_trip.get("assistant_history", [])
+    history.append({"role": "user", "text": request.message})
+    history.append({"role": "assistant", "text": result["reply"]})
+    inner_trip["assistant_history"] = history[-20:]  # Keep latest 20
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = inner_trip
+    else:
+        raw_trip = inner_trip
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "reply": result["reply"],
+        "topic": result["topic"],
+        "suggested_actions": result["suggested_actions"],
+        "trip_highlights": result["trip_highlights"],
+    }
 

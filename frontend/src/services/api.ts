@@ -609,4 +609,30 @@ export async function resolveGroupConflicts(
 
   return await res.json();
 }
+
+export async function sendAssistantChatMessage(
+  tripId: string,
+  message: string
+): Promise<{
+  success: boolean;
+  reply: string;
+  topic: string;
+  suggested_actions: string[];
+  trip_highlights: any;
+}> {
+  const res = await fetch(`${API}/trip/${tripId}/assistant-chat`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ message }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to send chat message");
+  }
+
+  return await res.json();
+}
 

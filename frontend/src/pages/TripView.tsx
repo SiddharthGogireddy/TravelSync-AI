@@ -45,6 +45,7 @@ import {
   reallocateTripBudget,
   castGroupVote,
   resolveGroupConflicts,
+  sendAssistantChatMessage,
 } from "../services/api";
 
 
@@ -305,6 +306,48 @@ export default function TripView() {
       alert(err.message || "Failed to resolve conflicts");
     } finally {
       setResolvingConflicts(false);
+    }
+  };
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatInput, setChatInput] = useState("");
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
+    {
+      role: "assistant",
+      text: "👋 Hi! I am your TravelSync AI Copilot. Ask me anything about packing checklists, famous regional delicacies, safety tips, or best visit hours for your trip!",
+    },
+  ]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSuggestions, setChatSuggestions] = useState<string[]>([
+    "What should I pack?",
+    "Top local dishes to try",
+    "Best timing & sunset spot",
+    "Safety & cultural tips",
+  ]);
+
+  const handleSendChatMessage = async (msgText?: string) => {
+    const textToSend = (msgText || chatInput).trim();
+    if (!textToSend || !tripId || chatLoading) return;
+
+    setChatMessages((prev) => [...prev, { role: "user", text: textToSend }]);
+    setChatInput("");
+    setChatLoading(true);
+
+    try {
+      const res = await sendAssistantChatMessage(tripId, textToSend);
+      if (res.reply) {
+        setChatMessages((prev) => [...prev, { role: "assistant", text: res.reply }]);
+        if (res.suggested_actions && res.suggested_actions.length > 0) {
+          setChatSuggestions(res.suggested_actions);
+        }
+      }
+    } catch (err: any) {
+      setChatMessages((prev) => [
+        ...prev,
+        { role: "assistant", text: `⚠️ Error: ${err.message || "Could not fetch response"}` },
+      ]);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -2619,6 +2662,232 @@ if (savedRating) {
         </div>
       )}
 
+      {/* Floating AI Travel Assistant (Copilot) Widget */}
+      {!chatOpen && (
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            padding: "12px 20px",
+            borderRadius: 30,
+            background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+            color: "#ffffff",
+            border: "none",
+            fontWeight: 700,
+            fontSize: "0.92rem",
+            cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(124, 58, 237, 0.35)",
+            zIndex: 999,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <span>🤖</span> AI Travel Assistant
+        </button>
+      )}
+
+      {chatOpen && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            width: 380,
+            maxHeight: 560,
+            height: "80vh",
+            background: "#ffffff",
+            borderRadius: 16,
+            border: "1px solid #e2e8f0",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+            zIndex: 1000,
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+          }}
+        >
+          {/* Assistant Header */}
+          <div
+            style={{
+              padding: "14px 18px",
+              background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+              color: "#ffffff",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", gap: 6 }}>
+                <span>🤖</span> TravelSync AI Copilot
+              </div>
+              <div style={{ fontSize: "0.74rem", opacity: 0.9, marginTop: 2 }}>
+                Trip Expert for {(trip as any).destination || "your trip"}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setChatOpen(false)}
+              style={{
+                background: "rgba(255, 255, 255, 0.2)",
+                border: "none",
+                borderRadius: "50%",
+                width: 28,
+                height: 28,
+                color: "#ffffff",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontWeight: 700,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Message Thread */}
+          <div
+            style={{
+              flex: 1,
+              padding: "14px 16px",
+              overflowY: "auto",
+              display: "flex",
+              flexDirection: "column",
+              gap: 12,
+              background: "#f8fafc",
+            }}
+          >
+            {chatMessages.map((msg, idx) => (
+              <div
+                key={idx}
+                style={{
+                  alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                  maxWidth: "84%",
+                  padding: "10px 14px",
+                  borderRadius: msg.role === "user" ? "14px 14px 2px 14px" : "14px 14px 14px 2px",
+                  background: msg.role === "user" ? "#4f46e5" : "#ffffff",
+                  color: msg.role === "user" ? "#ffffff" : "#1e293b",
+                  border: msg.role === "user" ? "none" : "1px solid #e2e8f0",
+                  fontSize: "0.84rem",
+                  lineHeight: 1.45,
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                  whiteSpace: "pre-line",
+                }}
+              >
+                {msg.text}
+              </div>
+            ))}
+
+            {chatLoading && (
+              <div
+                style={{
+                  alignSelf: "flex-start",
+                  padding: "8px 14px",
+                  borderRadius: "14px 14px 14px 2px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  fontSize: "0.8rem",
+                  color: "#64748b",
+                  fontStyle: "italic",
+                }}
+              >
+                Thinking...
+              </div>
+            )}
+          </div>
+
+          {/* Suggestion Chips */}
+          <div
+            style={{
+              padding: "8px 12px",
+              background: "#ffffff",
+              borderTop: "1px solid #f1f5f9",
+              display: "flex",
+              flexWrap: "nowrap",
+              overflowX: "auto",
+              gap: 6,
+            }}
+          >
+            {chatSuggestions.map((sug, sIdx) => (
+              <button
+                key={sIdx}
+                type="button"
+                disabled={chatLoading}
+                onClick={() => handleSendChatMessage(sug)}
+                style={{
+                  padding: "4px 10px",
+                  fontSize: "0.72rem",
+                  borderRadius: 14,
+                  background: "#f1f5f9",
+                  color: "#475569",
+                  border: "1px solid #e2e8f0",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                }}
+              >
+                {sug}
+              </button>
+            ))}
+          </div>
+
+          {/* Input Box */}
+          <div
+            style={{
+              padding: "10px 12px",
+              background: "#ffffff",
+              borderTop: "1px solid #e2e8f0",
+              display: "flex",
+              gap: 8,
+              alignItems: "center",
+            }}
+          >
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  handleSendChatMessage();
+                }
+              }}
+              placeholder="Ask Copilot anything..."
+              style={{
+                flex: 1,
+                padding: "8px 12px",
+                fontSize: "0.84rem",
+                borderRadius: 8,
+                border: "1px solid #cbd5e1",
+                outline: "none",
+              }}
+            />
+            <button
+              type="button"
+              disabled={chatLoading || !chatInput.trim()}
+              onClick={() => handleSendChatMessage()}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 8,
+                background: chatInput.trim() ? "#4f46e5" : "#94a3b8",
+                color: "#ffffff",
+                border: "none",
+                fontWeight: 600,
+                fontSize: "0.82rem",
+                cursor: chatInput.trim() ? "pointer" : "default",
+              }}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-}
+}
