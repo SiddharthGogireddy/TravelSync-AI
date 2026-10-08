@@ -780,4 +780,60 @@ async def assistant_chat_endpoint(
         "suggested_actions": result["suggested_actions"],
         "trip_highlights": result["trip_highlights"],
     }
+
+
+@router.get("/{trip_id}/optimization-score")
+async def get_optimization_score_endpoint(
+    trip_id: str,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.ai_trip_optimizer import calculate_trip_optimization_score
+    score_data = calculate_trip_optimization_score(inner_trip)
+
+    # Cache back into trip
+    inner_trip["optimization_score"] = score_data
+    if "trip" in raw_trip:
+        raw_trip["trip"] = inner_trip
+    else:
+        raw_trip = inner_trip
+    update_saved_trip(trip_id, raw_trip)
+
+    return {
+        "success": True,
+        "optimization_score": score_data,
+    }
+
+
+@router.post("/{trip_id}/optimize-trip")
+async def optimize_trip_endpoint(
+    trip_id: str,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.ai_trip_optimizer import optimize_trip_itinerary
+    updated_inner, audit = optimize_trip_itinerary(inner_trip)
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to optimize trip"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
+
 

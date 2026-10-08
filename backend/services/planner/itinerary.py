@@ -494,6 +494,9 @@ async def build_trip(request):
     from backend.services.planner.group_decision_engine import evaluate_group_decisions
     trip_data["group_decisions"] = evaluate_group_decisions(trip_data)
 
+    from backend.services.planner.ai_trip_optimizer import calculate_trip_optimization_score
+    trip_data["optimization_score"] = calculate_trip_optimization_score(trip_data)
+
     trip_data["dashboard"] = build_dashboard(
         trip_data
     )

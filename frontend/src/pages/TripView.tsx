@@ -46,6 +46,7 @@ import {
   castGroupVote,
   resolveGroupConflicts,
   sendAssistantChatMessage,
+  optimizeTrip,
 } from "../services/api";
 
 
@@ -309,33 +310,32 @@ export default function TripView() {
     }
   };
 
+  // Step 59: AI Assistant Copilot State
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInput, setChatInput] = useState("");
+  const [chatLoading, setChatLoading] = useState(false);
   const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; text: string }>>([
     {
       role: "assistant",
-      text: "👋 Hi! I am your TravelSync AI Copilot. Ask me anything about packing checklists, famous regional delicacies, safety tips, or best visit hours for your trip!",
+      text: "Hi! I am your TravelSync AI Copilot. Ask me about your itinerary, weather advice, packing tips, or route alternatives!",
     },
   ]);
-  const [chatLoading, setChatLoading] = useState(false);
   const [chatSuggestions, setChatSuggestions] = useState<string[]>([
-    "What should I pack?",
-    "Top local dishes to try",
-    "Best timing & sunset spot",
-    "Safety & cultural tips",
+    "What should I pack for this trip?",
+    "Where should I eat lunch?",
+    "What is the best time to visit top spots?",
+    "Give me an overview of today schedule",
   ]);
 
-  const handleSendChatMessage = async (msgText?: string) => {
-    const textToSend = (msgText || chatInput).trim();
-    if (!textToSend || !tripId || chatLoading) return;
-
-    setChatMessages((prev) => [...prev, { role: "user", text: textToSend }]);
-    setChatInput("");
-    setChatLoading(true);
-
+  const handleSendChatMessage = async (msgToSend?: string) => {
+    const text = (msgToSend !== undefined ? msgToSend : chatInput).trim();
+    if (!text || !tripId || chatLoading) return;
+    setChatMessages((prev) => [...prev, { role: "user", text }]);
+    if (msgToSend === undefined) setChatInput("");
     try {
-      const res = await sendAssistantChatMessage(tripId, textToSend);
-      if (res.reply) {
+      setChatLoading(true);
+      const res = await sendAssistantChatMessage(tripId, text);
+      if (res && res.reply) {
         setChatMessages((prev) => [...prev, { role: "assistant", text: res.reply }]);
         if (res.suggested_actions && res.suggested_actions.length > 0) {
           setChatSuggestions(res.suggested_actions);
@@ -344,10 +344,30 @@ export default function TripView() {
     } catch (err: any) {
       setChatMessages((prev) => [
         ...prev,
-        { role: "assistant", text: `⚠️ Error: ${err.message || "Could not fetch response"}` },
+        { role: "assistant", text: "Sorry, could not reach the assistant: " + err.message },
       ]);
     } finally {
       setChatLoading(false);
+    }
+  };
+
+  // Step 60: AI Trip Optimization State
+  const [optimizingTrip, setOptimizingTrip] = useState(false);
+  const [optimizationAudit, setOptimizationAudit] = useState<any>(null);
+
+  const handleExecuteOptimization = async () => {
+    if (!tripId || optimizingTrip) return;
+    try {
+      setOptimizingTrip(true);
+      const res = await optimizeTrip(tripId);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+        setOptimizationAudit(res.audit);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to optimize trip");
+    } finally {
+      setOptimizingTrip(false);
     }
   };
 
@@ -532,6 +552,7 @@ if (savedRating) {
   const transportRecs = (trip as any)?.transport_recommendations;
   const budgetRealloc = (trip as any)?.budget_reallocation;
   const groupDecisions = (trip as any)?.group_decisions;
+  const optimizationScore = (trip as any)?.optimization_score;
 
 
 
@@ -656,6 +677,244 @@ if (savedRating) {
 
       {/* Trip Analytics & Insights */}
       <TripInsightsCard tripId={tripId} />
+
+      {/* STEP 60: AI Trip Quality & Holistic Optimization Score Card */}
+      {optimizationScore && (
+        <div
+          style={{
+            background: "#ffffff",
+            borderRadius: 16,
+            border: "1px solid #e0e7ff",
+            boxShadow: "0 10px 25px -5px rgba(99, 102, 241, 0.1), 0 8px 10px -6px rgba(99, 102, 241, 0.05)",
+            padding: 24,
+            margin: "24px 0",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              flexWrap: "wrap",
+              gap: 16,
+              marginBottom: 20,
+            }}
+          >
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "1.6rem" }}>⚡</span>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#1e1b4b" }}>
+                  AI Trip Quality & Optimization Score
+                </h3>
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)",
+                    color: "#ffffff",
+                    padding: "4px 12px",
+                    borderRadius: 20,
+                    fontSize: "0.78rem",
+                    fontWeight: 700,
+                    letterSpacing: "0.03em",
+                  }}
+                >
+                  STEP 60 ENGINE
+                </span>
+              </div>
+              <p style={{ margin: "6px 0 0 0", fontSize: "0.86rem", color: "#6b7280" }}>
+                Holistic multi-variable quality audit evaluating transit efficiency, pacing, budget adherence, and group alignment.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div
+                style={{
+                  background: "linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%)",
+                  border: "2px solid #818cf8",
+                  borderRadius: 16,
+                  padding: "10px 18px",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#3730a3", lineHeight: 1 }}>
+                  {optimizationScore.overall_score}
+                  <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#6366f1" }}>/100</span>
+                </div>
+                <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#4338ca", marginTop: 4, textTransform: "uppercase" }}>
+                  {optimizationScore.tier_badge || "Optimized"}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleExecuteOptimization}
+                disabled={optimizingTrip}
+                style={{
+                  background: "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "12px 20px",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  cursor: optimizingTrip ? "not-allowed" : "pointer",
+                  opacity: optimizingTrip ? 0.7 : 1,
+                  boxShadow: "0 4px 14px rgba(79, 70, 229, 0.35)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <span>⚡</span>
+                {optimizingTrip ? "Optimizing Itinerary..." : "One-Click AI Route Polish"}
+              </button>
+            </div>
+          </div>
+
+          {/* Audit banner if just executed */}
+          {optimizationAudit && (
+            <div
+              style={{
+                background: "#ecfdf5",
+                border: "1px solid #6ee7b7",
+                borderRadius: 12,
+                padding: "12px 16px",
+                marginBottom: 18,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+              }}
+            >
+              <span style={{ fontSize: "1.2rem" }}>✨</span>
+              <div style={{ flex: 1, fontSize: "0.86rem", color: "#065f46", fontWeight: 600 }}>
+                {optimizationAudit.summary}
+              </div>
+            </div>
+          )}
+
+          {/* Metrics Breakdown */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 14,
+              marginBottom: 20,
+            }}
+          >
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
+                <span>🚗 Route Efficiency</span>
+                <strong>{optimizationScore.metrics?.route_efficiency || 85}%</strong>
+              </div>
+              <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${optimizationScore.metrics?.route_efficiency || 85}%`,
+                    height: "100%",
+                    background: "#4f46e5",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
+                <span>⏱️ Daily Pacing</span>
+                <strong>{optimizationScore.metrics?.pacing_score || 85}%</strong>
+              </div>
+              <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${optimizationScore.metrics?.pacing_score || 85}%`,
+                    height: "100%",
+                    background: "#0ea5e9",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
+                <span>💵 Budget Adherence</span>
+                <strong>{optimizationScore.metrics?.budget_adherence || 90}%</strong>
+              </div>
+              <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${optimizationScore.metrics?.budget_adherence || 90}%`,
+                    height: "100%",
+                    background: "#10b981",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
+                <span>🤝 Traveler Alignment</span>
+                <strong>{optimizationScore.metrics?.traveler_happiness || 88}%</strong>
+              </div>
+              <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
+                <div
+                  style={{
+                    width: `${optimizationScore.metrics?.traveler_happiness || 88}%`,
+                    height: "100%",
+                    background: "#f59e0b",
+                    borderRadius: 3,
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Stats Pill Grid */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 12,
+              background: "#f8fafc",
+              padding: "12px 16px",
+              borderRadius: 12,
+              border: "1px solid #e2e8f0",
+              marginBottom: 16,
+            }}
+          >
+            <div style={{ fontSize: "0.82rem", color: "#334155" }}>
+              <strong>Total Transit:</strong> {optimizationScore.stats?.total_transit_km || 0} km
+            </div>
+            <div style={{ color: "#cbd5e1" }}>|</div>
+            <div style={{ fontSize: "0.82rem", color: "#334155" }}>
+              <strong>Road Time:</strong> {optimizationScore.stats?.total_transit_minutes || 0} mins
+            </div>
+            <div style={{ color: "#cbd5e1" }}>|</div>
+            <div style={{ fontSize: "0.82rem", color: "#334155" }}>
+              <strong>Total Stops:</strong> {optimizationScore.stats?.total_places || 0} attractions
+            </div>
+            <div style={{ color: "#cbd5e1" }}>|</div>
+            <div style={{ fontSize: "0.82rem", color: "#334155" }}>
+              <strong>Duration:</strong> {optimizationScore.stats?.total_days || 0} day(s)
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          {optimizationScore.recommendations?.length > 0 && (
+            <div style={{ background: "#eff6ff", borderRadius: 10, padding: "10px 14px", border: "1px solid #bfdbfe" }}>
+              <div style={{ fontSize: "0.78rem", fontWeight: 700, color: "#1e40af", textTransform: "uppercase", marginBottom: 4 }}>
+                AI Polish Recommendations:
+              </div>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.82rem", color: "#1e3a8a" }}>
+                {optimizationScore.recommendations.map((rec: string, rIdx: number) => (
+                  <li key={rIdx}>{rec}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
 
       {/* Multi-Destination Tour Route Card */}
       {isMulti && (
@@ -2662,7 +2921,7 @@ if (savedRating) {
         </div>
       )}
 
-      {/* Floating AI Travel Assistant (Copilot) Widget */}
+      {/* STEP 59: AI Assistant Floating Copilot Drawer */}
       {!chatOpen && (
         <button
           type="button"
@@ -2725,7 +2984,7 @@ if (savedRating) {
                 <span>🤖</span> TravelSync AI Copilot
               </div>
               <div style={{ fontSize: "0.74rem", opacity: 0.9, marginTop: 2 }}>
-                Trip Expert for {(trip as any).destination || "your trip"}
+                Trip Expert for {(trip as any)?.destination || "your trip"}
               </div>
             </div>
 

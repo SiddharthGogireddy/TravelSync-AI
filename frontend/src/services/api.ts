@@ -635,4 +635,40 @@ export async function sendAssistantChatMessage(
 
   return await res.json();
 }
+
+export async function getTripOptimizationScore(
+  tripId: string
+): Promise<{ success: boolean; optimization_score: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/optimization-score`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to fetch trip optimization score");
+  }
+
+  return await res.json();
+}
+
+export async function optimizeTrip(
+  tripId: string
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/optimize-trip`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to optimize trip");
+  }
+
+  return await res.json();
+}
+
 
