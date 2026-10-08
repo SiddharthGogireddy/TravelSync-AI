@@ -97,7 +97,7 @@ async def update_trip(
             actions = []
 
         # --------------------------------
-        # LLM → existing command format
+        # LLM -> existing command format
         # --------------------------------
 
         parsed = {}

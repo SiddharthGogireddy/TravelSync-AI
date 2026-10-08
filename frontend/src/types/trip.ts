@@ -70,12 +70,39 @@ export interface Transport {
 
     legs: TransportLeg[];
 }
+
+export interface DestinationStop {
+    name: string;
+    days: number;
+}
+
+export interface InterDestinationTravelLeg {
+    leg_index: number;
+    from_location: string;
+    to_location: string;
+    distance_km: number;
+    duration_hours: number;
+    travel_mode: string;
+    departure_day: number;
+}
+
+export interface DestinationSummary {
+    stop_index: number;
+    name: string;
+    days: number;
+    start_day: number;
+    end_day: number;
+    location?: { lat: number; lon: number };
+    attraction_count?: number;
+    hotel_count?: number;
+}
+
 export interface TripRequest {
     source: string;
     destination: string;
-    
     days: number;
+    destinations?: DestinationStop[];
     travel_mode: string;
     travelers: TravelerRequest[];
     mandatory_visits: MandatoryVisit[];
-}
+}

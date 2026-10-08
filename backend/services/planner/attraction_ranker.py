@@ -21,7 +21,7 @@ def rank_places(places, travelers):
     for traveler in travelers:
         print(
             traveler["name"],
-            "→",
+            "->",
             traveler["interests"]
         )
     for place in places:

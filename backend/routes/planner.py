@@ -13,33 +13,32 @@ router = APIRouter(
 async def planner(request: TripRequest):
 
     result = await build_trip(request)
-    print("TYPE:", type(result))
+    if not isinstance(result, dict) or "trip" not in result:
+        return result
 
-    if isinstance(result, dict):
-        print("KEYS:", list(result.keys()))
+    trip_info = result["trip"]
+    destination_title = trip_info.get("destination", request.destination)
+    trip_days = trip_info.get("days", request.days)
 
-        print(
-        "HAS_TRIP:",
-        "trip" in result
-        )
     place_names = [
         p["name"]
-        for p in result["trip"]["places"][:10]
+        for p in trip_info.get("places", [])[:10]
     ]
 
     hotel_names = [
         h["name"]
-        for h in result["trip"]["hotels"][:5]
+        for h in trip_info.get("hotels", [])[:5]
     ]
 
     prompt = f"""
-Generate a {request.days}-day travel itinerary.
+Generate a {trip_days}-day travel itinerary.
 
 Source: {request.source}
 
-Destination: {request.destination}
+Destination: {destination_title}
 
 Travel mode: {request.travel_mode}
+
 
 Traveler interests:
 

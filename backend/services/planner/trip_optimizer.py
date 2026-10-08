@@ -559,7 +559,7 @@ def optimize_trip(
 
             print(
                 place["name"],
-                "→",
+                "->",
                 place.get(
                     "travel_from_previous_km"
                 ),

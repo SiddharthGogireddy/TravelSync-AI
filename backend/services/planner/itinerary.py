@@ -36,6 +36,10 @@ from backend.services.planner.weather_planner import (
 from backend.services.storage.trip_store import save_trip
 
 async def build_trip(request):
+    if getattr(request, "destinations", None) and len(request.destinations) > 1:
+        from backend.services.planner.multi_destination import build_multi_destination_trip
+        return await build_multi_destination_trip(request)
+
     source = request.source
     destination = request.destination
     days = request.days
@@ -368,6 +372,7 @@ async def build_trip(request):
     
     trip_data = {
         "planner_version": "1.0",
+        "is_multi_destination": False,
 
         "source": source,
         "destination": destination,

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TravelerRequest, TripRequest } from "../types/trip";
+import type { DestinationStop, TravelerRequest, TripRequest } from "../types/trip";
 import {useLocation} from  "react-router-dom";
 const locations: Record<string, string[]> = {
     India: [
@@ -57,13 +57,19 @@ export default function TripForm({
 }) {
     const location = useLocation();
     const previousTrip = location.state?.trip;
+    const [isMultiDest, setIsMultiDest] = useState(false);
+    const [multiStops, setMultiStops] = useState<DestinationStop[]>([
+        { name: locations.India[0], days: 2 },
+        { name: locations.India[8], days: 1 },
+        { name: locations.India[7], days: 2 },
+    ]);
     const [source, setSource] = useState<string>(
-    previousTrip?.source ?? locations.India[0]
+    previousTrip?.source ?? locations.India[1]
 );
     const [sourceSelected, setSourceSelected] = useState(true);
 const [destinationSelected, setDestinationSelected] = useState(true);
 const [destination, setDestination] = useState<string>(
-    previousTrip?.destination ?? locations.India[1]
+    previousTrip?.destination ?? locations.India[0]
 );
     const [days, setDays] = useState(
     previousTrip?.days ?? 3
@@ -90,6 +96,31 @@ const [destination, setDestination] = useState<string>(
 ) => {
     e.preventDefault();
 
+    if (isMultiDest) {
+        if (multiStops.length < 2) {
+            alert("Please add at least 2 destination stops for a multi-destination trip.");
+            return;
+        }
+        for (const s of multiStops) {
+            if (!s.name.trim()) {
+                alert("Please ensure all destination stops have a selected city.");
+                return;
+            }
+        }
+        const totalDays = multiStops.reduce((sum, s) => sum + (Number(s.days) || 1), 0);
+        const compositeDest = multiStops.map(s => s.name.split(",")[0].trim()).join(" -> ");
+        onSubmit({
+            source,
+            destination: compositeDest,
+            days: totalDays,
+            destinations: multiStops,
+            travelers,
+            mandatory_visits: [],
+            travel_mode: travelMode,
+        });
+        return;
+    }
+
     if (!sourceSelected || !destinationSelected) {
         alert(
             "Please select a source and destination from the suggestions."
@@ -107,6 +138,7 @@ const [destination, setDestination] = useState<string>(
         travel_mode: travelMode,
     });
 };
+
     const [sourceSearch, setSourceSearch] = useState(
     previousTrip?.source ?? ""
 );
@@ -303,101 +335,210 @@ const [destinationSearch, setDestinationSearch] = useState(
         + Add Traveler
     </button>
 </div>
-                    <div className="form-group location-field">
-    <label>Source</label>
 
-                    <input
-    placeholder="Search source city..."
-    value={sourceSearch}
-    onChange={(e) => {
-        setSourceSearch(e.target.value);
-        setSourceSelected(false);
-        setShowSourceResults(true);
-    }}
-    onFocus={() => setShowSourceResults(true)}
-/>
+    {/* Single vs Multi-Destination Mode Toggle */}
+    <div style={{ display: "flex", gap: 10, margin: "20px 0" }}>
+        <button
+            type="button"
+            onClick={() => setIsMultiDest(false)}
+            style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                border: !isMultiDest ? "2px solid #4f46e5" : "1px solid #cbd5e1",
+                background: !isMultiDest ? "#eef2ff" : "#fff",
+                color: !isMultiDest ? "#4f46e5" : "#64748b",
+            }}
+        >
+            📍 Single Destination
+        </button>
+        <button
+            type="button"
+            onClick={() => setIsMultiDest(true)}
+            style={{
+                flex: 1,
+                padding: "10px",
+                borderRadius: 8,
+                fontWeight: 600,
+                fontSize: "0.9rem",
+                cursor: "pointer",
+                border: isMultiDest ? "2px solid #4f46e5" : "1px solid #cbd5e1",
+                background: isMultiDest ? "#eef2ff" : "#fff",
+                color: isMultiDest ? "#4f46e5" : "#64748b",
+            }}
+        >
+            🗺️ Multi-Destination Tour (Multiple Cities)
+        </button>
+    </div>
 
-    {showSourceResults && (
-        <div className="location-results">
-            {filteredSourceLocations.length > 0 ? (
-                filteredSourceLocations.map((location) => (
-                    <button
-                        type="button"
-                        key={location}
-                        className="location-option"
-                        onClick={() => {
+    <div className="form-group location-field">
+        <label>Origin / Departure City</label>
+        <input
+            placeholder="Search source city..."
+            value={sourceSearch}
+            onChange={(e) => {
+                setSourceSearch(e.target.value);
+                setSourceSelected(false);
+                setShowSourceResults(true);
+            }}
+            onFocus={() => setShowSourceResults(true)}
+        />
 
-                            setSource(location);
-                            setSourceSearch(location);
-                            setSourceSelected(true);
-                            setShowSourceResults(false);
+        {showSourceResults && (
+            <div className="location-results">
+                {filteredSourceLocations.length > 0 ? (
+                    filteredSourceLocations.map((loc) => (
+                        <button
+                            type="button"
+                            key={loc}
+                            className="location-option"
+                            onClick={() => {
+                                setSource(loc);
+                                setSourceSearch(loc);
+                                setSourceSelected(true);
+                                setShowSourceResults(false);
+                            }}
+                        >
+                            {loc}
+                        </button>
+                    ))
+                ) : (
+                    <div className="no-results">
+                        No locations found
+                    </div>
+                )}
+            </div>
+        )}
+    </div>
+
+    {isMultiDest ? (
+        <div style={{ background: "#f8fafc", padding: 16, borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
+                    Destinations & Days per City
+                </span>
+                <span style={{ fontSize: "0.82rem", color: "#64748b" }}>
+                    Total: {multiStops.reduce((sum, s) => sum + (Number(s.days) || 1), 0)} Days
+                </span>
+            </div>
+
+            {multiStops.map((stop, idx) => (
+                <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#4f46e5", minWidth: 60 }}>
+                        Stop {idx + 1}:
+                    </span>
+                    <select
+                        value={stop.name}
+                        onChange={(e) => {
+                            const updated = [...multiStops];
+                            updated[idx].name = e.target.value;
+                            setMultiStops(updated);
                         }}
+                        style={{ flex: 1, minWidth: 200, padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff" }}
                     >
-                        {location}
-                    </button>
-                ))
-            ) : (
-                <div className="no-results">
-                    No locations found
+                        {allLocations.map((loc) => (
+                            <option key={loc} value={loc}>{loc}</option>
+                        ))}
+                    </select>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                        <input
+                            type="number"
+                            min="1"
+                            max="14"
+                            value={stop.days}
+                            onChange={(e) => {
+                                const updated = [...multiStops];
+                                updated[idx].days = Math.max(1, parseInt(e.target.value) || 1);
+                                setMultiStops(updated);
+                            }}
+                            style={{ width: 55, padding: "8px", borderRadius: 6, border: "1px solid #cbd5e1", textAlign: "center" }}
+                        />
+                        <span style={{ fontSize: "0.82rem", color: "#64748b" }}>days</span>
+                    </div>
+                    {multiStops.length > 2 && (
+                        <button
+                            type="button"
+                            onClick={() => setMultiStops(multiStops.filter((_, i) => i !== idx))}
+                            style={{ background: "#fee2e2", color: "#dc2626", border: "none", borderRadius: 6, padding: "8px 10px", cursor: "pointer", fontWeight: 700 }}
+                            title="Remove destination stop"
+                        >
+                            ✕
+                        </button>
+                    )}
                 </div>
-            )}
-        </div>
-    )}
-</div>
-<div className="form-group location-field">
-    <label>Destination</label>
-<input
-    placeholder="Search destination city..."
-    value={destinationSearch}
-    onChange={(e) => {
-        setDestinationSearch(e.target.value);
-        setDestinationSelected(false);
-        setShowDestinationResults(true);
-    }}
-    onFocus={() => setShowDestinationResults(true)}
-/>
+            ))}
 
-    {showDestinationResults && (
-        <div className="location-results">
-            {filteredDestinationLocations.length > 0 ? (
-                filteredDestinationLocations.map((location) => (
-                    <button
-                        type="button"
-                        key={location}
-                        className="location-option"
-                        onClick={() => {
-                            setDestination(location);
-                            setDestinationSearch(location);
-                            setDestinationSelected(true);
-                            setShowDestinationResults(false);
-                        }}
-                    >
-                        {location}
-                    </button>
-                ))
-            ) : (
-                <div className="no-results">
-                    No locations found
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
+                <button
+                    type="button"
+                    onClick={() => setMultiStops([...multiStops, { name: locations.India[3], days: 2 }])}
+                    style={{ background: "#eef2ff", color: "#4f46e5", border: "1px dashed #4f46e5", borderRadius: 6, padding: "7px 14px", fontWeight: 600, fontSize: "0.84rem", cursor: "pointer" }}
+                >
+                    + Add Another City
+                </button>
+                <div style={{ fontSize: "0.85rem", color: "#475569" }}>
+                    Route: {source.split(",")[0]} ➔ {multiStops.map(s => s.name.split(",")[0]).join(" ➔ ")}
                 </div>
-            )}
+            </div>
         </div>
-    )}
-</div>
+    ) : (
+        <>
+            <div className="form-group location-field">
+                <label>Destination</label>
+                <input
+                    placeholder="Search destination city..."
+                    value={destinationSearch}
+                    onChange={(e) => {
+                        setDestinationSearch(e.target.value);
+                        setDestinationSelected(false);
+                        setShowDestinationResults(true);
+                    }}
+                    onFocus={() => setShowDestinationResults(true)}
+                />
+
+                {showDestinationResults && (
+                    <div className="location-results">
+                        {filteredDestinationLocations.length > 0 ? (
+                            filteredDestinationLocations.map((loc) => (
+                                <button
+                                    type="button"
+                                    key={loc}
+                                    className="location-option"
+                                    onClick={() => {
+                                        setDestination(loc);
+                                        setDestinationSearch(loc);
+                                        setDestinationSelected(true);
+                                        setShowDestinationResults(false);
+                                    }}
+                                >
+                                    {loc}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="no-results">
+                                No locations found
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+
             <div className="form-group">
                 <label>Days</label>
-
                 <input
                     type="number"
                     min="1"
                     max="30"
                     value={days}
-                    onChange={(e) =>
-                        setDays(
-                            Number(e.target.value)
-                        )
-                    }
+                    onChange={(e) => setDays(Number(e.target.value))}
                 />
-            </div>       
+            </div>
+        </>
+    )}
+
             <div className="form-group">
                 <label>Travel Mode</label>
 

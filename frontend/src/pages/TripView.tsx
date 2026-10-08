@@ -326,6 +326,11 @@ if (savedRating) {
       description: w.description ?? "",
     }));
 
+  const isMulti = (trip as any)?.is_multi_destination || ((trip as any)?.destinations && (trip as any).destinations.length > 1);
+  const destinationsList = (trip as any)?.destinations || [];
+  const travelLegs = (trip as any)?.inter_destination_travel || [];
+
+
 
   return (
     <div className="page-container">
@@ -445,6 +450,114 @@ if (savedRating) {
 
       {/* Trip Analytics & Insights */}
       <TripInsightsCard tripId={tripId} />
+
+      {/* Multi-Destination Tour Route Card */}
+      {isMulti && (
+        <div
+          style={{
+            background: "#ffffff",
+            border: "1px solid #e0e7ff",
+            borderRadius: 12,
+            padding: "20px 24px",
+            margin: "24px 0",
+            boxShadow: "0 4px 6px -1px rgba(79, 70, 229, 0.08)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1.25rem", color: "#1e1b4b", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🗺️</span> Multi-Destination Travel Circuit
+              </h3>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.88rem" }}>
+                Coordinated itinerary spanning {destinationsList.length} destinations
+              </p>
+            </div>
+            <span
+              style={{
+                background: "#e0e7ff",
+                color: "#4338ca",
+                padding: "6px 14px",
+                borderRadius: 20,
+                fontSize: "0.82rem",
+                fontWeight: 700,
+              }}
+            >
+              {destinationsList.length} Cities • {dashboard.days} Days Total
+            </span>
+          </div>
+
+          {/* Destinations Timeline / Steps */}
+          <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(220px, 1fr))`, gap: 14, marginBottom: 20 }}>
+            {destinationsList.map((stop: any, idx: number) => (
+              <div
+                key={idx}
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: 10,
+                  padding: "14px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#4f46e5", textTransform: "uppercase" }}>
+                    Stop {idx + 1}
+                  </span>
+                  <span style={{ background: "#ecfdf5", color: "#059669", fontSize: "0.78rem", fontWeight: 700, padding: "2px 8px", borderRadius: 10 }}>
+                    Day {stop.start_day} - {stop.end_day} ({stop.days}d)
+                  </span>
+                </div>
+                <div style={{ fontWeight: 700, color: "#0f172a", fontSize: "1.02rem", marginBottom: 4 }}>
+                  {stop.name}
+                </div>
+                {stop.attraction_count !== undefined && (
+                  <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
+                    📍 {stop.attraction_count} attractions scheduled
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Travel Between Destinations Legs */}
+          {travelLegs.length > 0 && (
+            <div>
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "#334155" }}>
+                🚗 Inter-Destination Travel Legs
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {travelLegs.map((leg: any, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      background: "#f1f5f9",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      fontSize: "0.88rem",
+                      flexWrap: "wrap",
+                      gap: 8,
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                        Leg {leg.leg_index}: {leg.from_location?.split(",")[0]} ➔ {leg.to_location?.split(",")[0]}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", gap: 16, color: "#475569", fontSize: "0.82rem" }}>
+                      <span>📏 <strong>{leg.distance_km} km</strong></span>
+                      <span>⏱️ <strong>{leg.duration_hours} hrs</strong></span>
+                      <span>🚘 <strong>{leg.travel_mode?.toUpperCase()}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
 
       <TravelerConflicts
         conflicts={trip.traveler_conflicts}
