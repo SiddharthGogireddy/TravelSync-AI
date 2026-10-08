@@ -266,15 +266,19 @@ async def build_trip(request):
     print("\nINTEREST DISTRIBUTION:")
 
     for place in matched_places:
-        print(
-            place["name"],
-            "|",
-            place["category"],
-            "|",
-            place.get("matched_interests", []),
-            "| score:",
-            place.get("score"),
-        )
+        try:
+            safe_name = str(place.get("name", "")).encode("ascii", errors="replace").decode("ascii")
+            print(
+                safe_name,
+                "|",
+                place.get("category", ""),
+                "|",
+                place.get("matched_interests", []),
+                "| score:",
+                place.get("score"),
+            )
+        except Exception:
+            pass
     day_schedule = optimize_trip(
         matched_places,
         days,
