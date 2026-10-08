@@ -522,9 +522,23 @@ export async function addRouteStop(
   return await res.json();
 }
 
+export async function switchTransportMode(
+  tripId: string,
+  travelMode: string
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/switch-transport`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ travel_mode: travelMode }),
+  });
 
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to switch transport mode");
+  }
 
-
-
-
+  return await res.json();
+}
 

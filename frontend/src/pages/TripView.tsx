@@ -41,6 +41,7 @@ import {
   saveTripAsTemplate,
   replanActiveDay,
   addRouteStop,
+  switchTransportMode,
 } from "../services/api";
 
 
@@ -223,6 +224,26 @@ export default function TripView() {
     }
   };
 
+  const [switchingTransport, setSwitchingTransport] = useState(false);
+  const [transportStatusMessage, setTransportStatusMessage] = useState<string | null>(null);
+
+  const handleSwitchTransport = async (newMode: string) => {
+    if (!tripId || switchingTransport) return;
+    try {
+      setSwitchingTransport(true);
+      setTransportStatusMessage(null);
+      const res = await switchTransportMode(tripId, newMode);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+        setTransportStatusMessage(res.audit?.summary || `Switched transport to ${newMode.toUpperCase()}`);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to switch transport mode");
+    } finally {
+      setSwitchingTransport(false);
+    }
+  };
+
 
 
   /*
@@ -401,6 +422,7 @@ if (savedRating) {
   const constraintAnalysis = (trip as any)?.constraint_analysis;
   const weatherReplanning = (trip as any)?.weather_replanning;
   const routeAttractions: any[] = (trip as any)?.route_attractions || [];
+  const transportRecs = (trip as any)?.transport_recommendations;
 
 
 
@@ -1171,6 +1193,192 @@ if (savedRating) {
 
             </div>
 
+          </div>
+        )}
+
+        {/* Transport Recommendation Engine & Trade-off Matrix */}
+        {transportRecs && (
+          <div
+            style={{
+              background: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: 12,
+              padding: "20px 24px",
+              marginTop: 16,
+              boxShadow: "0 2px 6px rgba(22, 101, 52, 0.05)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>🧭</span> Transport Recommendation Engine
+                </h3>
+                <p style={{ margin: 0, color: "#15803d", fontSize: "0.86rem" }}>
+                  Multi-modal comparison across Party Size ({transportRecs.party_size || 1}), Distance ({transportRecs.distance_km} km), Cost, Time & Carbon emissions.
+                </p>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <span
+                  style={{
+                    background: transportRecs.is_using_recommended ? "#dcfce7" : "#fef3c7",
+                    color: transportRecs.is_using_recommended ? "#166534" : "#92400e",
+                    border: `1px solid ${transportRecs.is_using_recommended ? "#86efac" : "#fcd34d"}`,
+                    padding: "4px 12px",
+                    borderRadius: 16,
+                    fontSize: "0.8rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  {transportRecs.is_using_recommended
+                    ? `✓ Active: Recommended (${transportRecs.recommended_mode?.toUpperCase()})`
+                    : `⚠️ Active: ${transportRecs.current_mode?.toUpperCase()} (Recommended: ${transportRecs.recommended_mode?.toUpperCase()})`}
+                </span>
+              </div>
+            </div>
+
+            {/* AI Recommendation Summary Banner */}
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #86efac",
+                borderRadius: 8,
+                padding: "12px 16px",
+                marginBottom: 16,
+                fontSize: "0.88rem",
+                color: "#1e293b",
+                lineHeight: 1.5,
+              }}
+            >
+              <strong>💡 Recommendation Rationale:</strong> {transportRecs.recommendation_summary}
+            </div>
+
+            {transportStatusMessage && (
+              <div
+                style={{
+                  background: "#dcfce7",
+                  border: "1px solid #86efac",
+                  color: "#166534",
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  fontSize: "0.85rem",
+                  marginBottom: 14,
+                }}
+              >
+                ✓ {transportStatusMessage}
+              </div>
+            )}
+
+            {/* Comparison Grid across Car, Train, Flight, Bus */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+              {transportRecs.options &&
+                Object.entries(transportRecs.options).map(([modeKey, opt]: [string, any]) => {
+                  const currentMode = ((trip as any).travel_mode || (trip.transport as any)?.travel_mode || trip.transport?.mode || "");
+                  const isSelected = currentMode.toLowerCase() === modeKey.toLowerCase();
+                  const isRec = transportRecs.recommended_mode?.toLowerCase() === modeKey.toLowerCase();
+
+                  return (
+                    <div
+                      key={modeKey}
+                      style={{
+                        background: isSelected ? "#ffffff" : "#f8fafc",
+                        border: isSelected ? "2px solid #16a34a" : isRec ? "1px solid #86efac" : "1px solid #e2e8f0",
+                        borderRadius: 10,
+                        padding: "16px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        boxShadow: isSelected ? "0 4px 12px rgba(22, 163, 74, 0.12)" : "none",
+                        position: "relative",
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                          <span style={{ fontSize: "1.05rem", fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>
+                            {modeKey === "car" ? "🚗 Car / Drive" : modeKey === "train" ? "🚆 Train / Rail" : modeKey === "flight" ? "✈️ Flight" : "🚌 Bus"}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.78rem",
+                              fontWeight: 700,
+                              background: opt.score >= 80 ? "#dcfce7" : "#e0e7ff",
+                              color: opt.score >= 80 ? "#166534" : "#3730a3",
+                              padding: "2px 8px",
+                              borderRadius: 12,
+                            }}
+                          >
+                            Score: {opt.score}/100
+                          </span>
+                        </div>
+
+                        {/* Badges */}
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }}>
+                          {opt.badges?.map((b: string, bIdx: number) => (
+                            <span
+                              key={bIdx}
+                              style={{
+                                fontSize: "0.7rem",
+                                fontWeight: 600,
+                                background: b.includes("Recommended") ? "#fef08a" : b.includes("Fastest") ? "#fed7aa" : b.includes("Eco") ? "#bbf7d0" : "#f1f5f9",
+                                color: "#1e293b",
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                              }}
+                            >
+                              {b}
+                            </span>
+                          ))}
+                        </div>
+
+                        {/* Metrics Breakdown */}
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, margin: "10px 0", fontSize: "0.8rem" }}>
+                          <div style={{ background: "#f1f5f9", padding: "6px 8px", borderRadius: 6 }}>
+                            <div style={{ color: "#64748b", fontSize: "0.72rem" }}>Est. Cost (Total)</div>
+                            <strong style={{ color: "#0f172a" }}>₹{opt.total_cost_inr}</strong>
+                            <div style={{ color: "#94a3b8", fontSize: "0.68rem" }}>₹{opt.per_person_cost_inr}/person</div>
+                          </div>
+                          <div style={{ background: "#f1f5f9", padding: "6px 8px", borderRadius: 6 }}>
+                            <div style={{ color: "#64748b", fontSize: "0.72rem" }}>Transit Time</div>
+                            <strong style={{ color: "#0f172a" }}>{opt.duration_hours} hrs</strong>
+                          </div>
+                          <div style={{ background: "#f1f5f9", padding: "6px 8px", borderRadius: 6 }}>
+                            <div style={{ color: "#64748b", fontSize: "0.72rem" }}>CO2 Emissions</div>
+                            <strong style={{ color: "#0f172a" }}>{opt.carbon_kg} kg</strong>
+                          </div>
+                          <div style={{ background: "#f1f5f9", padding: "6px 8px", borderRadius: 6 }}>
+                            <div style={{ color: "#64748b", fontSize: "0.72rem" }}>Comfort / Ease</div>
+                            <strong style={{ color: "#0f172a" }}>{opt.comfort_score}/10</strong>
+                          </div>
+                        </div>
+
+                        <p style={{ margin: "6px 0 12px", fontSize: "0.78rem", color: "#475569", lineHeight: 1.4 }}>
+                          {opt.suitability_reason}
+                        </p>
+                      </div>
+
+                      <button
+                        type="button"
+                        disabled={isSelected || switchingTransport || !opt.viable}
+                        onClick={() => handleSwitchTransport(modeKey)}
+                        style={{
+                          width: "100%",
+                          padding: "8px 12px",
+                          fontSize: "0.82rem",
+                          fontWeight: 700,
+                          borderRadius: 6,
+                          border: "none",
+                          cursor: isSelected || !opt.viable ? "default" : "pointer",
+                          background: isSelected ? "#16a34a" : opt.viable ? "#0f172a" : "#94a3b8",
+                          color: "#ffffff",
+                          transition: "background 0.2s",
+                        }}
+                      >
+                        {isSelected ? "✓ Currently Active" : !opt.viable ? "Not Viable" : switchingTransport ? "Switching..." : `Switch to ${modeKey.toUpperCase()}`}
+                      </button>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         )}
 

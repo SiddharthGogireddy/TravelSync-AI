@@ -312,6 +312,15 @@ async def build_multi_destination_trip(request) -> dict:
         travel_mode=travel_mode,
     )
 
+    from backend.services.planner.transport_recommendation_engine import generate_transport_recommendations
+    trip_data["transport_recommendations"] = generate_transport_recommendations(
+        source=source,
+        destination=composite_destination,
+        distance_km=route_summary.get("distance_km", 300.0),
+        current_mode=travel_mode,
+        party_size=len(traveler_profiles) or 1,
+    )
+
 
 
 

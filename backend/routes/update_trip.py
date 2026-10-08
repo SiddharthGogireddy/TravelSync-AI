@@ -593,4 +593,42 @@ async def add_route_stop_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
+
+
+class SwitchTransportRequest(BaseModel):
+    travel_mode: str
+
+
+@router.post("/{trip_id}/switch-transport")
+async def switch_transport_endpoint(
+    trip_id: str,
+    request: SwitchTransportRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.transport_recommendation_engine import switch_trip_transport
+    updated_inner, audit = switch_trip_transport(
+        trip_data=inner_trip,
+        new_mode=request.travel_mode,
+    )
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to switch transport"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+        if "dashboard" in raw_trip and "dashboard" in updated_inner:
+            raw_trip["dashboard"] = updated_inner["dashboard"]
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
 

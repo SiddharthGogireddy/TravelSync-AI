@@ -479,6 +479,15 @@ async def build_trip(request):
         travel_mode=travel_mode,
     )
 
+    from backend.services.planner.transport_recommendation_engine import generate_transport_recommendations
+    trip_data["transport_recommendations"] = generate_transport_recommendations(
+        source=source,
+        destination=destination,
+        distance_km=route_summary["distance_km"],
+        current_mode=travel_mode,
+        party_size=len(traveler_profiles) or 1,
+    )
+
 
 
     trip_data["dashboard"] = build_dashboard(
