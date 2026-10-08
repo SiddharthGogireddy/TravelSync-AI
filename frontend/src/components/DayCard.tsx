@@ -9,7 +9,9 @@ interface Props {
     mealsAndBreaks?: DayMealsAndBreaks;
     onSelect: (place: Place) => void;
     onRegenerate?: (day: string) => void;
+    onReplanDay?: (day: string) => void;
 }
+
 
 
 const TIMES = [
@@ -44,7 +46,9 @@ export default function DayCard({
     onRegenerate,
     TravelMode,
     mealsAndBreaks,
+    onReplanDay,
 }: Props) {
+
 
     const totalTravelDistance = places.reduce(
     (total, place) =>
@@ -257,14 +261,39 @@ export default function DayCard({
                 </div>
             )}
 
-            {onRegenerate && (
-                <button
-                    className="regenerate-button"
-                    onClick={() => onRegenerate(day)}
-                >
-                    Regenerate Day
-                </button>
-            )}
+            <div style={{ display: "flex", gap: 10, marginTop: 12, flexWrap: "wrap" }}>
+                {onRegenerate && (
+                    <button
+                        className="regenerate-button"
+                        onClick={() => onRegenerate(day)}
+                    >
+                        🔄 Regenerate Day
+                    </button>
+                )}
+                {onReplanDay && (
+                    <button
+                        type="button"
+                        onClick={() => onReplanDay(day)}
+                        style={{
+                            background: "#4f46e5",
+                            color: "#ffffff",
+                            border: "none",
+                            borderRadius: 6,
+                            padding: "8px 16px",
+                            fontSize: "0.85rem",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                            boxShadow: "0 2px 4px rgba(79, 70, 229, 0.2)",
+                        }}
+                    >
+                        ⚡ Replan My Day (Live)
+                    </button>
+                )}
+            </div>
+
 
         </div>
     );

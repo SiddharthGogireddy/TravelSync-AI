@@ -472,6 +472,36 @@ export async function deleteTemplate(
   return await res.json();
 }
 
+export interface ReplanDayPayload {
+  day: number;
+  completed_attractions: string[];
+  remaining_hours: number;
+  current_location?: { lat: number; lon: number };
+  current_location_name?: string;
+  remaining_budget?: number;
+}
+
+export async function replanActiveDay(
+  tripId: string,
+  payload: ReplanDayPayload
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/replan-day`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to replan day");
+  }
+
+  return await res.json();
+}
+
+
 
 
 

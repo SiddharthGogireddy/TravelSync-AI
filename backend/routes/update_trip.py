@@ -1,4 +1,8 @@
 from fastapi import APIRouter, HTTPException
+from typing import Optional, List, Dict
+from pydantic import BaseModel
+
+
 
 from backend.models.trip_update import (
     TripUpdateRequest,
@@ -508,3 +512,46 @@ async def update_trip(
     )
 
     return trip
+
+
+class RealtimeReplanRequest(BaseModel):
+    day: int = 1
+    completed_attractions: list[str] = []
+    remaining_hours: float = 4.0
+    current_location: Optional[dict[str, float]] = None
+    current_location_name: Optional[str] = None
+    remaining_budget: Optional[float] = None
+
+
+@router.post("/{trip_id}/replan-day")
+async def replan_day_endpoint(
+    trip_id: str,
+    request: RealtimeReplanRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.realtime_replanner import replan_active_day
+    updated_inner, audit = replan_active_day(
+        trip_data=inner_trip,
+        day_number=request.day,
+        completed_attraction_names=request.completed_attractions,
+        remaining_hours=request.remaining_hours,
+        current_location=request.current_location,
+        current_location_name=request.current_location_name,
+        remaining_budget=request.remaining_budget,
+    )
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }

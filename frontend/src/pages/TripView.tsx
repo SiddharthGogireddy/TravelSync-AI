@@ -39,7 +39,9 @@ import {
   importTrip,
   duplicateTrip,
   saveTripAsTemplate,
+  replanActiveDay,
 } from "../services/api";
+
 
 import type {
   Place,
@@ -155,6 +157,49 @@ export default function TripView() {
       setSavingTemplate(false);
     }
   };
+
+  // Real-time day replanning state
+  const [showReplanModal, setShowReplanModal] = useState(false);
+  const [replanTargetDay, setReplanTargetDay] = useState(1);
+  const [replanCompletedAttractions, setReplanCompletedAttractions] = useState<string[]>([]);
+  const [replanRemainingHours, setReplanRemainingHours] = useState(4.0);
+  const [replanCurrentLocName, setReplanCurrentLocName] = useState("");
+  const [replanLoading, setReplanLoading] = useState(false);
+
+  const handleOpenReplan = (dayStr: string) => {
+    const dNum = parseInt(dayStr) || 1;
+    setReplanTargetDay(dNum);
+    const dayPlaces = (data?.trip as any)?.day_schedule?.[dayStr] || [];
+    const completed = dayPlaces.filter((p: any) => p.is_completed).map((p: any) => p.name);
+    setReplanCompletedAttractions(completed);
+    setReplanCurrentLocName("");
+    setReplanRemainingHours(4.0);
+    setShowReplanModal(true);
+  };
+
+  const handleExecuteReplan = async () => {
+    if (!tripId) return;
+    try {
+      setReplanLoading(true);
+      const res = await replanActiveDay(tripId, {
+        day: replanTargetDay,
+        completed_attractions: replanCompletedAttractions,
+        remaining_hours: replanRemainingHours,
+        current_location_name: replanCurrentLocName.trim() || undefined,
+      });
+
+      if (res.trip) {
+        setData((prev) => prev ? { ...prev, trip: res.trip } : null);
+      }
+      alert(res.audit?.summary || "Day successfully replanned!");
+      setShowReplanModal(false);
+    } catch (err: any) {
+      alert(err.message || "Failed to replan day");
+    } finally {
+      setReplanLoading(false);
+    }
+  };
+
 
 
   /*
@@ -1088,7 +1133,11 @@ if (savedRating) {
                 onRegenerate={
                   handleRegenerateDay
                 }
+                onReplanDay={
+                  handleOpenReplan
+                }
               />
+
 
 
             )
@@ -1520,6 +1569,162 @@ if (savedRating) {
         </div>
       )}
 
+      {/* Real-Time Day Replanning Modal */}
+      {showReplanModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(15, 23, 42, 0.65)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: 14,
+              padding: "24px 28px",
+              maxWidth: 520,
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+              border: "1px solid #e2e8f0",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e1b4b", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>⚡</span> Replan Day {replanTargetDay} (Live)
+              </h3>
+              <button
+                onClick={() => setShowReplanModal(false)}
+                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "#64748b" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.88rem" }}>
+              Check completed attractions and specify remaining time. TravelSync AI will replan only the unvisited stops from your current location.
+            </p>
+
+            {/* Completed attractions checklist */}
+            <div style={{ marginBottom: 18 }}>
+              <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: 8 }}>
+                Check attractions you have ALREADY visited:
+              </label>
+              <div style={{ maxHeight: 150, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 8, padding: 8, background: "#f8fafc" }}>
+                {((data?.trip as any)?.day_schedule?.[String(replanTargetDay)] || []).map((p: any, idx: number) => {
+                  const isChecked = replanCompletedAttractions.includes(p.name);
+                  return (
+                    <label key={idx} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", cursor: "pointer", fontSize: "0.85rem" }}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setReplanCompletedAttractions([...replanCompletedAttractions, p.name]);
+                          } else {
+                            setReplanCompletedAttractions(replanCompletedAttractions.filter(n => n !== p.name));
+                          }
+                        }}
+                      />
+                      <span style={{ textDecoration: isChecked ? "line-through" : "none", color: isChecked ? "#64748b" : "#0f172a", fontWeight: isChecked ? 400 : 600 }}>
+                        {p.name} ({p.time_window || "Scheduled"})
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Remaining Hours */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
+                <label style={{ fontSize: "0.84rem", fontWeight: 600, color: "#334155" }}>
+                  Hours Remaining Today:
+                </label>
+                <span style={{ fontSize: "0.84rem", fontWeight: 700, color: "#4f46e5" }}>
+                  {replanRemainingHours} hours
+                </span>
+              </div>
+              <input
+                type="range"
+                min="1"
+                max="8"
+                step="0.5"
+                value={replanRemainingHours}
+                onChange={(e) => setReplanRemainingHours(parseFloat(e.target.value))}
+                style={{ width: "100%" }}
+              />
+            </div>
+
+            {/* Current Location Name */}
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                Current Location (Optional)
+              </label>
+              <input
+                type="text"
+                value={replanCurrentLocName}
+                onChange={(e) => setReplanCurrentLocName(e.target.value)}
+                placeholder="e.g., Near Fort Aguada / Hotel Lobby"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  boxSizing: "border-box",
+                  fontSize: "0.9rem",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                onClick={() => setShowReplanModal(false)}
+                disabled={replanLoading}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.88rem",
+                  color: "#475569",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExecuteReplan}
+                disabled={replanLoading}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#4f46e5",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.88rem",
+                  boxShadow: "0 2px 4px rgba(79, 70, 229, 0.3)",
+                }}
+              >
+                {replanLoading ? "Replanning..." : "⚡ Replan Remaining Day"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
-}
+}
