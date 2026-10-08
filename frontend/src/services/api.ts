@@ -501,6 +501,28 @@ export async function replanActiveDay(
   return await res.json();
 }
 
+export async function addRouteStop(
+  tripId: string,
+  day: number,
+  routeStop: any
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/add-route-stop`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ day, route_stop: routeStop }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to add route stop");
+  }
+
+  return await res.json();
+}
+
+
 
 
 

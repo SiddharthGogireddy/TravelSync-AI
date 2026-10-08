@@ -40,7 +40,9 @@ import {
   duplicateTrip,
   saveTripAsTemplate,
   replanActiveDay,
+  addRouteStop,
 } from "../services/api";
+
 
 
 import type {
@@ -197,6 +199,27 @@ export default function TripView() {
       alert(err.message || "Failed to replan day");
     } finally {
       setReplanLoading(false);
+    }
+  };
+
+  const [addingRouteStopId, setAddingRouteStopId] = useState<string | null>(null);
+  const [selectedRouteStopDay, setSelectedRouteStopDay] = useState<{ [stopId: string]: number }>({});
+  const [routeStopFeedback, setRouteStopFeedback] = useState<string | null>(null);
+
+  const handleInsertRouteStop = async (stop: any, dayNum: number) => {
+    if (!tripId) return;
+    setAddingRouteStopId(stop.id || stop.name);
+    setRouteStopFeedback(null);
+    try {
+      const res = await addRouteStop(tripId, dayNum, stop);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setRouteStopFeedback(res.audit?.summary || `Added ${stop.name} to Day ${dayNum}`);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to add route stop");
+    } finally {
+      setAddingRouteStopId(null);
     }
   };
 
@@ -377,6 +400,7 @@ if (savedRating) {
   const travelLegs = (trip as any)?.inter_destination_travel || [];
   const constraintAnalysis = (trip as any)?.constraint_analysis;
   const weatherReplanning = (trip as any)?.weather_replanning;
+  const routeAttractions: any[] = (trip as any)?.route_attractions || [];
 
 
 
@@ -826,6 +850,172 @@ if (savedRating) {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Route-Aware Attraction Discovery Card */}
+      {routeAttractions && routeAttractions.length > 0 && (
+        <div
+          style={{
+            background: "#faf5ff",
+            border: "1px solid #e9d5ff",
+            borderRadius: 12,
+            padding: "20px 24px",
+            margin: "24px 0",
+            boxShadow: "0 2px 6px rgba(147, 51, 234, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#6b21a8", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🛣️</span> En-Route Sights & Scenic Waypoints
+              </h3>
+              <p style={{ margin: 0, color: "#9333ea", fontSize: "0.86rem" }}>
+                Curated attractions along your corridor within easy detour distance. Seamlessly add stops to your daily itinerary!
+              </p>
+            </div>
+            <span
+              style={{
+                background: "#f3e8ff",
+                color: "#7e22ce",
+                padding: "4px 12px",
+                borderRadius: 16,
+                fontSize: "0.82rem",
+                fontWeight: 700,
+              }}
+            >
+              {routeAttractions.length} Discovered Stops
+            </span>
+          </div>
+
+          {routeStopFeedback && (
+            <div
+              style={{
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                color: "#166534",
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: "0.85rem",
+                marginBottom: 14,
+              }}
+            >
+              ✓ {routeStopFeedback}
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
+            {routeAttractions.map((stop: any, idx: number) => {
+              const currentTargetDay = selectedRouteStopDay[stop.id || stop.name] || 1;
+              const isAdding = addingRouteStopId === (stop.id || stop.name);
+
+              return (
+                <div
+                  key={stop.id || idx}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #f3e8ff",
+                    borderRadius: 10,
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
+                      <strong style={{ color: "#1e293b", fontSize: "0.98rem" }}>{stop.name}</strong>
+                      <span
+                        style={{
+                          background: "#e0e7ff",
+                          color: "#3730a3",
+                          padding: "2px 8px",
+                          borderRadius: 12,
+                          fontSize: "0.72rem",
+                          fontWeight: 600,
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {stop.corridor_position || `${stop.corridor_progress_percent}% along route`}
+                      </span>
+                    </div>
+
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                      <span style={{ fontSize: "0.74rem", background: "#f1f5f9", padding: "2px 6px", borderRadius: 4, color: "#475569" }}>
+                        🏷️ {stop.category}
+                      </span>
+                      <span style={{ fontSize: "0.74rem", background: "#fef3c7", padding: "2px 6px", borderRadius: 4, color: "#92400e" }}>
+                        🚗 +{stop.detour_distance_km} km detour
+                      </span>
+                      <span style={{ fontSize: "0.74rem", background: "#e0f2fe", padding: "2px 6px", borderRadius: 4, color: "#0369a1" }}>
+                        ⏱️ +{stop.added_travel_time_minutes} min transit
+                      </span>
+                      <span style={{ fontSize: "0.74rem", background: "#ecfdf5", padding: "2px 6px", borderRadius: 4, color: "#065f46" }}>
+                        ☕ ~{stop.recommended_pause_minutes} min pause
+                      </span>
+                    </div>
+
+                    <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#64748b", lineHeight: 1.4 }}>
+                      {stop.description}
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, paddingTop: 8, borderTop: "1px dashed #f1f5f9" }}>
+                    <label style={{ fontSize: "0.78rem", color: "#64748b", whiteSpace: "nowrap" }}>
+                      Target Day:
+                    </label>
+                    <select
+                      value={currentTargetDay}
+                      onChange={(e) =>
+                        setSelectedRouteStopDay((prev) => ({
+                          ...prev,
+                          [stop.id || stop.name]: parseInt(e.target.value) || 1,
+                        }))
+                      }
+                      style={{
+                        padding: "4px 8px",
+                        fontSize: "0.8rem",
+                        borderRadius: 6,
+                        border: "1px solid #cbd5e1",
+                        background: "#fff",
+                      }}
+                    >
+                      {trip.day_schedule ? (
+                        Object.keys(trip.day_schedule).map((d) => (
+                          <option key={d} value={d}>
+                            Day {d}
+                          </option>
+                        ))
+                      ) : (
+                        <option value={1}>Day 1</option>
+                      )}
+                    </select>
+
+                    <button
+                      type="button"
+                      disabled={isAdding}
+                      onClick={() => handleInsertRouteStop(stop, currentTargetDay)}
+                      style={{
+                        flex: 1,
+                        padding: "5px 10px",
+                        fontSize: "0.8rem",
+                        fontWeight: 600,
+                        background: isAdding ? "#94a3b8" : "#9333ea",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: 6,
+                        cursor: isAdding ? "default" : "pointer",
+                        transition: "background 0.2s",
+                      }}
+                    >
+                      {isAdding ? "Adding..." : "+ Add to Itinerary"}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

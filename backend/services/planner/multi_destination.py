@@ -305,6 +305,14 @@ async def build_multi_destination_trip(request) -> dict:
         travelers=traveler_profiles,
     )
 
+    from backend.services.planner.route_attractions import discover_route_attractions
+    trip_data["route_attractions"] = await discover_route_attractions(
+        route={"routes": [{"geometry": {"coordinates": [[stops_info[0]["location"]["lon"], stops_info[0]["location"]["lat"]], [stops_info[-1]["location"]["lon"], stops_info[-1]["location"]["lat"]]]}}]},
+        destination_places=all_places,
+        travel_mode=travel_mode,
+    )
+
+
 
 
     # 8. Dashboard and Summary

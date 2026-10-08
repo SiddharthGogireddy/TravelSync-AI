@@ -472,6 +472,14 @@ async def build_trip(request):
     )
     trip_data["meals_and_breaks"] = meals_and_breaks
 
+    from backend.services.planner.route_attractions import discover_route_attractions
+    trip_data["route_attractions"] = await discover_route_attractions(
+        route=route,
+        destination_places=matched_places,
+        travel_mode=travel_mode,
+    )
+
+
 
     trip_data["dashboard"] = build_dashboard(
         trip_data

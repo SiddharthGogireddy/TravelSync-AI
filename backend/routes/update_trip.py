@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 
@@ -554,4 +554,43 @@ async def replan_day_endpoint(
         "success": True,
         "trip": updated_inner,
         "audit": audit,
-    }
+    }
+
+
+class AddRouteStopRequest(BaseModel):
+    day: int = 1
+    route_stop: dict[str, Any]
+
+
+@router.post("/{trip_id}/add-route-stop")
+async def add_route_stop_endpoint(
+    trip_id: str,
+    request: AddRouteStopRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.route_attractions import insert_route_stop_into_day
+    updated_inner, audit = insert_route_stop_into_day(
+        trip_data=inner_trip,
+        day_number=request.day,
+        route_stop=request.route_stop,
+    )
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to add route stop"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
+
