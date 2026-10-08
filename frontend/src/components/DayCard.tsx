@@ -112,10 +112,33 @@ export default function DayCard({
 )}
                         {place.matched_travelers &&
         place.matched_travelers.length > 0 && (
-            <p>
-                <strong>Matches:</strong>{" "}
-                {place.matched_travelers.join(", ")}
-            </p>
+            <div style={{ marginTop: 6, fontSize: "0.82rem" }}>
+                <span style={{ color: "#4f46e5", fontWeight: 600 }}>
+                    🎯 Matched:
+                </span>{" "}
+                <span style={{ color: "#1e293b", fontWeight: 500 }}>
+                    {place.matched_travelers.join(", ")}
+                </span>
+                {place.matched_interests && place.matched_interests.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                        {place.matched_interests.map((interest, idx) => (
+                            <span
+                                key={idx}
+                                style={{
+                                    background: "#ede9fe",
+                                    color: "#6d28d9",
+                                    fontSize: "0.72rem",
+                                    padding: "2px 7px",
+                                    borderRadius: 10,
+                                    fontWeight: 500,
+                                }}
+                            >
+                                #{interest}
+                            </span>
+                        ))}
+                    </div>
+                )}
+            </div>
         )}
                     </div>
                 </div>

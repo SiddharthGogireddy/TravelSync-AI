@@ -221,13 +221,16 @@ const [destinationSearch, setDestinationSearch] = useState(
             <label>Interests</label>
 
             {[
-                "Beaches",
-                "History",
-                "Nature",
                 "Food",
-                "Shopping",
-                "Adventure",
+                "History",
                 "Culture",
+                "Nature",
+                "Adventure",
+                "Beaches",
+                "Shopping",
+                "Religion",
+                "Nightlife",
+                "Photography",
             ].map((interest) => (
                 <label
                     key={interest}

@@ -82,6 +82,8 @@ export interface Place {
     lon: number;
     score?: number;
     matched_travelers?: string[];
+    matched_interests?: string[];
+    matched_traveler_preferences?: Array<{ traveler: string; interests: string[] }>;
     match_count?: number;
     travel_from_previous_km?: number | null;
 }
