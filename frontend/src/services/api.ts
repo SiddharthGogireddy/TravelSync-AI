@@ -541,4 +541,28 @@ export async function switchTransportMode(
 
   return await res.json();
 }
+
+export async function reallocateTripBudget(
+  tripId: string,
+  strategy: string,
+  customCategories?: Record<string, number>
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/reallocate-budget`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      strategy,
+      custom_categories: customCategories,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to reallocate budget");
+  }
+
+  return await res.json();
+}
 

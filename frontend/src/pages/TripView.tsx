@@ -42,6 +42,7 @@ import {
   replanActiveDay,
   addRouteStop,
   switchTransportMode,
+  reallocateTripBudget,
 } from "../services/api";
 
 
@@ -244,6 +245,27 @@ export default function TripView() {
     }
   };
 
+  const [selectedBudgetStrategy, setSelectedBudgetStrategy] = useState("conservative");
+  const [reallocatingBudget, setReallocatingBudget] = useState(false);
+  const [budgetReallocFeedback, setBudgetReallocFeedback] = useState<string | null>(null);
+
+  const handleApplyBudgetReallocation = async (strategy: string) => {
+    if (!tripId || reallocatingBudget) return;
+    try {
+      setReallocatingBudget(true);
+      setBudgetReallocFeedback(null);
+      const res = await reallocateTripBudget(tripId, strategy);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+        setBudgetReallocFeedback(res.audit?.summary || "Budget reallocated successfully!");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to reallocate budget");
+    } finally {
+      setReallocatingBudget(false);
+    }
+  };
+
 
 
   /*
@@ -423,6 +445,7 @@ if (savedRating) {
   const weatherReplanning = (trip as any)?.weather_replanning;
   const routeAttractions: any[] = (trip as any)?.route_attractions || [];
   const transportRecs = (trip as any)?.transport_recommendations;
+  const budgetRealloc = (trip as any)?.budget_reallocation;
 
 
 
@@ -1065,6 +1088,149 @@ if (savedRating) {
         <BudgetPieChart
           categories={trip.budget.categories}
         />
+
+        {/* Smart Budget Reallocation & Optimization Card */}
+        {budgetRealloc && (
+          <div
+            style={{
+              background: "#fffbeb",
+              border: "1px solid #fde68a",
+              borderRadius: 12,
+              padding: "20px 24px",
+              marginTop: 20,
+              boxShadow: "0 2px 6px rgba(217, 119, 6, 0.05)",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+              <div>
+                <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#92400e", display: "flex", alignItems: "center", gap: 8 }}>
+                  <span>⚖️</span> Smart Budget Reallocation Engine
+                </h3>
+                <p style={{ margin: 0, color: "#b45309", fontSize: "0.86rem" }}>
+                  Active Strategy: <strong>{budgetRealloc.strategy_label}</strong> — {budgetRealloc.strategy_description}
+                </p>
+              </div>
+
+              {/* Strategy Selector Buttons */}
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {budgetRealloc.available_strategies?.map((st: any) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedBudgetStrategy(st.id);
+                      handleApplyBudgetReallocation(st.id);
+                    }}
+                    disabled={reallocatingBudget}
+                    style={{
+                      padding: "6px 12px",
+                      fontSize: "0.78rem",
+                      fontWeight: 600,
+                      borderRadius: 20,
+                      border: "none",
+                      cursor: "pointer",
+                      background: (selectedBudgetStrategy || budgetRealloc.active_strategy) === st.id ? "#d97706" : "#fef3c7",
+                      color: (selectedBudgetStrategy || budgetRealloc.active_strategy) === st.id ? "#ffffff" : "#92400e",
+                      boxShadow: (selectedBudgetStrategy || budgetRealloc.active_strategy) === st.id ? "0 2px 4px rgba(217, 119, 6, 0.25)" : "none",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    {st.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {budgetReallocFeedback && (
+              <div
+                style={{
+                  background: "#f0fdf4",
+                  border: "1px solid #bbf7d0",
+                  color: "#166534",
+                  padding: "8px 14px",
+                  borderRadius: 8,
+                  fontSize: "0.85rem",
+                  marginBottom: 14,
+                }}
+              >
+                ✓ {budgetReallocFeedback}
+              </div>
+            )}
+
+            {/* Category Before vs After Comparison Table / Cards */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12, margin: "14px 0" }}>
+              {budgetRealloc.categories &&
+                Object.entries(budgetRealloc.categories).map(([catKey, catData]: [string, any]) => {
+                  const delta = catData.delta_amount;
+                  return (
+                    <div
+                      key={catKey}
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid #fef3c7",
+                        borderRadius: 10,
+                        padding: "12px 14px",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>
+                          {catKey === "hotel" ? "🏨 Hotel" : catKey === "food" ? "🍽️ Dining" : catKey === "transport" ? "🚗 Transport" : catKey === "activities" ? "🎟️ Activities" : "🛡️ Reserve"}
+                        </span>
+                        <span
+                          style={{
+                            fontSize: "0.72rem",
+                            fontWeight: 700,
+                            padding: "2px 6px",
+                            borderRadius: 10,
+                            background: delta > 0 ? "#dcfce7" : delta < 0 ? "#fee2e2" : "#f1f5f9",
+                            color: delta > 0 ? "#166534" : delta < 0 ? "#991b1b" : "#475569",
+                          }}
+                        >
+                          {delta > 0 ? `+₹${delta}` : delta < 0 ? `-₹${Math.abs(delta)}` : "Balanced"}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: "0.95rem", fontWeight: 700, color: "#0f172a" }}>
+                        ₹{catData.proposed_amount}
+                      </div>
+
+                      <div style={{ fontSize: "0.74rem", color: "#64748b", marginTop: 2 }}>
+                        Current: ₹{catData.current_amount} ({catData.target_percentage}% target)
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+
+            {/* Actionable Trade-Off Cards */}
+            {budgetRealloc.trade_off_suggestions?.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#92400e", marginBottom: 6 }}>
+                  💡 High-Impact Budget Trade-Offs:
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {budgetRealloc.trade_off_suggestions.map((to: any, toIdx: number) => (
+                    <div
+                      key={toIdx}
+                      style={{
+                        background: "#ffffff",
+                        border: "1px solid #fef3c7",
+                        borderRadius: 8,
+                        padding: "10px 14px",
+                        fontSize: "0.82rem",
+                        color: "#334155",
+                      }}
+                    >
+                      <strong style={{ color: "#b45309" }}>{to.action}</strong>
+                      <div style={{ marginTop: 2, color: "#475569" }}>{to.impact}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
       </div>
 

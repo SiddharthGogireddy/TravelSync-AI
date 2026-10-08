@@ -321,8 +321,8 @@ async def build_multi_destination_trip(request) -> dict:
         party_size=len(traveler_profiles) or 1,
     )
 
-
-
+    from backend.services.planner.budget_reallocator import analyze_budget_reallocations
+    trip_data["budget_reallocation"] = analyze_budget_reallocations(trip_data["budget"])
 
     # 8. Dashboard and Summary
     trip_data["dashboard"] = build_dashboard(trip_data)

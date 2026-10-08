@@ -631,4 +631,42 @@ async def switch_transport_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
+
+
+class ReallocateBudgetRequest(BaseModel):
+    strategy: str = "conservative"
+    custom_categories: Optional[dict[str, int]] = None
+
+
+@router.post("/{trip_id}/reallocate-budget")
+async def reallocate_budget_endpoint(
+    trip_id: str,
+    request: ReallocateBudgetRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.budget_reallocator import apply_budget_reallocation
+    updated_inner, audit = apply_budget_reallocation(
+        trip_data=inner_trip,
+        strategy=request.strategy,
+        custom_categories=request.custom_categories,
+    )
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to reallocate budget"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
 
