@@ -219,12 +219,20 @@ async def build_multi_destination_trip(request) -> dict:
             })
         stop["hotel_count"] = len(raw_hotels)
 
+    from backend.services.planner.weather_planner import replan_trip_for_weather
+    day_schedule, weather_replanning = replan_trip_for_weather(
+        day_schedule,
+        primary_weather_summary,
+        available_places=all_places,
+    )
+
     from backend.services.planner.opening_hours_scheduler import apply_opening_hours_to_schedule
     day_schedule, opening_hours_notes = apply_opening_hours_to_schedule(
         day_schedule=day_schedule,
         travel_mode=travel_mode,
         available_places=all_places,
     )
+
 
     # 6. Overall summaries
     route_summary = {
@@ -286,7 +294,9 @@ async def build_multi_destination_trip(request) -> dict:
         "day_schedule": day_schedule,
         "budget": budget,
         "opening_hours_notes": opening_hours_notes,
+        "weather_replanning": weather_replanning,
     }
+
 
     from backend.services.planner.meal_and_break_engine import attach_meals_and_breaks_to_itinerary
     trip_data["meals_and_breaks"] = attach_meals_and_breaks_to_itinerary(

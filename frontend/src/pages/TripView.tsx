@@ -328,8 +328,13 @@ if (savedRating) {
 
   const isMulti = (trip as any)?.is_multi_destination || ((trip as any)?.destinations && (trip as any).destinations.length > 1);
   const destinationsList = (trip as any)?.destinations || [];
+
   const travelLegs = (trip as any)?.inter_destination_travel || [];
   const constraintAnalysis = (trip as any)?.constraint_analysis;
+  const weatherReplanning = (trip as any)?.weather_replanning;
+
+
+
 
 
 
@@ -712,9 +717,76 @@ if (savedRating) {
         </div>
       )}
 
+      {/* Weather-Aware Replanning Alert Card */}
+      {weatherReplanning && weatherReplanning.has_weather_replan && (
+        <div
+          style={{
+            background: "#eff6ff",
+            border: "1px solid #bfdbfe",
+            borderRadius: 12,
+            padding: "18px 22px",
+            margin: "24px 0",
+            boxShadow: "0 2px 4px rgba(37, 99, 235, 0.06)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1.18rem", color: "#1e3a8a", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🌦️</span> Weather-Aware Itinerary Protection
+              </h3>
+              <p style={{ margin: 0, color: "#3b82f6", fontSize: "0.85rem" }}>
+                {weatherReplanning.summary}
+              </p>
+            </div>
+            <span
+              style={{
+                background: "#dbeafe",
+                color: "#1d4ed8",
+                padding: "4px 12px",
+                borderRadius: 16,
+                fontSize: "0.8rem",
+                fontWeight: 700,
+              }}
+            >
+              {weatherReplanning.decisions?.length || 0} Adjustments Made
+            </span>
+          </div>
 
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {weatherReplanning.decisions?.map((d: any, idx: number) => (
+              <div
+                key={idx}
+                style={{
+                  background: "#ffffff",
+                  border: "1px solid #dbeafe",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  fontSize: "0.86rem",
+                  color: "#1e293b",
+                  display: "flex",
+                  alignItems: "flex-start",
+                  gap: 10,
+                }}
+              >
+                <span style={{ fontSize: "1.1rem" }}>
+                  {d.condition === "rain" ? "🌧️" : (d.condition === "storm" ? "⛈️" : "☀️")}
+                </span>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, color: "#1e40af" }}>
+                    Day {d.day} ({d.date || "Forecast"}): {d.action === "swapped_activities" ? "Activity Rescheduled" : "Indoor Alternative Substituted"}
+                  </div>
+                  <div style={{ color: "#475569", marginTop: 2 }}>
+                    {d.explanation}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="section">
+
 
         <h2 className="section-title">
           Budget Overview

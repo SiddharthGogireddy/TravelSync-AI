@@ -282,10 +282,13 @@ async def build_trip(request):
         pace=traveler_profiles[0]["pace"],
         constraints=constraints_dict,
     )
-    day_schedule = adjust_schedule_for_weather(
+    from backend.services.planner.weather_planner import replan_trip_for_weather
+    day_schedule, weather_replanning = replan_trip_for_weather(
         day_schedule,
         weather_summary,
+        available_places=matched_places,
     )
+
     from backend.services.planner.opening_hours_scheduler import apply_opening_hours_to_schedule
     day_schedule, opening_hours_notes = apply_opening_hours_to_schedule(
         day_schedule=day_schedule,
@@ -458,6 +461,8 @@ async def build_trip(request):
     trip_data["constraint_analysis"] = constraint_analysis
     trip_data["constraints"] = constraints_dict
     trip_data["opening_hours_notes"] = opening_hours_notes
+    trip_data["weather_replanning"] = weather_replanning
+
 
     from backend.services.planner.meal_and_break_engine import attach_meals_and_breaks_to_itinerary
     meals_and_breaks = attach_meals_and_breaks_to_itinerary(
