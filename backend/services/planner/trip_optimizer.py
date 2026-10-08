@@ -6,6 +6,7 @@ def optimize_trip(
     days,
     mandatory_schedule=None,
     pace="Balanced",
+    constraints=None,
 ):
     """
     Creates a balanced itinerary by:
@@ -14,6 +15,7 @@ def optimize_trip(
     - Prioritizing higher scored attractions
     - Grouping nearby attractions
     - Limiting attractions per day
+    - Applying user planning constraints (max daily distance, min attractions)
     """
 
     PACE_LIMITS = {
@@ -36,7 +38,13 @@ def optimize_trip(
         )
     )
 
+    if constraints and isinstance(constraints, dict):
+        min_req = constraints.get("min_attractions_per_day")
+        if min_req and isinstance(min_req, int):
+            MAX_PER_DAY = max(MAX_PER_DAY, min_req)
+
     MAX_CLUSTER_DISTANCE = 5
+
 
     if mandatory_schedule is None:
         mandatory_schedule = {}
@@ -99,24 +107,32 @@ def optimize_trip(
             continue
 
         for mandatory in mandatory_places:
+            matched_place = None
+            mandatory_norm = str(mandatory).strip().lower()
 
+            # Exact or substring match in places
             for place in places:
-
-                if place["name"] == mandatory:
-
-                    if (
-                        len(schedule[day])
-                        < MAX_PER_DAY
-                    ):
-                        schedule[day].append(
-                            place
-                        )
-
-                        used.add(
-                            place["name"]
-                        )
-
+                p_norm = place["name"].lower()
+                if p_norm == mandatory_norm or mandatory_norm in p_norm or p_norm in mandatory_norm:
+                    matched_place = place
                     break
+
+            if not matched_place:
+                matched_place = {
+                    "name": str(mandatory).strip(),
+                    "category": "Must-Visit",
+                    "distance_km": 0.0,
+                    "lat": places[0]["lat"] if places else 0.0,
+                    "lon": places[0]["lon"] if places else 0.0,
+                    "score": 10,
+                    "matched_interests": ["Must-Visit"],
+                    "travel_from_previous_km": 0.0,
+                }
+
+            if len(schedule[day]) < MAX_PER_DAY:
+                schedule[day].append(matched_place)
+                used.add(matched_place["name"])
+
 
     # -------------------------------------------------
     # STEP 2

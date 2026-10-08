@@ -91,10 +91,44 @@ const [destination, setDestination] = useState<string>(
         "car" | "bus" | "train" | "flight"
     >(previousTrip?.travel_mode ?? "car");
 
+    // Planning Constraints State
+    const [showConstraints, setShowConstraints] = useState(false);
+    const [maxDailyDistance, setMaxDailyDistance] = useState<string>("");
+    const [maxBudgetCap, setMaxBudgetCap] = useState<string>("");
+    const [minAttractionsPerDay, setMinAttractionsPerDay] = useState<string>("");
+    const [mustVisitInput, setMustVisitInput] = useState<string>("");
+    const [avoidLocationsInput, setAvoidLocationsInput] = useState<string>("");
+
+    const getParsedConstraints = () => {
+        const c: any = {};
+        if (maxDailyDistance.trim()) {
+            const v = parseFloat(maxDailyDistance);
+            if (!isNaN(v) && v > 0) c.max_daily_distance_km = v;
+        }
+        if (maxBudgetCap.trim()) {
+            const v = parseFloat(maxBudgetCap);
+            if (!isNaN(v) && v > 0) c.max_budget = v;
+        }
+        if (minAttractionsPerDay.trim()) {
+            const v = parseInt(minAttractionsPerDay);
+            if (!isNaN(v) && v > 0) c.min_attractions_per_day = v;
+        }
+        if (mustVisitInput.trim()) {
+            const arr = mustVisitInput.split(",").map((s) => s.trim()).filter(Boolean);
+            if (arr.length > 0) c.must_visit_locations = arr;
+        }
+        if (avoidLocationsInput.trim()) {
+            const arr = avoidLocationsInput.split(",").map((s) => s.trim()).filter(Boolean);
+            if (arr.length > 0) c.locations_to_avoid = arr;
+        }
+        return Object.keys(c).length > 0 ? c : undefined;
+    };
+
     const handleSubmit = (
     e: React.FormEvent<HTMLFormElement>
 ) => {
     e.preventDefault();
+    const constraintsObj = getParsedConstraints();
 
     if (isMultiDest) {
         if (multiStops.length < 2) {
@@ -116,6 +150,7 @@ const [destination, setDestination] = useState<string>(
             destinations: multiStops,
             travelers,
             mandatory_visits: [],
+            constraints: constraintsObj,
             travel_mode: travelMode,
         });
         return;
@@ -133,7 +168,7 @@ const [destination, setDestination] = useState<string>(
         destination,
         days,
         travelers,
-
+        constraints: constraintsObj,
         mandatory_visits: [],
         travel_mode: travelMode,
     });
@@ -573,6 +608,84 @@ const [destinationSearch, setDestinationSearch] = useState(
                         Flight
                     </option>
                 </select>
+            </div>
+
+            {/* Planning Constraints Collapsible Section */}
+            <div style={{ margin: "20px 0", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, background: "#f8fafc" }}>
+                <div
+                    onClick={() => setShowConstraints(!showConstraints)}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontWeight: 600, color: "#1e293b" }}
+                >
+                    <span style={{ fontSize: "0.92rem" }}>⚙️ Custom Planning Constraints (Optional)</span>
+                    <span style={{ fontSize: "0.82rem", color: "#4f46e5" }}>{showConstraints ? "▲ Hide" : "▼ Show"}</span>
+                </div>
+
+                {showConstraints && (
+                    <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                        <div>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                                Max Daily Travel Distance (km)
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="e.g. 25"
+                                value={maxDailyDistance}
+                                onChange={(e) => setMaxDailyDistance(e.target.value)}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                                Max Budget Cap (₹ INR)
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="e.g. 50000"
+                                value={maxBudgetCap}
+                                onChange={(e) => setMaxBudgetCap(e.target.value)}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                                Min Attractions Per Day
+                            </label>
+                            <input
+                                type="number"
+                                placeholder="e.g. 2"
+                                min="1"
+                                max="6"
+                                value={minAttractionsPerDay}
+                                onChange={(e) => setMinAttractionsPerDay(e.target.value)}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                            />
+                        </div>
+                        <div>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                                Must-Visit Attractions
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="Comma separated, e.g. Fort, Church"
+                                value={mustVisitInput}
+                                onChange={(e) => setMustVisitInput(e.target.value)}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                            />
+                        </div>
+                        <div style={{ gridColumn: "1 / -1" }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                                Locations / Keywords to Avoid
+                            </label>
+                            <input
+                                type="text"
+                                placeholder="e.g. Crowded Pubs, Extreme Adventure"
+                                value={avoidLocationsInput}
+                                onChange={(e) => setAvoidLocationsInput(e.target.value)}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
 
             <button

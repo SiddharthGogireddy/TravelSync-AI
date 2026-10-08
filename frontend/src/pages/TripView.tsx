@@ -329,6 +329,7 @@ if (savedRating) {
   const isMulti = (trip as any)?.is_multi_destination || ((trip as any)?.destinations && (trip as any).destinations.length > 1);
   const destinationsList = (trip as any)?.destinations || [];
   const travelLegs = (trip as any)?.inter_destination_travel || [];
+  const constraintAnalysis = (trip as any)?.constraint_analysis;
 
 
 
@@ -562,6 +563,155 @@ if (savedRating) {
       <TravelerConflicts
         conflicts={trip.traveler_conflicts}
       />
+
+      {/* Planning Constraints Audit Card */}
+      {constraintAnalysis && (
+        <div
+          style={{
+            background: "#ffffff",
+            border: constraintAnalysis.violations?.length ? "1px solid #fecaca" : "1px solid #bbf7d0",
+            borderRadius: 12,
+            padding: "20px 24px",
+            margin: "24px 0",
+            boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🎯</span> Planning Constraints Audit
+              </h3>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.86rem" }}>
+                Verified adherence to custom budget, distance limits, and location requirements
+              </p>
+            </div>
+            <span
+              style={{
+                background: constraintAnalysis.violations?.length ? "#fee2e2" : "#dcfce7",
+                color: constraintAnalysis.violations?.length ? "#991b1b" : "#166534",
+                padding: "6px 14px",
+                borderRadius: 20,
+                fontSize: "0.82rem",
+                fontWeight: 700,
+              }}
+            >
+              {constraintAnalysis.violations?.length ? "⚠️ Constraints Adjusted" : "✓ All Constraints Met"}
+            </span>
+          </div>
+
+          {/* Satisfied items pills */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+            {constraintAnalysis.satisfied?.budget !== undefined && (
+              <span
+                style={{
+                  background: constraintAnalysis.satisfied.budget ? "#f0fdf4" : "#fef2f2",
+                  color: constraintAnalysis.satisfied.budget ? "#15803d" : "#b91c1c",
+                  border: `1px solid ${constraintAnalysis.satisfied.budget ? "#bbf7d0" : "#fecaca"}`,
+                  padding: "4px 10px",
+                  borderRadius: 16,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {constraintAnalysis.satisfied.budget ? "✓ Budget Respected" : "✕ Budget Exceeded"}
+              </span>
+            )}
+            {constraintAnalysis.satisfied?.distance !== undefined && (
+              <span
+                style={{
+                  background: constraintAnalysis.satisfied.distance ? "#f0fdf4" : "#fef2f2",
+                  color: constraintAnalysis.satisfied.distance ? "#15803d" : "#b91c1c",
+                  border: `1px solid ${constraintAnalysis.satisfied.distance ? "#bbf7d0" : "#fecaca"}`,
+                  padding: "4px 10px",
+                  borderRadius: 16,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {constraintAnalysis.satisfied.distance ? "✓ Daily Distance Capped" : "✕ Distance Exceeded"}
+              </span>
+            )}
+            {constraintAnalysis.satisfied?.must_visit !== undefined && (
+              <span
+                style={{
+                  background: constraintAnalysis.satisfied.must_visit ? "#f0fdf4" : "#fef2f2",
+                  color: constraintAnalysis.satisfied.must_visit ? "#15803d" : "#b91c1c",
+                  border: `1px solid ${constraintAnalysis.satisfied.must_visit ? "#bbf7d0" : "#fecaca"}`,
+                  padding: "4px 10px",
+                  borderRadius: 16,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {constraintAnalysis.satisfied.must_visit ? "✓ Must-Visit Scheduled" : "✕ Must-Visit Missing"}
+              </span>
+            )}
+            {constraintAnalysis.satisfied?.avoided_locations !== undefined && (
+              <span
+                style={{
+                  background: constraintAnalysis.satisfied.avoided_locations ? "#f0fdf4" : "#fef2f2",
+                  color: constraintAnalysis.satisfied.avoided_locations ? "#15803d" : "#b91c1c",
+                  border: `1px solid ${constraintAnalysis.satisfied.avoided_locations ? "#bbf7d0" : "#fecaca"}`,
+                  padding: "4px 10px",
+                  borderRadius: 16,
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                }}
+              >
+                {constraintAnalysis.satisfied.avoided_locations ? "✓ Avoided Locations Excluded" : "✕ Avoided Visited"}
+              </span>
+            )}
+          </div>
+
+          {/* Details breakdown */}
+          {constraintAnalysis.details && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, fontSize: "0.85rem", background: "#f8fafc", padding: 12, borderRadius: 8, marginBottom: 12 }}>
+              {constraintAnalysis.details.max_daily_distance_km && (
+                <div>
+                  <span style={{ color: "#64748b" }}>Daily Distance Limit: </span>
+                  <strong>{constraintAnalysis.details.max_daily_distance_km} km</strong> (Peak: {constraintAnalysis.details.max_observed_day_distance_km} km)
+                </div>
+              )}
+              {constraintAnalysis.details.max_budget && (
+                <div>
+                  <span style={{ color: "#64748b" }}>Budget Cap: </span>
+                  <strong>${constraintAnalysis.details.max_budget}</strong> (Est: ${constraintAnalysis.details.estimated_total_cost})
+                </div>
+              )}
+              {constraintAnalysis.details.must_visit_included?.length > 0 && (
+                <div>
+                  <span style={{ color: "#64748b" }}>Must-Visits Added: </span>
+                  <strong>{constraintAnalysis.details.must_visit_included.join(", ")}</strong>
+                </div>
+              )}
+              {constraintAnalysis.details.avoided_locations_excluded?.length > 0 && (
+                <div>
+                  <span style={{ color: "#64748b" }}>Locations Avoided: </span>
+                  <strong>{constraintAnalysis.details.avoided_locations_excluded.join(", ")}</strong>
+                </div>
+              )}
+            </div>
+          )}
+
+          {constraintAnalysis.explanation && (
+            <div style={{ fontSize: "0.85rem", color: "#475569", fontStyle: "italic", borderTop: "1px solid #f1f5f9", paddingTop: 8 }}>
+              💡 {constraintAnalysis.explanation}
+            </div>
+          )}
+
+          {constraintAnalysis.violations?.length > 0 && (
+            <div style={{ marginTop: 10, padding: "8px 12px", background: "#fef2f2", borderRadius: 6, border: "1px solid #fecaca" }}>
+              <div style={{ fontSize: "0.82rem", fontWeight: 700, color: "#991b1b", marginBottom: 4 }}>Note on Constraints:</div>
+              <ul style={{ margin: 0, paddingLeft: 18, fontSize: "0.82rem", color: "#b91c1c" }}>
+                {constraintAnalysis.violations.map((v: string, i: number) => (
+                  <li key={i}>{v}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
 
 
       <div className="section">

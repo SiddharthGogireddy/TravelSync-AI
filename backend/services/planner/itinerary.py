@@ -45,7 +45,34 @@ async def build_trip(request):
     days = request.days
     travelers = request.travelers
     travel_mode = request.travel_mode
-    mandatory_visits = request.mandatory_visits
+    mandatory_visits = list(request.mandatory_visits or [])
+
+    raw_constraints = getattr(request, "constraints", None)
+    constraints_dict = (
+        raw_constraints.dict()
+        if raw_constraints and hasattr(raw_constraints, "dict")
+        else (raw_constraints if isinstance(raw_constraints, dict) else {})
+    )
+    from backend.services.planner.constraint_engine import (
+        validate_constraints,
+        filter_avoided_locations,
+        evaluate_constraints_satisfaction,
+    )
+    is_valid_constraints, constraint_errors = validate_constraints(constraints_dict)
+    if not is_valid_constraints:
+        return {
+            "error": "Constraint validation failed",
+            "details": constraint_errors,
+        }
+
+    # Merge must_visit_locations from constraints into mandatory_visits
+    raw_must = constraints_dict.get("must_visit_locations") or constraints_dict.get("must_visit") or []
+    if raw_must:
+        from backend.models.trip import MandatoryVisit
+        for mv in raw_must:
+            mv_name = str(mv).strip()
+            if mv_name and not any(v.name.lower() == mv_name.lower() for v in mandatory_visits):
+                mandatory_visits.append(MandatoryVisit(name=mv_name))
 
     traveler_profiles = []
 
@@ -81,7 +108,11 @@ async def build_trip(request):
         float(destination_location["lat"]),
         float(destination_location["lon"]),
     )
-    print("Raw places:", len(places))
+    places, excluded_places = filter_avoided_locations(
+        places,
+        constraints_dict.get("locations_to_avoid")
+    )
+    print("Raw places after constraint filtering:", len(places))
     route = await get_route(
         float(source_location["lon"]),
         float(source_location["lat"]),
@@ -249,6 +280,7 @@ async def build_trip(request):
         days,
         mandatory_schedule,
         pace=traveler_profiles[0]["pace"],
+        constraints=constraints_dict,
     )
     day_schedule = adjust_schedule_for_weather(
         day_schedule,
@@ -410,10 +442,20 @@ async def build_trip(request):
         "budget": budget,
     }
 
+    constraint_analysis = evaluate_constraints_satisfaction(
+        day_schedule,
+        budget,
+        constraints_dict,
+        mandatory_visits=[visit.dict() for visit in mandatory_visits],
+    )
+    trip_data["constraint_analysis"] = constraint_analysis
+    trip_data["constraints"] = constraints_dict
 
     trip_data["dashboard"] = build_dashboard(
         trip_data
     )
+    trip_data["dashboard"]["constraint_analysis"] = constraint_analysis
+
 
     trip_data["summary"] = build_summary(
         trip_data

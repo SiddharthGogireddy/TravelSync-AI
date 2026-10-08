@@ -97,6 +97,24 @@ export interface DestinationSummary {
     hotel_count?: number;
 }
 
+export interface PlanningConstraints {
+    max_daily_distance_km?: number;
+    max_budget?: number;
+    min_attractions_per_day?: number;
+    preferred_travel_mode?: string;
+    must_visit_locations?: string[];
+    locations_to_avoid?: string[];
+}
+
+export interface ConstraintAnalysis {
+    all_satisfied: boolean;
+    satisfied_constraints: string[];
+    unsatisfied_constraints: string[];
+    explanations: string[];
+    conflicts_detected: string[];
+    daily_distance_audit: Record<string, number>;
+}
+
 export interface TripRequest {
     source: string;
     destination: string;
@@ -105,4 +123,5 @@ export interface TripRequest {
     travel_mode: string;
     travelers: TravelerRequest[];
     mandatory_visits: MandatoryVisit[];
+    constraints?: PlanningConstraints;
 }
