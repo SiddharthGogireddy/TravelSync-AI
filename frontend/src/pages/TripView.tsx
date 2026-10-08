@@ -38,6 +38,7 @@ import {
   exportTrip,
   importTrip,
   duplicateTrip,
+  saveTripAsTemplate,
 } from "../services/api";
 
 import type {
@@ -127,6 +128,34 @@ export default function TripView() {
       setDuplicating(false);
     }
   };
+
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [templateName, setTemplateName] = useState("");
+  const [templateDesc, setTemplateDesc] = useState("");
+  const [templateCategory, setTemplateCategory] = useState("General");
+  const [savingTemplate, setSavingTemplate] = useState(false);
+
+  const handleSaveAsTemplate = async () => {
+    if (!tripId) return;
+    try {
+      setSavingTemplate(true);
+      const res = await saveTripAsTemplate(
+        tripId,
+        templateName.trim() || undefined,
+        templateDesc.trim() || undefined,
+        templateCategory
+      );
+      alert(`Success! Template "${res.name}" created. You can reuse it anytime from the Templates tab.`);
+      setShowTemplateModal(false);
+      setTemplateName("");
+      setTemplateDesc("");
+    } catch (err: any) {
+      alert(err.message || "Failed to create template from trip");
+    } finally {
+      setSavingTemplate(false);
+    }
+  };
+
 
   /*
    * Check whether this trip is already a favorite.
@@ -387,6 +416,19 @@ if (savedRating) {
         disabled={duplicating}
       >
         {duplicating ? "Duplicating..." : "Duplicate Trip"}
+      </button>
+
+
+      {/* Save as Template */}
+      <button
+        onClick={() => {
+          if (dashboard) {
+            setTemplateName(`${dashboard.days || 1}-Day ${dashboard.destination || "Trip"} Template`);
+          }
+          setShowTemplateModal(true);
+        }}
+      >
+        Save as Template
       </button>
 
 
@@ -963,6 +1005,21 @@ if (savedRating) {
         <button
           className="download-button"
           onClick={() => {
+            if (dashboard) {
+              setTemplateName(`${dashboard.days || 1}-Day ${dashboard.destination || "Trip"} Template`);
+            }
+            setShowTemplateModal(true);
+          }}
+          style={{
+            background: "#7c3aed",
+          }}
+        >
+          Save as Template
+        </button>
+
+        <button
+          className="download-button"
+          onClick={() => {
             if (tripId) {
               exportTrip(tripId);
             }
@@ -986,6 +1043,145 @@ if (savedRating) {
         </button>
 
       </div>
+
+      {/* SAVE TRIP AS TEMPLATE MODAL */}
+      {showTemplateModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 12,
+              padding: 24,
+              maxWidth: 480,
+              width: "100%",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)",
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px", fontSize: "1.25rem", color: "#1e293b" }}>
+              Save Trip as Template
+            </h3>
+            <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.88rem" }}>
+              Make this itinerary a reusable blueprint for future trip planning.
+            </p>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                Template Name
+              </label>
+              <input
+                type="text"
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="e.g. 3-Day Goa Leisure & Beach Escape"
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  boxSizing: "border-box",
+                  fontSize: "0.9rem",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                Category
+              </label>
+              <select
+                value={templateCategory}
+                onChange={(e) => setTemplateCategory(e.target.value)}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  boxSizing: "border-box",
+                  fontSize: "0.9rem",
+                }}
+              >
+                <option value="General">General</option>
+                <option value="Weekend Getaway">Weekend Getaway</option>
+                <option value="Heritage & Culture">Heritage & Culture</option>
+                <option value="Beach & Leisure">Beach & Leisure</option>
+                <option value="Adventure">Adventure</option>
+                <option value="Family Friendly">Family Friendly</option>
+              </select>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                Description (Optional)
+              </label>
+              <textarea
+                value={templateDesc}
+                onChange={(e) => setTemplateDesc(e.target.value)}
+                placeholder="Describe what makes this template great..."
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  boxSizing: "border-box",
+                  fontSize: "0.9rem",
+                  fontFamily: "inherit",
+                }}
+              />
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <button
+                onClick={() => setShowTemplateModal(false)}
+                disabled={savingTemplate}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.88rem",
+                  color: "#475569",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAsTemplate}
+                disabled={savingTemplate}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: 6,
+                  border: "none",
+                  background: "#7c3aed",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  fontSize: "0.88rem",
+                }}
+              >
+                {savingTemplate ? "Saving..." : "Save Template"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

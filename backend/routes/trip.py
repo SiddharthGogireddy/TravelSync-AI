@@ -800,3 +800,34 @@ def rate_trip(
         "trip_id": trip_id,
         **result
     }
+
+
+@router.post("/{trip_id}/template")
+def convert_trip_to_template(
+    trip_id: str,
+    payload: dict = Body(default_factory=dict)
+):
+    from backend.services.storage.template_store import save_template_from_trip
+    name = payload.get("name", "")
+    description = payload.get("description", "")
+    category = payload.get("category", "General")
+
+    try:
+        template = save_template_from_trip(
+            trip_id=trip_id,
+            name=name,
+            description=description,
+            category=category,
+        )
+        return {
+            "message": "Template created successfully from trip",
+            "template_id": template["id"],
+            "name": template["name"],
+            "destination": template["destination"],
+            "duration_days": template["duration_days"],
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create template: {str(e)}")
+

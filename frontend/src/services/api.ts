@@ -389,6 +389,90 @@ export async function getTripInsights(
   return await res.json();
 }
 
+// -------------------------------------------------------------
+// STEP 47: TRIP TEMPLATES SERVICE METHODS
+// -------------------------------------------------------------
+
+export async function getTemplates(): Promise<{ templates: import("../types/template").TripTemplate[] }> {
+  const res = await fetch(`${API}/templates`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to load templates");
+  }
+  return await res.json();
+}
+
+export async function getTemplate(templateId: string): Promise<import("../types/template").TripTemplate> {
+  const res = await fetch(`${API}/templates/${templateId}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to load template details");
+  }
+  return await res.json();
+}
+
+export async function saveTripAsTemplate(
+  tripId: string,
+  name?: string,
+  description?: string,
+  category?: string
+): Promise<{ message: string; template_id: string; name: string; destination: string; duration_days: number }> {
+  const res = await fetch(`${API}/trip/${tripId}/template`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      name: name || "",
+      description: description || "",
+      category: category || "General",
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to save trip as template");
+  }
+
+  return await res.json();
+}
+
+export async function createTripFromTemplate(
+  templateId: string,
+  overrides?: { source?: string; travel_mode?: string; budget?: number }
+): Promise<{ message: string; trip_id: string; template_id: string; template_name: string }> {
+  const res = await fetch(`${API}/templates/${templateId}/create-trip`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(overrides || {}),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to create trip from template");
+  }
+
+  return await res.json();
+}
+
+export async function deleteTemplate(
+  templateId: string
+): Promise<{ message: string; template_id: string }> {
+  const res = await fetch(`${API}/templates/${templateId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to delete template");
+  }
+
+  return await res.json();
+}
+
+
 
 
 
