@@ -669,4 +669,74 @@ async def reallocate_budget_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
+
+
+class GroupVoteRequest(BaseModel):
+    traveler_name: str
+    attraction_name: str
+    vote: str  # 'up', 'neutral', 'down'
+
+
+@router.post("/{trip_id}/group-vote")
+async def group_vote_endpoint(
+    trip_id: str,
+    request: GroupVoteRequest,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.group_decision_engine import cast_group_vote
+    updated_inner, audit = cast_group_vote(
+        trip_data=inner_trip,
+        traveler_name=request.traveler_name,
+        attraction_name=request.attraction_name,
+        vote=request.vote,
+    )
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to cast vote"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
+
+
+@router.post("/{trip_id}/resolve-group-conflicts")
+async def resolve_group_conflicts_endpoint(
+    trip_id: str,
+):
+    raw_trip = load_trip(trip_id)
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    from backend.services.planner.group_decision_engine import resolve_group_conflicts
+    updated_inner, audit = resolve_group_conflicts(
+        trip_data=inner_trip,
+    )
+
+    if not audit.get("success", False):
+        raise HTTPException(status_code=400, detail=audit.get("error", "Failed to resolve conflicts"))
+
+    if "trip" in raw_trip:
+        raw_trip["trip"] = updated_inner
+    else:
+        raw_trip = updated_inner
+
+    update_saved_trip(trip_id, raw_trip)
+    return {
+        "success": True,
+        "trip": updated_inner,
+        "audit": audit,
+    }
 

@@ -324,6 +324,9 @@ async def build_multi_destination_trip(request) -> dict:
     from backend.services.planner.budget_reallocator import analyze_budget_reallocations
     trip_data["budget_reallocation"] = analyze_budget_reallocations(trip_data["budget"])
 
+    from backend.services.planner.group_decision_engine import evaluate_group_decisions
+    trip_data["group_decisions"] = evaluate_group_decisions(trip_data)
+
     # 8. Dashboard and Summary
     trip_data["dashboard"] = build_dashboard(trip_data)
     # Enhance dashboard with multi-destination info

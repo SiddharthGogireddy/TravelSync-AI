@@ -43,6 +43,8 @@ import {
   addRouteStop,
   switchTransportMode,
   reallocateTripBudget,
+  castGroupVote,
+  resolveGroupConflicts,
 } from "../services/api";
 
 
@@ -266,6 +268,46 @@ export default function TripView() {
     }
   };
 
+  const [votingTraveler, setVotingTraveler] = useState("");
+  const [votingLoading, setVotingLoading] = useState(false);
+  const [resolvingConflicts, setResolvingConflicts] = useState(false);
+  const [groupConflictFeedback, setGroupConflictFeedback] = useState<string | null>(null);
+
+  const handleCastVote = async (attractionName: string, vote: string) => {
+    if (!tripId || votingLoading) return;
+    const voter = votingTraveler || (trip?.travelers?.[0]?.name) || "Traveler";
+    try {
+      setVotingLoading(true);
+      setGroupConflictFeedback(null);
+      const res = await castGroupVote(tripId, voter, attractionName, vote);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setGroupConflictFeedback(res.audit?.summary || `Vote recorded for ${attractionName}!`);
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to submit vote");
+    } finally {
+      setVotingLoading(false);
+    }
+  };
+
+  const handleResolveConflicts = async () => {
+    if (!tripId || resolvingConflicts) return;
+    try {
+      setResolvingConflicts(true);
+      setGroupConflictFeedback(null);
+      const res = await resolveGroupConflicts(tripId);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setGroupConflictFeedback(res.audit?.summary || "Conflicts resolved into fair compromise!");
+      }
+    } catch (err: any) {
+      alert(err.message || "Failed to resolve conflicts");
+    } finally {
+      setResolvingConflicts(false);
+    }
+  };
+
 
 
   /*
@@ -446,6 +488,7 @@ if (savedRating) {
   const routeAttractions: any[] = (trip as any)?.route_attractions || [];
   const transportRecs = (trip as any)?.transport_recommendations;
   const budgetRealloc = (trip as any)?.budget_reallocation;
+  const groupDecisions = (trip as any)?.group_decisions;
 
 
 
@@ -1259,6 +1302,293 @@ if (savedRating) {
         )}
 
       </div>
+
+      {/* Group Decision & Conflict Resolution Card */}
+      {groupDecisions && (
+        <div
+          style={{
+            background: "#f8fafc",
+            border: "1px solid #cbd5e1",
+            borderRadius: 12,
+            padding: "20px 24px",
+            margin: "24px 0",
+            boxShadow: "0 2px 6px rgba(15, 23, 42, 0.05)",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+            <div>
+              <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>🤝</span> Group Decision & Conflict Resolution
+              </h3>
+              <p style={{ margin: 0, color: "#64748b", fontSize: "0.86rem" }}>
+                Multi-traveler consensus balancing, satisfaction meters & collaborative itinerary voting.
+              </p>
+            </div>
+
+            <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span
+                style={{
+                  background: groupDecisions.harmony_score >= 75 ? "#dcfce7" : "#fee2e2",
+                  color: groupDecisions.harmony_score >= 75 ? "#166534" : "#991b1b",
+                  border: `1px solid ${groupDecisions.harmony_score >= 75 ? "#86efac" : "#fca5a5"}`,
+                  padding: "4px 12px",
+                  borderRadius: 16,
+                  fontSize: "0.82rem",
+                  fontWeight: 700,
+                }}
+              >
+                {groupDecisions.harmony_score}% Harmony ({groupDecisions.harmony_level})
+              </span>
+
+              <button
+                type="button"
+                disabled={resolvingConflicts}
+                onClick={handleResolveConflicts}
+                style={{
+                  padding: "6px 14px",
+                  fontSize: "0.8rem",
+                  fontWeight: 600,
+                  borderRadius: 8,
+                  border: "none",
+                  cursor: resolvingConflicts ? "default" : "pointer",
+                  background: resolvingConflicts ? "#94a3b8" : "#2563eb",
+                  color: "#ffffff",
+                  transition: "background 0.2s",
+                }}
+              >
+                {resolvingConflicts ? "Optimizing..." : "⚡ Auto-Resolve Conflicts"}
+              </button>
+            </div>
+          </div>
+
+          {groupConflictFeedback && (
+            <div
+              style={{
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                color: "#166534",
+                padding: "8px 14px",
+                borderRadius: 8,
+                fontSize: "0.85rem",
+                marginBottom: 14,
+              }}
+            >
+              ✓ {groupConflictFeedback}
+            </div>
+          )}
+
+          {/* Divergence Zones Banner */}
+          {groupDecisions.divergence_zones?.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 16 }}>
+              {groupDecisions.divergence_zones.map((dz: any, dzIdx: number) => (
+                <div
+                  key={dzIdx}
+                  style={{
+                    background: "#fffbeb",
+                    border: "1px solid #fde68a",
+                    borderRadius: 8,
+                    padding: "8px 12px",
+                    fontSize: "0.82rem",
+                    color: "#92400e",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: 6,
+                  }}
+                >
+                  <div>
+                    <strong>⚠️ {dz.category}:</strong> {dz.description}
+                  </div>
+                  <span style={{ fontSize: "0.75rem", color: "#b45309", fontStyle: "italic" }}>
+                    💡 {dz.suggestion}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Traveler Satisfaction Breakdown */}
+          <div style={{ marginBottom: 16 }}>
+            <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "#334155" }}>
+              Traveler Preference Fulfillment:
+            </h4>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+              {groupDecisions.traveler_satisfaction?.map((ts: any, tsIdx: number) => (
+                <div
+                  key={tsIdx}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: 8,
+                    padding: "12px 14px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                    <strong style={{ fontSize: "0.9rem", color: "#0f172a" }}>{ts.traveler}</strong>
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700, color: ts.score >= 70 ? "#16a34a" : "#d97706" }}>
+                      {ts.score}% Sat.
+                    </span>
+                  </div>
+
+                  {/* Progress bar */}
+                  <div style={{ height: 6, width: "100%", background: "#f1f5f9", borderRadius: 3, overflow: "hidden", marginBottom: 8 }}>
+                    <div
+                      style={{
+                        height: "100%",
+                        width: `${ts.score}%`,
+                        background: ts.score >= 70 ? "#22c55e" : "#f59e0b",
+                        borderRadius: 3,
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ fontSize: "0.74rem", color: "#64748b" }}>
+                    {ts.satisfied_count} of {ts.total_interests} preferences scheduled
+                  </div>
+
+                  {ts.represented_interests?.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 6 }}>
+                      {ts.represented_interests.map((ri: string, rIdx: number) => (
+                        <span key={rIdx} style={{ fontSize: "0.68rem", background: "#f0fdf4", color: "#166534", padding: "1px 5px", borderRadius: 4 }}>
+                          ✓ {ri}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Group Voting Section */}
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, flexWrap: "wrap", gap: 8 }}>
+              <h4 style={{ margin: 0, fontSize: "0.95rem", color: "#334155" }}>
+                Group Voting on Scheduled Attractions:
+              </h4>
+
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <label style={{ fontSize: "0.78rem", color: "#64748b" }}>Vote as:</label>
+                <select
+                  value={votingTraveler || trip.travelers?.[0]?.name || ""}
+                  onChange={(e) => setVotingTraveler(e.target.value)}
+                  style={{
+                    padding: "4px 8px",
+                    fontSize: "0.8rem",
+                    borderRadius: 6,
+                    border: "1px solid #cbd5e1",
+                    background: "#fff",
+                  }}
+                >
+                  {trip.travelers?.map((tr: any, idx: number) => (
+                    <option key={idx} value={tr.name}>
+                      {tr.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 10 }}>
+              {groupDecisions.consensus_places?.slice(0, 8).map((cp: any, cpIdx: number) => {
+                const currentVoter = votingTraveler || trip.travelers?.[0]?.name || "";
+                const voterCurrentChoice = cp.votes_by_traveler?.[currentVoter];
+
+                return (
+                  <div
+                    key={cpIdx}
+                    style={{
+                      background: "#ffffff",
+                      border: cp.status.includes("Contentious") ? "1px solid #fecaca" : "1px solid #e2e8f0",
+                      borderRadius: 8,
+                      padding: "10px 12px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+                        <strong style={{ fontSize: "0.88rem", color: "#1e293b" }}>{cp.name}</strong>
+                        <span
+                          style={{
+                            fontSize: "0.68rem",
+                            padding: "2px 6px",
+                            borderRadius: 10,
+                            fontWeight: 600,
+                            background: cp.status.includes("Contentious") ? "#fee2e2" : "#f1f5f9",
+                            color: cp.status.includes("Contentious") ? "#991b1b" : "#475569",
+                          }}
+                        >
+                          {cp.status}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: "0.74rem", color: "#64748b", marginBottom: 6 }}>
+                        👍 {cp.up_votes} | 😐 {cp.neutral_votes} | 👎 {cp.down_votes}
+                      </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                      <button
+                        type="button"
+                        disabled={votingLoading}
+                        onClick={() => handleCastVote(cp.name, "up")}
+                        style={{
+                          flex: 1,
+                          padding: "4px 8px",
+                          fontSize: "0.75rem",
+                          borderRadius: 6,
+                          border: "1px solid #bbf7d0",
+                          background: voterCurrentChoice === "up" ? "#22c55e" : "#f0fdf4",
+                          color: voterCurrentChoice === "up" ? "#fff" : "#166534",
+                          cursor: "pointer",
+                        }}
+                      >
+                        👍 Favor
+                      </button>
+                      <button
+                        type="button"
+                        disabled={votingLoading}
+                        onClick={() => handleCastVote(cp.name, "neutral")}
+                        style={{
+                          flex: 1,
+                          padding: "4px 8px",
+                          fontSize: "0.75rem",
+                          borderRadius: 6,
+                          border: "1px solid #e2e8f0",
+                          background: voterCurrentChoice === "neutral" ? "#64748b" : "#f8fafc",
+                          color: voterCurrentChoice === "neutral" ? "#fff" : "#475569",
+                          cursor: "pointer",
+                        }}
+                      >
+                        😐 Ok
+                      </button>
+                      <button
+                        type="button"
+                        disabled={votingLoading}
+                        onClick={() => handleCastVote(cp.name, "down")}
+                        style={{
+                          flex: 1,
+                          padding: "4px 8px",
+                          fontSize: "0.75rem",
+                          borderRadius: 6,
+                          border: "1px solid #fecaca",
+                          background: voterCurrentChoice === "down" ? "#ef4444" : "#fef2f2",
+                          color: voterCurrentChoice === "down" ? "#fff" : "#991b1b",
+                          cursor: "pointer",
+                        }}
+                      >
+                        👎 Skip
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
 
       <div className="section">

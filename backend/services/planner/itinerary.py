@@ -491,6 +491,9 @@ async def build_trip(request):
     from backend.services.planner.budget_reallocator import analyze_budget_reallocations
     trip_data["budget_reallocation"] = analyze_budget_reallocations(trip_data["budget"])
 
+    from backend.services.planner.group_decision_engine import evaluate_group_decisions
+    trip_data["group_decisions"] = evaluate_group_decisions(trip_data)
+
     trip_data["dashboard"] = build_dashboard(
         trip_data
     )

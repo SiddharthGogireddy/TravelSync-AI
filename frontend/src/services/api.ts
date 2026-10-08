@@ -565,4 +565,48 @@ export async function reallocateTripBudget(
 
   return await res.json();
 }
+
+export async function castGroupVote(
+  tripId: string,
+  travelerName: string,
+  attractionName: string,
+  vote: string
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/group-vote`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      traveler_name: travelerName,
+      attraction_name: attractionName,
+      vote,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to submit group vote");
+  }
+
+  return await res.json();
+}
+
+export async function resolveGroupConflicts(
+  tripId: string
+): Promise<{ success: boolean; trip: any; audit: any }> {
+  const res = await fetch(`${API}/trip/${tripId}/resolve-group-conflicts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to resolve group conflicts");
+  }
+
+  return await res.json();
+}
 
