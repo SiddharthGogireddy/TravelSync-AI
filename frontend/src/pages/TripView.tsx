@@ -1009,6 +1009,7 @@ if (savedRating) {
                 day={day}
                 places={places}
                 TravelMode={trip.transport.mode}
+                mealsAndBreaks={(trip as any)?.meals_and_breaks?.[day]}
                 onSelect={
                   setSelectedPlace
                 }
@@ -1016,6 +1017,7 @@ if (savedRating) {
                   handleRegenerateDay
                 }
               />
+
 
             )
           )}

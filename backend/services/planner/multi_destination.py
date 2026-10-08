@@ -288,6 +288,14 @@ async def build_multi_destination_trip(request) -> dict:
         "opening_hours_notes": opening_hours_notes,
     }
 
+    from backend.services.planner.meal_and_break_engine import attach_meals_and_breaks_to_itinerary
+    trip_data["meals_and_breaks"] = attach_meals_and_breaks_to_itinerary(
+        day_schedule=day_schedule,
+        available_places=all_places,
+        travelers=traveler_profiles,
+    )
+
+
 
     # 8. Dashboard and Summary
     trip_data["dashboard"] = build_dashboard(trip_data)

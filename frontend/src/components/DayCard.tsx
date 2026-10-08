@@ -1,13 +1,16 @@
 import type { Place } from "../types/api";
+import type { DayMealsAndBreaks } from "../types/trip";
 
 import "../styles/DayCard.css";
 interface Props {
     day: string;
     places: Place[];
     TravelMode: string;
+    mealsAndBreaks?: DayMealsAndBreaks;
     onSelect: (place: Place) => void;
     onRegenerate?: (day: string) => void;
 }
+
 
 const TIMES = [
     "09:00 AM",
@@ -40,7 +43,9 @@ export default function DayCard({
     onSelect,
     onRegenerate,
     TravelMode,
+    mealsAndBreaks,
 }: Props) {
+
     const totalTravelDistance = places.reduce(
     (total, place) =>
         total + (place.travel_from_previous_km ?? 0),
@@ -166,14 +171,101 @@ export default function DayCard({
                 );
             })}
 
+            {/* Daily Meals & Rest Breaks Section */}
+            {mealsAndBreaks && (
+                <div
+                    style={{
+                        marginTop: 18,
+                        background: "#f8fafc",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: 10,
+                        padding: "14px 16px",
+                    }}
+                >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                        <span style={{ fontWeight: 700, fontSize: "0.92rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 6 }}>
+                            <span>🍽️</span> Daily Dining & Rest Breaks
+                        </span>
+                        <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
+                            Est. Dining: <strong>${Math.round(mealsAndBreaks.total_estimated_meal_cost / 80)}</strong> / person
+                        </span>
+                    </div>
+
+                    {/* Meal cards grid */}
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 10, marginBottom: mealsAndBreaks.rest_breaks?.length ? 12 : 0 }}>
+                        {mealsAndBreaks.meals?.map((meal, mIdx) => (
+                            <div
+                                key={mIdx}
+                                style={{
+                                    background: "#ffffff",
+                                    border: "1px solid #e2e8f0",
+                                    borderRadius: 8,
+                                    padding: "10px 12px",
+                                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                                }}
+                            >
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4f46e5", textTransform: "uppercase" }}>
+                                        {meal.meal_type === "Breakfast" ? "🍳 Breakfast" : (meal.meal_type === "Lunch" ? "🥗 Lunch" : "🍽️ Dinner")}
+                                    </span>
+                                    <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>
+                                        {meal.time_slot}
+                                    </span>
+                                </div>
+                                <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.88rem", marginBottom: 2 }}>
+                                    {meal.name}
+                                </div>
+                                <div style={{ fontSize: "0.76rem", color: "#64748b", marginBottom: 4 }}>
+                                    {meal.cuisine} • {meal.price_tier}
+                                </div>
+                                {meal.near_location && (
+                                    <div style={{ fontSize: "0.72rem", color: "#475569" }}>
+                                        📍 Near {meal.near_location} ({meal.distance_km} km)
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Rest Breaks */}
+                    {mealsAndBreaks.rest_breaks?.length > 0 && (
+                        <div style={{ borderTop: "1px dashed #cbd5e1", paddingTop: 10 }}>
+                            {mealsAndBreaks.rest_breaks.map((rb, rbIdx) => (
+                                <div
+                                    key={rbIdx}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        background: "#fffbeb",
+                                        border: "1px solid #fef3c7",
+                                        borderRadius: 6,
+                                        padding: "8px 12px",
+                                        fontSize: "0.78rem",
+                                        color: "#92400e",
+                                    }}
+                                >
+                                    <span style={{ fontSize: "1.1rem" }}>☕</span>
+                                    <div>
+                                        <strong>{rb.break_type}</strong> ({rb.time_slot} • {rb.duration_minutes} min)
+                                        <div style={{ color: "#78350f", marginTop: 2 }}>{rb.recommended_activity}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
             {onRegenerate && (
-    <button
-        className="regenerate-button"
-        onClick={() => onRegenerate(day)}
-    >
-        Regenerate Day
-    </button>
-)}
+                <button
+                    className="regenerate-button"
+                    onClick={() => onRegenerate(day)}
+                >
+                    Regenerate Day
+                </button>
+            )}
+
         </div>
     );
 }

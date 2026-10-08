@@ -459,6 +459,15 @@ async def build_trip(request):
     trip_data["constraints"] = constraints_dict
     trip_data["opening_hours_notes"] = opening_hours_notes
 
+    from backend.services.planner.meal_and_break_engine import attach_meals_and_breaks_to_itinerary
+    meals_and_breaks = attach_meals_and_breaks_to_itinerary(
+        day_schedule=day_schedule,
+        available_places=matched_places,
+        travelers=traveler_profiles,
+    )
+    trip_data["meals_and_breaks"] = meals_and_breaks
+
+
     trip_data["dashboard"] = build_dashboard(
         trip_data
     )

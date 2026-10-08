@@ -124,4 +124,33 @@ export interface TripRequest {
     travelers: TravelerRequest[];
     mandatory_visits: MandatoryVisit[];
     constraints?: PlanningConstraints;
-}
+}
+
+export interface MealItem {
+    meal_type: string;
+    time_slot: string;
+    name: string;
+    cuisine: string;
+    distance_km: number;
+    estimated_cost_per_person: number;
+    price_tier: string;
+    dietary_tags: string[];
+    near_location?: string;
+}
+
+export interface RestBreakItem {
+    break_type: string;
+    time_slot: string;
+    duration_minutes: number;
+    recommended_activity: string;
+    reason: string;
+    location_context: string;
+}
+
+export interface DayMealsAndBreaks {
+    day: number;
+    meals: MealItem[];
+    rest_breaks: RestBreakItem[];
+    total_estimated_meal_cost: number;
+}
+
