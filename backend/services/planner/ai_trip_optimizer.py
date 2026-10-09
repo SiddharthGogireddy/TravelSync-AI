@@ -96,13 +96,13 @@ def calculate_trip_optimization_score(
 
     if overall_score >= 88:
         tier = "Masterpiece Itinerary"
-        tier_badge = "🌟 Top-Tier Perfection"
+        tier_badge = "Top-Tier Perfection"
     elif overall_score >= 75:
         tier = "Balanced & Well-Paced"
-        tier_badge = "✨ Highly Optimized"
+        tier_badge = "Highly Optimized"
     else:
         tier = "Good with Room for Optimization"
-        tier_badge = "⚡ Polish Recommended"
+        tier_badge = "Polish Recommended"
 
     suggestions = []
     if route_efficiency < 85:

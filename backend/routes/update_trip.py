@@ -1,6 +1,9 @@
+import logging
 from fastapi import APIRouter, HTTPException
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 
@@ -36,12 +39,6 @@ from backend.services.planner.budget_replanner import (
 from backend.services.planner.day_regenerator import (
     regenerate_day,
 )
-
-import re
-
-
-print(">>> UPDATED update_trip.py LOADED <<<")
-
 
 router = APIRouter(
     prefix="/trip",
@@ -92,12 +89,7 @@ async def update_trip(
 
             
         except Exception as e:
-
-            print(
-                "LLM failed:",
-                e,
-            )
-
+            logger.warning(f"LLM failed: {e}")
             actions = []
 
         # --------------------------------
@@ -146,233 +138,190 @@ async def update_trip(
         # --------------------------------
 
         if not parsed:
-
-            print(
-                "LLM produced no usable commands."
-            )
-
-            print(
-                "Falling back to deterministic parser."
-            )
-
             parsed = parse_prompt(
                 update.prompt
             )
 
-        print(
-            "PARSED COMMANDS:",
-            parsed,
-        )
-       
-        # =================================
-        # ADD PLACE
-        # =================================
+        from backend.services.planner.distance import haversine
+        from backend.services.planner.opening_hours_scheduler import schedule_day_opening_hours
+        from backend.services.planner.dashboard import build_dashboard
+        from backend.services.planner.trip_summary import build_summary
 
+        def _recalculate_day_transit_and_legs(day_places: list, mode_str: str = "car"):
+            for idx, p in enumerate(day_places):
+                if idx == 0:
+                    p["travel_from_previous_km"] = None
+                    p["travel_time_minutes"] = 0
+                    continue
+                prev = day_places[idx - 1]
+                lat1, lon1 = prev.get("lat"), prev.get("lon")
+                lat2, lon2 = p.get("lat"), p.get("lon")
+                if (
+                    lat1 is not None and lon1 is not None
+                    and lat2 is not None and lon2 is not None
+                    and (lat1 != 0 or lon1 != 0) and (lat2 != 0 or lon2 != 0)
+                ):
+                    d = round(haversine(lat1, lon1, lat2, lon2), 2)
+                    if d > 0.05:
+                        p["travel_from_previous_km"] = d
+                        p["travel_time_minutes"] = max(5, int(round((d / 30.0) * 60.0)))
+                    else:
+                        p["travel_from_previous_km"] = None
+                        p["travel_time_minutes"] = 10
+                else:
+                    p["travel_from_previous_km"] = None
+                    p["travel_time_minutes"] = 15
+            try:
+                updated, _ = schedule_day_opening_hours(day_places, travel_mode=mode_str)
+                return updated
+            except Exception:
+                return day_places
+
+        removed_from_day = None
+        day_schedule = trip["trip"].get("day_schedule", {})
+        travel_mode = trip["trip"].get("travel_mode", "car")
+
+        # =================================
+        # 1. REMOVE PLACE (Execute first!)
+        # =================================
+        if "remove_place" in parsed:
+            raw_remove = str(parsed["remove_place"]).strip()
+            norm_remove = normalize_place_name(raw_remove)
+
+            generic_terms = [
+                "one attraction",
+                "an attraction",
+                "1 attraction",
+                "any attraction",
+                "a place",
+                "one place",
+                "an activity",
+                "one activity",
+            ]
+            is_generic = norm_remove in generic_terms or any(raw_remove.lower() == g for g in generic_terms)
+
+            if is_generic:
+                eligible_days = [d for d, pls in day_schedule.items() if len(pls) > 0]
+                if eligible_days:
+                    target_day = max(eligible_days, key=lambda d: len(day_schedule[d]))
+                    day_places = day_schedule[target_day]
+                    remove_idx = min(range(len(day_places)), key=lambda i: day_places[i].get("score", 0))
+                    removed_place = day_places.pop(remove_idx)
+                    removed_from_day = target_day
+                    removed_name = normalize_place_name(removed_place.get("name", ""))
+                    trip["trip"]["places"] = [
+                        p for p in trip["trip"]["places"]
+                        if normalize_place_name(p.get("name", "")) != removed_name
+                    ]
+                    orig_name = removed_place.get("name", "")
+                    trip["trip"].setdefault("excluded_places", []).extend([orig_name, removed_name])
+                    day_schedule[target_day] = _recalculate_day_transit_and_legs(day_places, travel_mode)
+                else:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Cannot remove attraction: no attractions are currently scheduled in this trip.",
+                    )
+            else:
+                found_match = False
+                for d, pls in day_schedule.items():
+                    matching_indices = [
+                        i for i, p in enumerate(pls)
+                        if normalize_place_name(p.get("name", "")) == norm_remove
+                        or norm_remove in p.get("name", "").lower()
+                        or p.get("name", "").lower() in norm_remove
+                    ]
+                    if matching_indices:
+                        found_match = True
+                        removed_from_day = d
+                        for idx in reversed(matching_indices):
+                            pls.pop(idx)
+                        day_schedule[d] = _recalculate_day_transit_and_legs(pls, travel_mode)
+
+                matching_pool = [
+                    p for p in trip["trip"].get("places", [])
+                    if normalize_place_name(p.get("name", "")) == norm_remove
+                    or norm_remove in p.get("name", "").lower()
+                    or p.get("name", "").lower() in norm_remove
+                ]
+                if not found_match and not matching_pool:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Cannot remove attraction '{raw_remove}': attraction was not found in the trip.",
+                    )
+
+                trip["trip"]["places"] = [
+                    p for p in trip["trip"]["places"]
+                    if normalize_place_name(p.get("name", "")) != norm_remove
+                    and norm_remove not in p.get("name", "").lower()
+                    and p.get("name", "").lower() not in norm_remove
+                ]
+                trip["trip"].setdefault("excluded_places", []).extend([raw_remove, norm_remove])
+
+            trip["trip"]["day_schedule"] = day_schedule
+
+        # =================================
+        # 2. ADD PLACE (Execute second!)
+        # =================================
         if "add_place" in parsed:
-
-            place_name = parsed[
-                "add_place"
-            ]
-
-            destination = trip[
-                "trip"
-            ][
-                "destination_location"
-            ]
+            place_name = str(parsed["add_place"]).strip()
+            destination = trip["trip"]["destination_location"]
 
             place = await find_place(
                 place_name,
                 destination["lat"],
                 destination["lon"],
             )
-            
-            if place is None:
 
+            if place is None:
                 raise HTTPException(
                     status_code=404,
-                    detail=(
-                        f"Place '{place_name}' "
-                        "not found"
-                    ),
+                    detail=f"Place '{place_name}' not found",
                 )
 
             new_place = {
-                "name": place.get(
-                    "name",
-                    place_name,
-                ),
-
+                "name": place.get("name", place_name),
                 "category": (
-                    place.get(
-                        "kinds",
-                        "",
-                    )
+                    place.get("kinds", "")
                     .split(",")[0]
-                    .replace(
-                        "_",
-                        " ",
-                    )
+                    .replace("_", " ")
                     .title()
-                ),
-
-                "distance_km": round(
-                    place.get(
-                        "dist",
-                        0,
-                    ) / 1000,
-                    2,
-                ),
-
-                "lat": place.get(
-                    "point",
-                    {},
-                ).get("lat"),
-
-                "lon": place.get(
-                    "point",
-                    {},
-                ).get("lon"),
-
+                ) or "Sightseeing",
+                "distance_km": round(place.get("dist", 0) / 1000, 2),
+                "lat": place.get("point", {}).get("lat"),
+                "lon": place.get("point", {}).get("lon"),
                 "score": 0,
-
                 "matched_travelers": [],
-
                 "match_count": 0,
             }
 
-            trip["trip"][
-                "places"
-            ].append(
-                new_place
-            )
-
-            day_schedule = trip[
-                "trip"
-            ].get(
-                "day_schedule",
-                {},
-            )
+            trip["trip"]["places"].append(new_place)
 
             if day_schedule:
+                if removed_from_day and removed_from_day in day_schedule:
+                    target_day = removed_from_day
+                else:
+                    target_day = min(day_schedule, key=lambda day: len(day_schedule[day]))
 
-                target_day = min(
-                    day_schedule,
-                    key=lambda day: len(
-                        day_schedule[day]
-                    ),
-                )
+                day_schedule[target_day].append(new_place)
+                day_schedule[target_day] = _recalculate_day_transit_and_legs(day_schedule[target_day], travel_mode)
+                trip["trip"]["day_schedule"] = day_schedule
 
-                day_schedule[
-                    target_day
-                ].append(
-                    new_place
-                )
-
-                trip["trip"][
-                    "day_schedule"
-                ] = day_schedule
-
-        # =================================
-        # REMOVE PLACE
-        # =================================
-
-        if "remove_place" in parsed:
-
-            place_name = (
-                normalize_place_name(
-                    parsed[
-                        "remove_place"
-                    ]
-                )
+        # Recalculate budget and summaries if places were changed
+        if "remove_place" in parsed or "add_place" in parsed:
+            scheduled_activity_count = sum(len(day_places) for day_places in day_schedule.values())
+            trip["trip"]["budget"] = calculate_budget(
+                trip["trip"]["travelers"],
+                trip["trip"]["days"],
+                trip["trip"]["travel_mode"],
+                trip["trip"]["hotels"],
+                trip["trip"]["places"],
+                scheduled_activity_count=scheduled_activity_count,
+                total_budget=trip["trip"]["budget"]["total_budget"],
             )
-
-            # --------------------------------
-            # Remove from available places
-            # --------------------------------
-
-            trip["trip"]["places"] = [
-                place
-                for place in trip[
-                    "trip"
-                ]["places"]
-                if normalize_place_name(
-                    place["name"]
-                ) != place_name
-            ]
-
-            # --------------------------------
-            # Remove from daily schedule
-            # --------------------------------
-
-            day_schedule = trip[
-                "trip"
-            ].get(
-                "day_schedule",
-                {},
-            )
-
-            for day, places in (
-                day_schedule.items()
-            ):
-
-                day_schedule[day] = [
-                    place
-                    for place in places
-                    if normalize_place_name(
-                        place["name"]
-                    ) != place_name
-                ]
-
-            trip["trip"][
-                "day_schedule"
-            ] = day_schedule
-
-            # --------------------------------
-            # Recalculate budget
-            # --------------------------------
-
-            scheduled_activity_count = sum(
-                len(day_places)
-                for day_places in (
-                    day_schedule.values()
-                )
-            )
-
-            trip["trip"]["budget"] = (
-                calculate_budget(
-                    trip["trip"][
-                        "travelers"
-                    ],
-
-                    trip["trip"][
-                        "days"
-                    ],
-
-                    trip["trip"][
-                        "travel_mode"
-                    ],
-
-                    trip["trip"][
-                        "hotels"
-                    ],
-
-                    trip["trip"][
-                        "places"
-                    ],
-
-                    scheduled_activity_count=(
-                        scheduled_activity_count
-                    ),
-
-                    total_budget=(
-                        trip["trip"][
-                            "budget"
-                        ][
-                            "total_budget"
-                        ]
-                    ),
-                )
-            )
+            trip["dashboard"] = build_dashboard(trip["trip"])
+            trip["trip"]["dashboard"] = trip["dashboard"]
+            trip["summary"] = build_summary(trip["trip"])
+            trip["trip"]["summary"] = trip["summary"]
 
         # =================================
         # REGENERATE DAY
@@ -383,16 +332,6 @@ async def update_trip(
             day_number = parsed[
                 "regenerate_day"
             ]
-
-            print(
-                "BEFORE REGENERATE:"
-            )
-
-            print(
-                trip["trip"][
-                    "day_schedule"
-                ]
-            )
 
             # --------------------------------
             # Apply requested budget first
@@ -419,16 +358,6 @@ async def update_trip(
             # Generate explanations for attractions in the regenerated day
             for place in trip["trip"]["day_schedule"].get(str(day_number), []):
                 place["explanation"] = explain_attraction(place, trip["trip"])
-
-            print(
-                "AFTER REGENERATE:"
-            )
-
-            print(
-                trip["trip"][
-                    "day_schedule"
-                ]
-            )
 
             # --------------------------------
             # Fit remaining trip to budget
@@ -469,6 +398,16 @@ async def update_trip(
             ] = parsed["budget"]
 
         # --------------------------------
+        # Recalculate dashboard & summary
+        # --------------------------------
+        trip["dashboard"] = build_dashboard(trip["trip"])
+        trip["trip"]["dashboard"] = trip["dashboard"]
+        trip["summary"] = build_summary(trip["trip"])
+        trip["trip"]["summary"] = trip["summary"]
+        trip["trip_id"] = trip_id
+        trip["trip"]["trip_id"] = trip_id
+
+        # --------------------------------
         # Save prompt-based update
         # --------------------------------
 
@@ -501,6 +440,18 @@ async def update_trip(
         ][
             "total_budget"
         ] = update.budget
+
+    # --------------------------------
+    # Recalculate dashboard & summary
+    # --------------------------------
+    from backend.services.planner.dashboard import build_dashboard
+    from backend.services.planner.trip_summary import build_summary
+    trip["dashboard"] = build_dashboard(trip["trip"])
+    trip["trip"]["dashboard"] = trip["dashboard"]
+    trip["summary"] = build_summary(trip["trip"])
+    trip["trip"]["summary"] = trip["summary"]
+    trip["trip_id"] = trip_id
+    trip["trip"]["trip_id"] = trip_id
 
     # --------------------------------
     # Save direct update

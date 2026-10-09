@@ -702,7 +702,6 @@ if (savedRating) {
           >
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: "1.6rem" }}>⚡</span>
                 <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 800, color: "#1e1b4b" }}>
                   AI Trip Quality & Optimization Score
                 </h3>
@@ -764,7 +763,6 @@ if (savedRating) {
                   gap: 8,
                 }}
               >
-                <span>⚡</span>
                 {optimizingTrip ? "Optimizing Itinerary..." : "One-Click AI Route Polish"}
               </button>
             </div>
@@ -784,7 +782,6 @@ if (savedRating) {
                 gap: 12,
               }}
             >
-              <span style={{ fontSize: "1.2rem" }}>✨</span>
               <div style={{ flex: 1, fontSize: "0.86rem", color: "#065f46", fontWeight: 600 }}>
                 {optimizationAudit.summary}
               </div>
@@ -802,7 +799,7 @@ if (savedRating) {
           >
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
-                <span>🚗 Route Efficiency</span>
+                <span>Route Efficiency</span>
                 <strong>{optimizationScore.metrics?.route_efficiency || 85}%</strong>
               </div>
               <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
@@ -819,7 +816,7 @@ if (savedRating) {
 
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
-                <span>⏱️ Daily Pacing</span>
+                <span>Daily Pacing</span>
                 <strong>{optimizationScore.metrics?.pacing_score || 85}%</strong>
               </div>
               <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
@@ -836,7 +833,7 @@ if (savedRating) {
 
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
-                <span>💵 Budget Adherence</span>
+                <span>Budget Adherence</span>
                 <strong>{optimizationScore.metrics?.budget_adherence || 90}%</strong>
               </div>
               <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
@@ -853,7 +850,7 @@ if (savedRating) {
 
             <div style={{ background: "#f8fafc", borderRadius: 12, padding: "12px 14px", border: "1px solid #f1f5f9" }}>
               <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem", color: "#475569", marginBottom: 6 }}>
-                <span>🤝 Traveler Alignment</span>
+                <span>Traveler Alignment</span>
                 <strong>{optimizationScore.metrics?.traveler_happiness || 88}%</strong>
               </div>
               <div style={{ width: "100%", height: 6, background: "#e2e8f0", borderRadius: 3, overflow: "hidden" }}>
@@ -931,7 +928,7 @@ if (savedRating) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, flexWrap: "wrap", gap: 10 }}>
             <div>
               <h3 style={{ margin: "0 0 4px", fontSize: "1.25rem", color: "#1e1b4b", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🗺️</span> Multi-Destination Travel Circuit
+                Multi-Destination Travel Circuit
               </h3>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.88rem" }}>
                 Coordinated itinerary spanning {destinationsList.length} destinations
@@ -976,7 +973,7 @@ if (savedRating) {
                 </div>
                 {stop.attraction_count !== undefined && (
                   <div style={{ fontSize: "0.8rem", color: "#64748b" }}>
-                    📍 {stop.attraction_count} attractions scheduled
+                    {stop.attraction_count} attractions scheduled
                   </div>
                 )}
               </div>
@@ -987,7 +984,7 @@ if (savedRating) {
           {travelLegs.length > 0 && (
             <div>
               <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "#334155" }}>
-                🚗 Inter-Destination Travel Legs
+                Inter-Destination Travel Legs
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {travelLegs.map((leg: any, idx: number) => (
@@ -1007,13 +1004,13 @@ if (savedRating) {
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontWeight: 600, color: "#0f172a" }}>
-                        Leg {leg.leg_index}: {leg.from_location?.split(",")[0]} ➔ {leg.to_location?.split(",")[0]}
+                        Leg {leg.leg_index}: {leg.from_location?.split(",")[0]} -&gt; {leg.to_location?.split(",")[0]}
                       </span>
                     </div>
                     <div style={{ display: "flex", gap: 16, color: "#475569", fontSize: "0.82rem" }}>
-                      <span>📏 <strong>{leg.distance_km} km</strong></span>
-                      <span>⏱️ <strong>{leg.duration_hours} hrs</strong></span>
-                      <span>🚘 <strong>{leg.travel_mode?.toUpperCase()}</strong></span>
+                      <span>Distance: <strong>{leg.distance_km} km</strong></span>
+                      <span>Duration: <strong>{leg.duration_hours} hrs</strong></span>
+                      <span>Mode: <strong>{leg.travel_mode?.toUpperCase()}</strong></span>
                     </div>
                   </div>
                 ))}
@@ -1043,7 +1040,7 @@ if (savedRating) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
             <div>
               <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🎯</span> Planning Constraints Audit
+                Planning Constraints Audit
               </h3>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.86rem" }}>
                 Verified adherence to custom budget, distance limits, and location requirements
@@ -1059,7 +1056,7 @@ if (savedRating) {
                 fontWeight: 700,
               }}
             >
-              {constraintAnalysis.violations?.length ? "⚠️ Constraints Adjusted" : "✓ All Constraints Met"}
+              {constraintAnalysis.violations?.length ? "Constraints Adjusted" : "✓ All Constraints Met"}
             </span>
           </div>
 
@@ -1159,7 +1156,7 @@ if (savedRating) {
 
           {constraintAnalysis.explanation && (
             <div style={{ fontSize: "0.85rem", color: "#475569", fontStyle: "italic", borderTop: "1px solid #f1f5f9", paddingTop: 8 }}>
-              💡 {constraintAnalysis.explanation}
+              Note: {constraintAnalysis.explanation}
             </div>
           )}
 
@@ -1191,7 +1188,7 @@ if (savedRating) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
             <div>
               <h3 style={{ margin: "0 0 4px", fontSize: "1.18rem", color: "#1e3a8a", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🌦️</span> Weather-Aware Itinerary Protection
+                Weather-Aware Itinerary Protection
               </h3>
               <p style={{ margin: 0, color: "#3b82f6", fontSize: "0.85rem" }}>
                 {weatherReplanning.summary}
@@ -1227,8 +1224,8 @@ if (savedRating) {
                   gap: 10,
                 }}
               >
-                <span style={{ fontSize: "1.1rem" }}>
-                  {d.condition === "rain" ? "🌧️" : (d.condition === "storm" ? "⛈️" : "☀️")}
+                <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1e40af", padding: "2px 6px", background: "#dbeafe", borderRadius: 4 }}>
+                  {d.condition?.toUpperCase() || "WEATHER"}
                 </span>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontWeight: 600, color: "#1e40af" }}>
@@ -1259,7 +1256,7 @@ if (savedRating) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
             <div>
               <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#6b21a8", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🛣️</span> En-Route Sights & Scenic Waypoints
+                En-Route Sights & Scenic Waypoints
               </h3>
               <p style={{ margin: 0, color: "#9333ea", fontSize: "0.86rem" }}>
                 Curated attractions along your corridor within easy detour distance. Seamlessly add stops to your daily itinerary!
@@ -1334,16 +1331,16 @@ if (savedRating) {
 
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
                       <span style={{ fontSize: "0.74rem", background: "#f1f5f9", padding: "2px 6px", borderRadius: 4, color: "#475569" }}>
-                        🏷️ {stop.category}
+                        {stop.category}
                       </span>
                       <span style={{ fontSize: "0.74rem", background: "#fef3c7", padding: "2px 6px", borderRadius: 4, color: "#92400e" }}>
-                        🚗 +{stop.detour_distance_km} km detour
+                        +{stop.detour_distance_km} km detour
                       </span>
                       <span style={{ fontSize: "0.74rem", background: "#e0f2fe", padding: "2px 6px", borderRadius: 4, color: "#0369a1" }}>
-                        ⏱️ +{stop.added_travel_time_minutes} min transit
+                        +{stop.added_travel_time_minutes} min transit
                       </span>
                       <span style={{ fontSize: "0.74rem", background: "#ecfdf5", padding: "2px 6px", borderRadius: 4, color: "#065f46" }}>
-                        ☕ ~{stop.recommended_pause_minutes} min pause
+                        ~{stop.recommended_pause_minutes} min pause
                       </span>
                     </div>
 
@@ -1449,7 +1446,7 @@ if (savedRating) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
               <div>
                 <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#92400e", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span>⚖️</span> Smart Budget Reallocation Engine
+                  Smart Budget Reallocation Engine
                 </h3>
                 <p style={{ margin: 0, color: "#b45309", fontSize: "0.86rem" }}>
                   Active Strategy: <strong>{budgetRealloc.strategy_label}</strong> — {budgetRealloc.strategy_description}
@@ -1520,7 +1517,7 @@ if (savedRating) {
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>
-                          {catKey === "hotel" ? "🏨 Hotel" : catKey === "food" ? "🍽️ Dining" : catKey === "transport" ? "🚗 Transport" : catKey === "activities" ? "🎟️ Activities" : "🛡️ Reserve"}
+                          {catKey === "hotel" ? "Hotel" : catKey === "food" ? "Dining" : catKey === "transport" ? "Transport" : catKey === "activities" ? "Activities" : "Reserve"}
                         </span>
                         <span
                           style={{
@@ -1552,7 +1549,7 @@ if (savedRating) {
             {budgetRealloc.trade_off_suggestions?.length > 0 && (
               <div style={{ marginTop: 12 }}>
                 <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "#92400e", marginBottom: 6 }}>
-                  💡 High-Impact Budget Trade-Offs:
+                  High-Impact Budget Trade-Offs:
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   {budgetRealloc.trade_off_suggestions.map((to: any, toIdx: number) => (
@@ -1620,7 +1617,7 @@ if (savedRating) {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
             <div>
               <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#0f172a", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>🤝</span> Group Decision & Conflict Resolution
+                Group Decision & Conflict Resolution
               </h3>
               <p style={{ margin: 0, color: "#64748b", fontSize: "0.86rem" }}>
                 Multi-traveler consensus balancing, satisfaction meters & collaborative itinerary voting.
@@ -1658,7 +1655,7 @@ if (savedRating) {
                   transition: "background 0.2s",
                 }}
               >
-                {resolvingConflicts ? "Optimizing..." : "⚡ Auto-Resolve Conflicts"}
+                {resolvingConflicts ? "Optimizing..." : "Auto-Resolve Conflicts"}
               </button>
             </div>
           </div>
@@ -1700,10 +1697,10 @@ if (savedRating) {
                   }}
                 >
                   <div>
-                    <strong>⚠️ {dz.category}:</strong> {dz.description}
+                    <strong>{dz.category}:</strong> {dz.description}
                   </div>
                   <span style={{ fontSize: "0.75rem", color: "#b45309", fontStyle: "italic" }}>
-                    💡 {dz.suggestion}
+                    Suggestion: {dz.suggestion}
                   </span>
                 </div>
               ))}
@@ -1827,7 +1824,7 @@ if (savedRating) {
                         </span>
                       </div>
                       <div style={{ fontSize: "0.74rem", color: "#64748b", marginBottom: 6 }}>
-                        👍 {cp.up_votes} | 😐 {cp.neutral_votes} | 👎 {cp.down_votes}
+                        Favor: {cp.up_votes} | Neutral: {cp.neutral_votes} | Skip: {cp.down_votes}
                       </div>
                     </div>
 
@@ -1847,7 +1844,7 @@ if (savedRating) {
                           cursor: "pointer",
                         }}
                       >
-                        👍 Favor
+                        Favor
                       </button>
                       <button
                         type="button"
@@ -1864,7 +1861,7 @@ if (savedRating) {
                           cursor: "pointer",
                         }}
                       >
-                        😐 Ok
+                        Neutral
                       </button>
                       <button
                         type="button"
@@ -1881,7 +1878,7 @@ if (savedRating) {
                           cursor: "pointer",
                         }}
                       >
-                        👎 Skip
+                        Skip
                       </button>
                     </div>
                   </div>
@@ -2009,7 +2006,7 @@ if (savedRating) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
               <div>
                 <h3 style={{ margin: "0 0 4px", fontSize: "1.2rem", color: "#166534", display: "flex", alignItems: "center", gap: 8 }}>
-                  <span>🧭</span> Transport Recommendation Engine
+                  Transport Recommendation Engine
                 </h3>
                 <p style={{ margin: 0, color: "#15803d", fontSize: "0.86rem" }}>
                   Multi-modal comparison across Party Size ({transportRecs.party_size || 1}), Distance ({transportRecs.distance_km} km), Cost, Time & Carbon emissions.
@@ -2030,7 +2027,7 @@ if (savedRating) {
                 >
                   {transportRecs.is_using_recommended
                     ? `✓ Active: Recommended (${transportRecs.recommended_mode?.toUpperCase()})`
-                    : `⚠️ Active: ${transportRecs.current_mode?.toUpperCase()} (Recommended: ${transportRecs.recommended_mode?.toUpperCase()})`}
+                    : `Active: ${transportRecs.current_mode?.toUpperCase()} (Recommended: ${transportRecs.recommended_mode?.toUpperCase()})`}
                 </span>
               </div>
             </div>
@@ -2048,7 +2045,7 @@ if (savedRating) {
                 lineHeight: 1.5,
               }}
             >
-              <strong>💡 Recommendation Rationale:</strong> {transportRecs.recommendation_summary}
+              <strong>Recommendation Rationale:</strong> {transportRecs.recommendation_summary}
             </div>
 
             {transportStatusMessage && (
@@ -2093,7 +2090,7 @@ if (savedRating) {
                       <div>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                           <span style={{ fontSize: "1.05rem", fontWeight: 700, color: "#1e293b", textTransform: "capitalize" }}>
-                            {modeKey === "car" ? "🚗 Car / Drive" : modeKey === "train" ? "🚆 Train / Rail" : modeKey === "flight" ? "✈️ Flight" : "🚌 Bus"}
+                            {modeKey === "car" ? "Car / Drive" : modeKey === "train" ? "Train / Rail" : modeKey === "flight" ? "Flight" : "Bus"}
                           </span>
                           <span
                             style={{
@@ -2796,7 +2793,7 @@ if (savedRating) {
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e1b4b", display: "flex", alignItems: "center", gap: 8 }}>
-                <span>⚡</span> Replan Day {replanTargetDay} (Live)
+                Replan Day {replanTargetDay} (Live)
               </h3>
               <button
                 onClick={() => setShowReplanModal(false)}
@@ -2914,7 +2911,7 @@ if (savedRating) {
                   boxShadow: "0 2px 4px rgba(79, 70, 229, 0.3)",
                 }}
               >
-                {replanLoading ? "Replanning..." : "⚡ Replan Remaining Day"}
+                {replanLoading ? "Replanning..." : "Replan Remaining Day"}
               </button>
             </div>
           </div>
@@ -2945,7 +2942,7 @@ if (savedRating) {
             gap: 8,
           }}
         >
-          <span>🤖</span> AI Travel Assistant
+          AI Travel Assistant
         </button>
       )}
 
@@ -2981,7 +2978,7 @@ if (savedRating) {
           >
             <div>
               <div style={{ fontWeight: 700, fontSize: "1rem", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>🤖</span> TravelSync AI Copilot
+                TravelSync AI Copilot
               </div>
               <div style={{ fontSize: "0.74rem", opacity: 0.9, marginTop: 2 }}>
                 Trip Expert for {(trip as any)?.destination || "your trip"}

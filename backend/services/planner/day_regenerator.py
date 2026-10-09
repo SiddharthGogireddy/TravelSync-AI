@@ -149,15 +149,6 @@ def regenerate_day(
         []
     )
 
-    print(
-        "REGEN HISTORY FOR DAY",
-        day_key
-    )
-
-    print(
-        previous_versions
-    )
-
     # --------------------------------
     # Save current version
     # before replacing it
@@ -225,6 +216,12 @@ def regenerate_day(
         if visit.get("name")
     }
 
+    excluded_places = {
+        str(p).strip().lower()
+        for p in trip_data.get("excluded_places", [])
+        if p
+    }
+
     # --------------------------------
     # Build candidates
     # --------------------------------
@@ -256,6 +253,10 @@ def regenerate_day(
         # Mandatory visits are handled
         # separately.
         if name in mandatory_names:
+            continue
+
+        # Explicitly excluded or removed attractions
+        if name in excluded_places:
             continue
 
         candidates.append(
@@ -309,16 +310,6 @@ def regenerate_day(
         )
     )
 
-    print(
-        "TARGET ACTIVITIES:",
-        number_of_places
-    )
-
-    print(
-        "NUMBER OF CANDIDATES:",
-        len(candidates)
-    )
-
     # --------------------------------
     # Select new activities
     # --------------------------------
@@ -326,6 +317,42 @@ def regenerate_day(
     new_day = candidates[
         :number_of_places
     ]
+
+    # Calculate travel distance between consecutive places
+    from backend.services.planner.distance import haversine
+    from backend.services.planner.opening_hours_scheduler import schedule_day_opening_hours
+
+    for idx, place in enumerate(new_day):
+        if idx == 0:
+            place["travel_from_previous_km"] = None
+            place["travel_time_minutes"] = 0
+            continue
+        prev = new_day[idx - 1]
+        lat1, lon1 = prev.get("lat"), prev.get("lon")
+        lat2, lon2 = place.get("lat"), place.get("lon")
+        if (
+            lat1 is not None and lon1 is not None
+            and lat2 is not None and lon2 is not None
+            and (lat1 != 0 or lon1 != 0) and (lat2 != 0 or lon2 != 0)
+        ):
+            dist = round(haversine(lat1, lon1, lat2, lon2), 2)
+            if dist > 0.05:
+                place["travel_from_previous_km"] = dist
+                place["travel_time_minutes"] = max(5, int(round((dist / 30.0) * 60.0)))
+            else:
+                place["travel_from_previous_km"] = None
+                place["travel_time_minutes"] = 10
+        else:
+            place["travel_from_previous_km"] = None
+            place["travel_time_minutes"] = 15
+
+    try:
+        new_day, _ = schedule_day_opening_hours(
+            places=new_day,
+            travel_mode=trip_data.get("travel_mode", "car"),
+        )
+    except Exception:
+        pass
 
     # --------------------------------
     # Replace the day
@@ -381,10 +408,6 @@ def regenerate_day(
                 ]
             ),
         )
-    )
-
-    print(
-        ">>> regenerate_day RETURNING TRIP <<<"
     )
 
     return trip

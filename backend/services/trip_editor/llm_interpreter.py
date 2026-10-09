@@ -1,6 +1,9 @@
 import json
+import logging
 
 from backend.services.gemini_service import generate
+
+logger = logging.getLogger(__name__)
 
 
 SYSTEM_PROMPT = """
@@ -137,6 +140,24 @@ Return:
 }
 
 User:
+"Remove one attraction from the trip and add Golconda Fort"
+
+Return:
+
+{
+    "actions": [
+        {
+            "type": "remove_place",
+            "place": "one attraction"
+        },
+        {
+            "type": "add_place",
+            "place": "Golconda Fort"
+        }
+    ]
+}
+
+User:
 "Make day 2 more about food and history"
 
 Return:
@@ -161,11 +182,11 @@ USER REQUEST:
 {prompt}
 """
 
-    print("LLM PROMPT:", prompt)
+    logger.debug(f"LLM PROMPT: {prompt}")
 
     result = generate(full_prompt)
 
-    print("LLM RESULT:", result)
+    logger.debug(f"LLM RESULT: {result}")
 
     if not isinstance(result, dict):
         return {"actions": []}

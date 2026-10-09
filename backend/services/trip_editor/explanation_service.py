@@ -46,6 +46,6 @@ Explain the selection in 2-4 bullet points.
     result = generate(prompt)
 
     if not isinstance(result, dict):
-        return "Unable to generate an explanation."
+        return "Explanation unavailable."
 
-    return result.get("explanation", "Unable to generate an explanation.")
+    return result.get("explanation", "Explanation unavailable.")

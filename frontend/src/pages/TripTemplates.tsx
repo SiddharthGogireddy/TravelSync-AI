@@ -188,7 +188,6 @@ export default function TripTemplates() {
             textAlign: "center",
           }}
         >
-          <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>🗺️</div>
           <h3 style={{ margin: "0 0 8px", color: "#1e293b" }}>
             {searchTerm || selectedCategory !== "all" ? "No matching templates found" : "No trip templates yet"}
           </h3>
@@ -270,7 +269,7 @@ export default function TripTemplates() {
                 {tpl.name}
               </h3>
               <div style={{ fontSize: "0.88rem", color: "#64748b", marginBottom: 8, display: "flex", gap: 6, alignItems: "center" }}>
-                <span>📍 {tpl.destination}</span>
+                <span>{tpl.destination}</span>
                 {tpl.source && <span>• from {tpl.source}</span>}
               </div>
 
@@ -358,7 +357,7 @@ export default function TripTemplates() {
                     cursor: "pointer",
                   }}
                 >
-                  ⚡ Use Template
+                  Use Template
                 </button>
 
                 <button
@@ -375,24 +374,24 @@ export default function TripTemplates() {
                   }}
                   title="Preview structure and day schedule"
                 >
-                  👁️ Structure
+                  Structure
                 </button>
 
                 <button
                   onClick={() => handleDelete(tpl.id, tpl.name)}
                   style={{
-                    padding: "9px 10px",
+                    padding: "9px 12px",
                     background: "#fee2e2",
                     color: "#dc2626",
                     border: "none",
                     borderRadius: 6,
                     cursor: "pointer",
                     fontWeight: 600,
-                    fontSize: "0.86rem",
+                    fontSize: "0.84rem",
                   }}
                   title="Delete template"
                 >
-                  🗑️
+                  Delete
                 </button>
               </div>
             </div>
@@ -571,7 +570,7 @@ export default function TripTemplates() {
                   {previewTemplate.name}
                 </h2>
                 <div style={{ color: "#64748b", fontSize: "0.86rem" }}>
-                  📍 {previewTemplate.destination} • {previewTemplate.duration_days} Days
+                  {previewTemplate.destination} • {previewTemplate.duration_days} Days
                 </div>
               </div>
               <button
@@ -593,7 +592,7 @@ export default function TripTemplates() {
             ) : (
               <div>
                 <h4 style={{ margin: "14px 0 8px", color: "#334155", fontSize: "0.95rem" }}>
-                  🏛️ Key Attractions & Activities
+                  Key Attractions & Activities
                 </h4>
                 {previewTemplate.itinerary_structure?.places_summary?.length ? (
                   <div style={{ display: "grid", gap: 8, marginBottom: 16 }}>
@@ -623,7 +622,7 @@ export default function TripTemplates() {
                 )}
 
                 <h4 style={{ margin: "14px 0 8px", color: "#334155", fontSize: "0.95rem" }}>
-                  📅 Day-by-Day Activity Count
+                  Day-by-Day Activity Count
                 </h4>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
                   {Object.entries(previewTemplate.itinerary_structure?.schedule_outline || {}).map(([day, count]) => (

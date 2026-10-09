@@ -125,7 +125,7 @@ def answer_trip_question(
             f"- **Estimated Spend:** ₹{budget.get('estimated_cost', 0):,}\n"
             f"- **Remaining Balance:** ₹{remaining:,} (*Status: {budget_status}*)\n"
             f"- **Key Categories:** Hotel: ₹{hotel_cost:,} | Food: ₹{food_cost:,} | Transport: ₹{budget.get('categories', {}).get('transport', 0):,}\n\n"
-            f"💡 *Assistant Tip:* You can use the **Smart Budget Reallocation** card on this page to dynamically adjust surplus funds into fine dining or activities with one click!"
+            f"Tip: You can use the **Smart Budget Reallocation** card on this page to dynamically adjust surplus funds into fine dining or activities with one click!"
         )
         suggestions = ["What should I pack?", "Top dishes to try", "Safety & local tips", "Best sunset spot"]
 

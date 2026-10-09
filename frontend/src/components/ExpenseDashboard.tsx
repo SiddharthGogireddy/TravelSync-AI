@@ -12,7 +12,7 @@ interface Props {
 
 export default function ExpenseDashboard({ expenses, budgets }: Props) {
 
-    // ✅ calculate spent per traveler
+    // Calculate spent per traveler
     const spent: Record<string, number> = {};
 
     expenses.forEach((e) => {

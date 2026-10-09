@@ -391,7 +391,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                 color: !isMultiDest ? "#4f46e5" : "#64748b",
             }}
         >
-            📍 Single Destination
+            Single Destination
         </button>
         <button
             type="button"
@@ -408,7 +408,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                 color: isMultiDest ? "#4f46e5" : "#64748b",
             }}
         >
-            🗺️ Multi-Destination Tour (Multiple Cities)
+            Multi-Destination Tour (Multiple Cities)
         </button>
     </div>
 
@@ -518,7 +518,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                     + Add Another City
                 </button>
                 <div style={{ fontSize: "0.85rem", color: "#475569" }}>
-                    Route: {source.split(",")[0]} ➔ {multiStops.map(s => s.name.split(",")[0]).join(" ➔ ")}
+                    Route: {source.split(",")[0]} -&gt; {multiStops.map(s => s.name.split(",")[0]).join(" -&gt; ")}
                 </div>
             </div>
         </div>
@@ -616,7 +616,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                     onClick={() => setShowConstraints(!showConstraints)}
                     style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontWeight: 600, color: "#1e293b" }}
                 >
-                    <span style={{ fontSize: "0.92rem" }}>⚙️ Custom Planning Constraints (Optional)</span>
+                    <span style={{ fontSize: "0.92rem" }}>Custom Planning Constraints (Optional)</span>
                     <span style={{ fontSize: "0.82rem", color: "#4f46e5" }}>{showConstraints ? "▲ Hide" : "▼ Show"}</span>
                 </div>
 

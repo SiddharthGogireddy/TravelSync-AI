@@ -21,13 +21,13 @@ export default function TripSummaryCard({
         >
             <h2>Trip Summary</h2>
 
-            <p>🏨 Hotels: {hotels}</p>
+            <p>Hotels: {hotels}</p>
 
-            <p>📍 Attractions: {attractions}</p>
+            <p>Attractions: {attractions}</p>
 
-            <p>🚗 Distance: {distance} km</p>
+            <p>Distance: {distance > 0 ? `${distance} km` : "N/A"}</p>
 
-            <p>⏱️ Duration: {duration} hrs</p>
+            <p>Duration: {duration > 0 ? `${duration} hrs` : "N/A"}</p>
         </div>
     );
 }

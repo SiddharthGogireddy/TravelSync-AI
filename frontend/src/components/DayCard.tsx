@@ -80,9 +80,9 @@ export default function DayCard({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
                 <h3 style={{ margin: 0 }}>Day {day}</h3>
                 <div style={{ display: "flex", gap: 12, fontSize: "0.82rem", color: "#64748b", fontWeight: 500 }}>
-                    <span>📍 <strong>{places.length}</strong> Stops</span>
-                    <span>🚗 <strong>{totalTravelDistance.toFixed(1)} km</strong></span>
-                    <span>⏱️ <strong>~{Math.round(totalTravelTime * 60)} min</strong> transit</span>
+                    <span><strong>{places.length}</strong> Stops</span>
+                    <span>Transit: <strong>{totalTravelDistance > 0 ? `${totalTravelDistance.toFixed(1)} km` : "N/A"}</strong></span>
+                    <span>Pacing: <strong>{totalTravelTime > 0 ? `~${Math.round(totalTravelTime * 60)} min` : "N/A"}</strong></span>
                 </div>
             </div>
 
@@ -102,8 +102,8 @@ export default function DayCard({
                                 {displayTime}
                             </div>
                             {place.opening_hours && (
-                                <div style={{ fontSize: "0.72rem", color: place.is_open_on_arrival === false ? "#b91c1c" : "#16a34a", marginTop: 2, display: "flex", alignItems: "center", gap: 3 }}>
-                                    <span>{place.is_open_on_arrival === false ? "⚠️" : "🕒"}</span>
+                                <div style={{ fontSize: "0.72rem", color: place.is_open_on_arrival === false ? "#b91c1c" : "#16a34a", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                                    <span style={{ fontWeight: 600 }}>{place.is_open_on_arrival === false ? "[Closed]" : "[Open]"}</span>
                                     <span>{place.opening_hours.display}</span>
                                 </div>
                             )}
@@ -132,19 +132,22 @@ export default function DayCard({
                                 {place.category} • {place.distance_km} km from center
                             </p>
 
-                            {place.travel_from_previous_km != null && place.travel_from_previous_km > 0 && (
-                                <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#475569", display: "flex", alignItems: "center", gap: 4 }}>
-                                    <span>🚗</span>
-                                    <span>
+                            {index > 0 && (
+                                place.travel_from_previous_km != null && place.travel_from_previous_km > 0.05 ? (
+                                    <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#475569" }}>
                                         <strong>{place.travel_from_previous_km.toFixed(1)} km</strong> ({travelDurationStr}) from previous stop
-                                    </span>
-                                </p>
+                                    </p>
+                                ) : (
+                                    <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#94a3b8" }}>
+                                        Distance from previous stop: N/A
+                                    </p>
+                                )
                             )}
 
                             {place.matched_travelers && place.matched_travelers.length > 0 && (
                                 <div style={{ marginTop: 6, fontSize: "0.82rem" }}>
                                     <span style={{ color: "#4f46e5", fontWeight: 600 }}>
-                                        🎯 Matched:
+                                        Matched:
                                     </span>{" "}
                                     <span style={{ color: "#1e293b", fontWeight: 500 }}>
                                         {place.matched_travelers.join(", ")}
@@ -188,7 +191,7 @@ export default function DayCard({
                 >
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                         <span style={{ fontWeight: 700, fontSize: "0.92rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 6 }}>
-                            <span>🍽️</span> Daily Dining & Rest Breaks
+                            Daily Dining & Rest Breaks
                         </span>
                         <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
                             Est. Dining: <strong>${Math.round(mealsAndBreaks.total_estimated_meal_cost / 80)}</strong> / person
@@ -210,7 +213,7 @@ export default function DayCard({
                             >
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
                                     <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#4f46e5", textTransform: "uppercase" }}>
-                                        {meal.meal_type === "Breakfast" ? "🍳 Breakfast" : (meal.meal_type === "Lunch" ? "🥗 Lunch" : "🍽️ Dinner")}
+                                        {meal.meal_type}
                                     </span>
                                     <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 600 }}>
                                         {meal.time_slot}
@@ -224,7 +227,7 @@ export default function DayCard({
                                 </div>
                                 {meal.near_location && (
                                     <div style={{ fontSize: "0.72rem", color: "#475569" }}>
-                                        📍 Near {meal.near_location} ({meal.distance_km} km)
+                                        Near {meal.near_location} ({meal.distance_km} km)
                                     </div>
                                 )}
                             </div>
@@ -249,7 +252,6 @@ export default function DayCard({
                                         color: "#92400e",
                                     }}
                                 >
-                                    <span style={{ fontSize: "1.1rem" }}>☕</span>
                                     <div>
                                         <strong>{rb.break_type}</strong> ({rb.time_slot} • {rb.duration_minutes} min)
                                         <div style={{ color: "#78350f", marginTop: 2 }}>{rb.recommended_activity}</div>
@@ -267,7 +269,7 @@ export default function DayCard({
                         className="regenerate-button"
                         onClick={() => onRegenerate(day)}
                     >
-                        🔄 Regenerate Day
+                        Regenerate Day
                     </button>
                 )}
                 {onReplanDay && (
@@ -289,7 +291,7 @@ export default function DayCard({
                             boxShadow: "0 2px 4px rgba(79, 70, 229, 0.2)",
                         }}
                     >
-                        ⚡ Replan My Day (Live)
+                        Replan My Day (Live)
                     </button>
                 )}
             </div>

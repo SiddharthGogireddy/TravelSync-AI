@@ -13,7 +13,7 @@ const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
 export default function ExpenseCharts({ expenses }: Props) {
 
-    // ✅ Category aggregation
+    // Category aggregation
     const categoryMap: Record<string, number> = {};
     expenses.forEach((e) => {
         categoryMap[e.category] =
@@ -24,7 +24,7 @@ export default function ExpenseCharts({ expenses }: Props) {
         ([name, value]) => ({ name, value })
     );
 
-    // ✅ Traveler aggregation
+    // Traveler aggregation
     const travelerMap: Record<string, number> = {};
     expenses.forEach((e) => {
         travelerMap[e.paid_by] =

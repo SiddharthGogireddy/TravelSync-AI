@@ -3,6 +3,8 @@ import json
 import re
 from datetime import datetime, timezone
 
+from typing import Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, HTTPException, Response, Body
 from fastapi.responses import FileResponse
 
@@ -615,6 +617,10 @@ def get_trip(trip_id: str):
             detail="Trip not found"
         )
 
+    trip["trip_id"] = trip_id
+    if "trip" in trip and isinstance(trip["trip"], dict):
+        trip["trip"]["trip_id"] = trip_id
+
     return trip
 
 
@@ -704,10 +710,20 @@ def get_trip_notes(trip_id: str):
     }
 
 
+class NotePayload(BaseModel):
+    note: Optional[str] = None
+
+
+class RatingPayload(BaseModel):
+    rating: Optional[int] = None
+    feedback: Optional[str] = ""
+
+
 @router.post("/{trip_id}/notes")
 def create_trip_note(
     trip_id: str,
-    note: str
+    note: Optional[str] = None,
+    payload: Optional[NotePayload] = None,
 ):
     trip = load_trip(trip_id)
 
@@ -717,7 +733,9 @@ def create_trip_note(
             detail="Trip not found"
         )
 
-    if not note.strip():
+    actual_note = (payload.note if payload and payload.note is not None else note) or ""
+
+    if not actual_note.strip():
         raise HTTPException(
             status_code=400,
             detail="Note cannot be empty"
@@ -725,7 +743,7 @@ def create_trip_note(
 
     notes = add_note(
         trip_id,
-        note.strip()
+        actual_note.strip()
     )
 
     return {
@@ -773,8 +791,9 @@ def get_trip_rating(trip_id: str):
 @router.post("/{trip_id}/rating")
 def rate_trip(
     trip_id: str,
-    rating: int,
-    feedback: str = ""
+    rating: Optional[int] = None,
+    feedback: str = "",
+    payload: Optional[RatingPayload] = None,
 ):
     trip = load_trip(trip_id)
 
@@ -784,7 +803,10 @@ def rate_trip(
             detail="Trip not found"
         )
 
-    if rating < 1 or rating > 5:
+    actual_rating = payload.rating if payload and payload.rating is not None else rating
+    actual_feedback = (payload.feedback if payload and payload.feedback is not None else feedback) or ""
+
+    if actual_rating is None or actual_rating < 1 or actual_rating > 5:
         raise HTTPException(
             status_code=400,
             detail="Rating must be between 1 and 5"
@@ -792,8 +814,8 @@ def rate_trip(
 
     result = save_rating(
         trip_id,
-        rating,
-        feedback.strip()
+        actual_rating,
+        actual_feedback.strip()
     )
 
     return {

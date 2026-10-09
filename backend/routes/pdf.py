@@ -12,9 +12,6 @@ router = APIRouter(
 
 @router.get("/{trip_id}/pdf")
 def download_pdf(trip_id: str):
-
-    print("Requested ID:", trip_id)
-
     trip = load_trip(trip_id)
 
     

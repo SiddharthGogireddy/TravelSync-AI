@@ -230,6 +230,32 @@ def schedule_day_opening_hours(
                     f"Adjusted visit window for '{place.get('name')}' to end at closing time ({minutes_to_time_str(oh['closes_minute'])})."
                 )
 
+    from backend.services.planner.distance import haversine
+
+    for idx, p in enumerate(scheduled_results):
+        if idx == 0:
+            p["travel_from_previous_km"] = None
+            p["travel_time_minutes"] = 0
+        else:
+            prev = scheduled_results[idx - 1]
+            lat1, lon1 = prev.get("lat"), prev.get("lon")
+            lat2, lon2 = p.get("lat"), p.get("lon")
+            if (
+                lat1 is not None and lon1 is not None
+                and lat2 is not None and lon2 is not None
+                and (lat1 != 0 or lon1 != 0) and (lat2 != 0 or lon2 != 0)
+            ):
+                d = round(haversine(lat1, lon1, lat2, lon2), 2)
+                if d > 0.05:
+                    p["travel_from_previous_km"] = d
+                    p["travel_time_minutes"] = estimate_travel_minutes(d, travel_mode)
+                else:
+                    p["travel_from_previous_km"] = None
+                    p["travel_time_minutes"] = 10
+            else:
+                p["travel_from_previous_km"] = None
+                p["travel_time_minutes"] = 10
+
     return scheduled_results, replan_notes
 
 

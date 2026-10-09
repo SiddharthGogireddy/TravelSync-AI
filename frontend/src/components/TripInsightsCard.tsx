@@ -62,11 +62,11 @@ export default function TripInsightsCard({ tripId }: Props) {
   const getObservationColor = (type: string) => {
     switch (type) {
       case "warning":
-        return { bg: "#fef3c7", border: "#f59e0b", text: "#92400e", badge: "⚠️ Alert" };
+        return { bg: "#fef3c7", border: "#f59e0b", text: "#92400e", badge: "Alert" };
       case "success":
-        return { bg: "#ecfdf5", border: "#10b981", text: "#065f46", badge: "✅ Healthy" };
+        return { bg: "#ecfdf5", border: "#10b981", text: "#065f46", badge: "Healthy" };
       default:
-        return { bg: "#eff6ff", border: "#3b82f6", text: "#1e40af", badge: "💡 Insight" };
+        return { bg: "#eff6ff", border: "#3b82f6", text: "#1e40af", badge: "Insight" };
     }
   };
 
@@ -96,7 +96,7 @@ export default function TripInsightsCard({ tripId }: Props) {
         }}
       >
         <h2 className="section-title" style={{ margin: 0, display: "flex", alignItems: "center", gap: "8px" }}>
-          📊 Trip Analytics & AI Insights
+          Trip Analytics & AI Insights
         </h2>
         <span
           style={{
@@ -236,7 +236,7 @@ export default function TripInsightsCard({ tripId }: Props) {
             Itinerary Route
           </div>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "#111827", marginTop: "4px" }}>
-            {metrics.distance} km
+            {metrics.distance > 0 ? `${metrics.distance} km` : "N/A"}
           </div>
           <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>
             Total travel distance
@@ -276,7 +276,7 @@ export default function TripInsightsCard({ tripId }: Props) {
             Avg Distance Between Stops
           </div>
           <div style={{ fontSize: "22px", fontWeight: "bold", color: "#111827", marginTop: "4px" }}>
-            {metrics.average_distance_between_stops} km
+            {metrics.average_distance_between_stops > 0 ? `${metrics.average_distance_between_stops} km` : "N/A"}
           </div>
           <div style={{ fontSize: "12px", color: "#9ca3af", marginTop: "2px" }}>
             Local transit average

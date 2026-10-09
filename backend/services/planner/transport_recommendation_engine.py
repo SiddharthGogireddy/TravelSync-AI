@@ -214,19 +214,19 @@ def generate_transport_recommendations(
 
         badges = []
         if m == fastest_mode:
-            badges.append("⚡ Fastest")
+            badges.append("Fastest")
         if m == cheapest_mode:
-            badges.append("💰 Most Economical")
+            badges.append("Most Economical")
         if m == greenest_mode:
-            badges.append("🌱 Eco Champion")
+            badges.append("Eco Champion")
         if m == current_mode.lower():
-            badges.append("📍 Currently Selected")
+            badges.append("Currently Selected")
 
         evaluated_modes[m]["badges"] = badges
 
     # Pick highest scoring mode as top recommendation
     recommended_mode = max(viable_modes, key=lambda m: evaluated_modes[m]["score"])
-    evaluated_modes[recommended_mode]["badges"].insert(0, "🌟 Recommended Best Match")
+    evaluated_modes[recommended_mode]["badges"].insert(0, "Recommended Best Match")
 
     rec_data = evaluated_modes[recommended_mode]
 
