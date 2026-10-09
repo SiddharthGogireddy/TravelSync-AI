@@ -158,26 +158,281 @@ def generate_pdf(trip: dict) -> str:
         alignment=1,
     )
 
+    cover_brand_tag = ParagraphStyle(
+        "PDFCoverBrandTag",
+        parent=styles["Normal"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=8.5,
+        leading=11,
+        textColor=colors.HexColor("#4F46E5"),
+    )
+    cover_title_style = ParagraphStyle(
+        "PDFCoverTitle",
+        parent=styles["Heading2"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=13,
+        leading=17,
+        textColor=colors.HexColor("#475569"),
+    )
+    cover_route_style = ParagraphStyle(
+        "PDFCoverRoute",
+        parent=styles["Title"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=22,
+        leading=27,
+        textColor=colors.HexColor("#0F172A"),
+        alignment=0,
+    )
+    cover_meta_line = ParagraphStyle(
+        "PDFCoverMetaLine",
+        parent=styles["Normal"],
+        fontName=UNICODE_FONT,
+        fontSize=9.5,
+        leading=13,
+        textColor=colors.HexColor("#64748B"),
+    )
+    cover_section_heading = ParagraphStyle(
+        "PDFCoverSectionHeading",
+        parent=styles["Heading2"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=11,
+        leading=15,
+        textColor=colors.HexColor("#1E293B"),
+    )
+    cover_cell_label = ParagraphStyle(
+        "PDFCoverCellLabel",
+        parent=styles["Normal"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.HexColor("#64748B"),
+    )
+    cover_report_meta = ParagraphStyle(
+        "PDFCoverReportMeta",
+        parent=styles["Normal"],
+        fontName=UNICODE_FONT,
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor("#64748B"),
+    )
+    cover_closing_line = ParagraphStyle(
+        "PDFCoverClosingLine",
+        parent=styles["Normal"],
+        fontName=UNICODE_FONT,
+        fontSize=7.5,
+        leading=10,
+        textColor=colors.HexColor("#94A3B8"),
+        alignment=1,
+    )
+
     elements = []
     route_dist = trip.get("route", {}).get("distance_km", "N/A")
     total_scheduled_places = sum(len(p) for p in trip.get("day_schedule", {}).values())
+    travelers = trip.get("travelers", [])
+    travelers_cnt = len(travelers)
 
     # ==================================================================
     # 1. Cover Page
     # ==================================================================
-    elements.append(Spacer(1, 100))
-    elements.append(Paragraph("TravelSync AI", title_style))
-    elements.append(Spacer(1, 16))
-    elements.append(Paragraph(f"{source} {ARROW_SYM} {destination}", h1_style))
-    elements.append(Spacer(1, 12))
-    elements.append(Paragraph(f"{trip.get('days', 1)}-Day Itinerary", h2_style))
-    elements.append(Spacer(1, 16))
-    elements.append(Paragraph(f"<b>Travel Mode:</b> {trip.get('travel_mode', 'N/A').capitalize()}", body_style))
-    elements.append(Paragraph(f"<b>Travelers:</b> {len(trip.get('travelers', []))}", body_style))
-    elements.append(Paragraph(f"<b>Places Scheduled:</b> {total_scheduled_places}", body_style))
-    elements.append(Paragraph(f"<b>Total Distance:</b> {route_dist} km", body_style))
-    elements.append(Spacer(1, 30))
-    elements.append(Paragraph(f"<b>Trip ID:</b> {trip.get('trip_id', 'N/A')}", body_style))
+    elements.append(Spacer(1, 28))
+
+    # --- A. Title and Route ---
+    elements.append(Paragraph("TRAVELSYNC AI &bull; TRAVEL ITINERARY DOSSIER", cover_brand_tag))
+    elements.append(Spacer(1, 4))
+    elements.append(Paragraph(f"Curated Itinerary: {source} to {destination}", cover_title_style))
+    elements.append(Spacer(1, 8))
+    # Primary visual emphasis on route
+    elements.append(Paragraph(f"{source} {ARROW_SYM} {destination}", cover_route_style))
+    elements.append(Spacer(1, 6))
+
+    dates_info = trip.get("dates") or trip.get("start_date") or ""
+    dates_suffix = f" &bull; {dates_info}" if dates_info else ""
+    elements.append(
+        Paragraph(
+            f"{trip.get('days', 1)}-Day Comprehensive Travel Plan{dates_suffix} &bull; {trip.get('travel_mode', 'N/A').capitalize()} Journey",
+            cover_meta_line,
+        )
+    )
+    elements.append(Spacer(1, 10))
+
+    accent_bar = Table([[""]], colWidths=[490], rowHeights=[2.5])
+    accent_bar.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#4F46E5")),
+        ("PADDING", (0, 0), (-1, -1), 0),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
+        ("TOPPADDING", (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(accent_bar)
+    elements.append(Spacer(1, 18))
+
+    # --- B. Trip At A Glance ---
+    elements.append(Paragraph("Trip At A Glance", cover_section_heading))
+    elements.append(Spacer(1, 6))
+
+    dist_display = f"{route_dist} km" if route_dist != "N/A" else "N/A"
+    glance_data = [
+        [
+            Paragraph("<b>TRAVEL MODE</b><br/><font size=10 color='#0F172A'><b>" + trip.get("travel_mode", "N/A").capitalize() + "</b></font>", cover_cell_label),
+            Paragraph("<b>TRAVELERS</b><br/><font size=10 color='#0F172A'><b>" + str(travelers_cnt) + " Traveler" + ("s" if travelers_cnt != 1 else "") + "</b></font>", cover_cell_label),
+        ],
+        [
+            Paragraph("<b>TOTAL ROUTE DISTANCE</b><br/><font size=10 color='#0F172A'><b>" + dist_display + "</b></font>", cover_cell_label),
+            Paragraph("<b>SCHEDULED ATTRACTIONS</b><br/><font size=10 color='#0F172A'><b>" + str(total_scheduled_places) + " Places Scheduled</b></font>", cover_cell_label),
+        ],
+    ]
+    glance_table = Table(glance_data, colWidths=[245, 245])
+    glance_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+        ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#CBD5E1")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
+        ("PADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+    ]))
+    elements.append(glance_table)
+    elements.append(Spacer(1, 18))
+
+    # --- C. Budget Snapshot ---
+    elements.append(Paragraph("Budget Snapshot", cover_section_heading))
+    elements.append(Spacer(1, 6))
+
+    budget = trip.get("budget", {})
+    b_tot = budget.get("total_budget") if budget.get("total_budget") is not None else budget.get("total")
+    b_est = budget.get("estimated_cost") if budget.get("estimated_cost") is not None else budget.get("estimated")
+
+    if isinstance(b_tot, (int, float)):
+        b_tot_str = f"Rs. {b_tot:,.0f}"
+        avg_traveler_str = f"Rs. {(b_tot / travelers_cnt):,.0f}" if travelers_cnt > 0 else "N/A"
+    else:
+        b_tot_str = "Flexible"
+        avg_traveler_str = "N/A"
+
+    b_est_str = f"Rs. {b_est:,.0f}" if isinstance(b_est, (int, float)) else "Standard"
+
+    budget_snap_data = [
+        [
+            Paragraph("<b>TOTAL TRIP BUDGET</b><br/><font size=10 color='#0F172A'><b>" + b_tot_str + "</b></font>", cover_cell_label),
+            Paragraph("<b>ESTIMATED EXPENSE</b><br/><font size=10 color='#0F172A'><b>" + b_est_str + "</b></font>", cover_cell_label),
+            Paragraph("<b>AVG PER TRAVELER</b><br/><font size=10 color='#0F172A'><b>" + avg_traveler_str + "</b></font>", cover_cell_label),
+        ]
+    ]
+    budget_snap_table = Table(budget_snap_data, colWidths=[163, 163, 164])
+    budget_snap_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#EEF2FF")),
+        ("BOX", (0, 0), (-1, -1), 0.75, colors.HexColor("#C7D2FE")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E0E7FF")),
+        ("PADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+    ]))
+    elements.append(budget_snap_table)
+    elements.append(Spacer(1, 18))
+
+    # --- D. Itinerary Highlights (Featured scheduled stops) ---
+    elements.append(Paragraph("Itinerary Highlights", cover_section_heading))
+    elements.append(Spacer(1, 6))
+
+    day_schedule = trip.get("day_schedule", {})
+    highlights = []
+    seen_names = set()
+    for d_key in sorted(day_schedule.keys(), key=lambda x: int(x) if x.isdigit() else 99):
+        pls = day_schedule[d_key]
+        if isinstance(pls, list):
+            for p in pls:
+                p_name = p.get("name")
+                if p_name and p_name not in seen_names:
+                    seen_names.add(p_name)
+                    highlights.append({
+                        "day": f"Day {d_key}",
+                        "name": p_name,
+                        "category": p.get("category") or "Attraction",
+                    })
+                    break
+        if len(highlights) >= 3:
+            break
+
+    if len(highlights) < 3:
+        for d_key in sorted(day_schedule.keys(), key=lambda x: int(x) if x.isdigit() else 99):
+            pls = day_schedule[d_key]
+            if isinstance(pls, list):
+                for p in pls:
+                    p_name = p.get("name")
+                    if p_name and p_name not in seen_names:
+                        seen_names.add(p_name)
+                        highlights.append({
+                            "day": f"Day {d_key}",
+                            "name": p_name,
+                            "category": p.get("category") or "Attraction",
+                        })
+                    if len(highlights) >= 3:
+                        break
+            if len(highlights) >= 3:
+                break
+
+    if highlights:
+        hl_rows = [
+            [
+                Paragraph("<b>Timeline</b>", table_header_style),
+                Paragraph("<b>Key Scheduled Attraction</b>", table_header_style),
+                Paragraph("<b>Category</b>", table_header_style),
+            ]
+        ]
+        for hl in highlights:
+            hl_rows.append([
+                Paragraph(f"<b>{hl['day']}</b>", table_cell_style),
+                Paragraph(f"<b>{hl['name']}</b>", table_cell_style),
+                Paragraph(str(hl['category']), table_cell_style),
+            ])
+        hl_table = Table(hl_rows, colWidths=[75, 255, 160])
+        hl_table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#312E81")),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+            ("PADDING", (0, 0), (-1, -1), 6),
+            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
+        ]))
+        elements.append(hl_table)
+    else:
+        no_hl = Table([[
+            Paragraph("Daily Itinerary Plan", table_cell_style),
+            Paragraph("Personalized attraction stops scheduled across travel days", table_cell_style),
+        ]], colWidths=[140, 350])
+        no_hl.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
+            ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+            ("PADDING", (0, 0), (-1, -1), 7),
+        ]))
+        elements.append(no_hl)
+    elements.append(Spacer(1, 18))
+
+    # --- E. Report Details & Footer ---
+    trip_id_str = str(trip.get("trip_id", "N/A"))
+    gen_time = datetime.now().strftime("%d %B %Y, %H:%M")
+    meta_data = [
+        [
+            Paragraph(f"<b>Trip Reference ID:</b> {trip_id_str}", cover_report_meta),
+            Paragraph(f"<b>Issued:</b> {gen_time}", cover_report_meta),
+        ],
+        [
+            Paragraph("<b>Status:</b> Confirmed Itinerary Dossier", cover_report_meta),
+            Paragraph("<b>Generated By:</b> TravelSync AI Planning Engine", cover_report_meta),
+        ],
+    ]
+    meta_table = Table(meta_data, colWidths=[245, 245])
+    meta_table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),
+        ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
+        ("PADDING", (0, 0), (-1, -1), 6),
+    ]))
+    elements.append(meta_table)
+    elements.append(Spacer(1, 10))
+
+    elements.append(
+        Paragraph(
+            "This travel dossier was generated by TravelSync AI. Comprehensive daily schedules, route segments, and hotel recommendations begin on page 2.",
+            cover_closing_line,
+        )
+    )
 
     elements.append(PageBreak())
 
