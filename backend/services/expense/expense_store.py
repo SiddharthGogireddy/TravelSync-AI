@@ -1,41 +1,66 @@
 import json
+import logging
 import os
+from pathlib import Path
 
-FILE = "backend/data/expenses.json"
+logger = logging.getLogger(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = BASE_DIR / "data"
+FILE = DATA_DIR / "expenses.json"
+
+
+def _ensure_store_file():
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if not FILE.exists():
+        temp_file = FILE.with_suffix(".tmp")
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump({}, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_file, FILE)
 
 
 def load_expenses():
-
-    if not os.path.exists(FILE):
+    _ensure_store_file()
+    try:
+        with open(FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except Exception as e:
+        logger.error(f"Failed to load expenses: {e}")
         return {}
-
-    with open(FILE, "r") as f:
-        return json.load(f)
 
 
 def save_expenses(data):
-
-    with open(FILE, "w") as f:
-        json.dump(data, f, indent=4)
+    _ensure_store_file()
+    temp_file = FILE.with_suffix(".tmp")
+    try:
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=4)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_file, FILE)
+    except Exception as e:
+        logger.error(f"Failed to save expenses: {e}")
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
 
 
 def add_expense(trip_id, expense):
-
-    print("Trip ID:", trip_id)
-    print("Expense:", expense)
-
+    key = str(trip_id)
     data = load_expenses()
 
-    print("Before:", data)
+    if key not in data:
+        data[key] = []
 
-    if trip_id not in data:
-        data[trip_id] = []
-
-    data[trip_id].append(expense)
-
-    print("After:", data)
+    data[key].append(expense)
 
     save_expenses(data)
+
 def get_expenses(trip_id):
 
     data = load_expenses()

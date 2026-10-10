@@ -16,9 +16,11 @@ def generate(prompt: str):
             contents=prompt
         )
 
-        text = response.text.strip()
-        print("GEMINI RAW RESPONSE:")
-        print(text)
+        try:
+            print("GEMINI RAW RESPONSE:")
+            print(text)
+        except Exception:
+            pass
         if text.startswith("```json"):
             text = text.replace("```json", "", 1)
             text = text.replace("```", "", 1)

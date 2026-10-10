@@ -38,10 +38,58 @@ router = APIRouter(
 
 @router.get("/history")
 def get_trip_history():
-    trips = load_all_trips()
+    raw_trips = load_all_trips()
+    normalized_trips = []
+
+    for item in raw_trips:
+        if not isinstance(item, dict):
+            continue
+
+        trip_id = str(item.get("id") or "").strip()
+        if not trip_id:
+            continue
+
+        raw_data = item.get("data")
+        if not isinstance(raw_data, dict):
+            raw_data = {}
+
+        # Normalize data structure so "trip" is always present and is a dict
+        if "trip" in raw_data and isinstance(raw_data.get("trip"), dict):
+            trip_obj = dict(raw_data["trip"])
+            dashboard = raw_data.get("dashboard")
+            summary = raw_data.get("summary")
+        else:
+            # Stored directly as trip dict without wrapper
+            trip_obj = dict(raw_data)
+            dashboard = raw_data.get("dashboard")
+            summary = raw_data.get("summary")
+
+        # Standardize destination_location if present with valid numbers, else None
+        dest_loc = trip_obj.get("destination_location")
+        if isinstance(dest_loc, dict) and "lat" in dest_loc and "lon" in dest_loc:
+            try:
+                dest_loc = {
+                    "lat": float(dest_loc["lat"]),
+                    "lon": float(dest_loc["lon"]),
+                }
+            except (ValueError, TypeError):
+                dest_loc = None
+        else:
+            dest_loc = None
+
+        trip_obj["destination_location"] = dest_loc
+
+        normalized_trips.append({
+            "id": trip_id,
+            "data": {
+                "trip": trip_obj,
+                "dashboard": dashboard,
+                "summary": summary,
+            }
+        })
 
     return {
-        "trips": trips
+        "trips": normalized_trips
     }
 
 

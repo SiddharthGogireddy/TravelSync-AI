@@ -166,30 +166,13 @@ def generate_pdf(trip: dict) -> str:
         leading=11,
         textColor=colors.HexColor("#4F46E5"),
     )
-    cover_title_style = ParagraphStyle(
-        "PDFCoverTitle",
-        parent=styles["Heading2"],
-        fontName=UNICODE_FONT_BOLD,
-        fontSize=13,
-        leading=17,
-        textColor=colors.HexColor("#475569"),
-    )
-    cover_route_style = ParagraphStyle(
-        "PDFCoverRoute",
-        parent=styles["Title"],
-        fontName=UNICODE_FONT_BOLD,
-        fontSize=22,
-        leading=27,
-        textColor=colors.HexColor("#0F172A"),
-        alignment=0,
-    )
     cover_meta_line = ParagraphStyle(
         "PDFCoverMetaLine",
         parent=styles["Normal"],
         fontName=UNICODE_FONT,
         fontSize=9.5,
-        leading=13,
-        textColor=colors.HexColor("#64748B"),
+        leading=13.5,
+        textColor=colors.HexColor("#475569"),
     )
     cover_section_heading = ParagraphStyle(
         "PDFCoverSectionHeading",
@@ -202,10 +185,10 @@ def generate_pdf(trip: dict) -> str:
     cover_cell_label = ParagraphStyle(
         "PDFCoverCellLabel",
         parent=styles["Normal"],
-        fontName=UNICODE_FONT_BOLD,
-        fontSize=7.5,
-        leading=10,
-        textColor=colors.HexColor("#64748B"),
+        fontName=UNICODE_FONT,
+        fontSize=8,
+        leading=11,
+        textColor=colors.HexColor("#1E293B"),
     )
     cover_report_meta = ParagraphStyle(
         "PDFCoverReportMeta",
@@ -213,14 +196,14 @@ def generate_pdf(trip: dict) -> str:
         fontName=UNICODE_FONT,
         fontSize=8,
         leading=11,
-        textColor=colors.HexColor("#64748B"),
+        textColor=colors.HexColor("#1E293B"),
     )
     cover_closing_line = ParagraphStyle(
         "PDFCoverClosingLine",
         parent=styles["Normal"],
         fontName=UNICODE_FONT,
-        fontSize=7.5,
-        leading=10,
+        fontSize=7.8,
+        leading=11,
         textColor=colors.HexColor("#94A3B8"),
         alignment=1,
     )
@@ -230,30 +213,66 @@ def generate_pdf(trip: dict) -> str:
     total_scheduled_places = sum(len(p) for p in trip.get("day_schedule", {}).values())
     travelers = trip.get("travelers", [])
     travelers_cnt = len(travelers)
+    days_cnt = trip.get("days", 1)
 
     # ==================================================================
     # 1. Cover Page
     # ==================================================================
-    elements.append(Spacer(1, 28))
+    elements.append(Spacer(1, 20))
 
     # --- A. Title and Route ---
     elements.append(Paragraph("TRAVELSYNC AI &bull; TRAVEL ITINERARY DOSSIER", cover_brand_tag))
     elements.append(Spacer(1, 4))
-    elements.append(Paragraph(f"Curated Itinerary: {source} to {destination}", cover_title_style))
-    elements.append(Spacer(1, 8))
+
+    custom_title = trip.get("title")
+    title_text = custom_title if custom_title else f"Curated Itinerary: {source} to {destination}"
+    title_font_size = 11 if len(title_text) > 60 else 12.5
+    title_leading = 14 if len(title_text) > 60 else 16
+    cover_title_style = ParagraphStyle(
+        "PDFCoverTitle",
+        parent=styles["Heading2"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=title_font_size,
+        leading=title_leading,
+        textColor=colors.HexColor("#475569"),
+    )
+    elements.append(Paragraph(title_text, cover_title_style))
+    elements.append(Spacer(1, 7))
+
     # Primary visual emphasis on route
-    elements.append(Paragraph(f"{source} {ARROW_SYM} {destination}", cover_route_style))
+    route_str = f"{source} {ARROW_SYM} {destination}"
+    if len(route_str) > 60:
+        route_font_size, route_leading = 17, 21
+    elif len(route_str) > 40:
+        route_font_size, route_leading = 20, 25
+    else:
+        route_font_size, route_leading = 24, 29
+
+    cover_route_style = ParagraphStyle(
+        "PDFCoverRoute",
+        parent=styles["Title"],
+        fontName=UNICODE_FONT_BOLD,
+        fontSize=route_font_size,
+        leading=route_leading,
+        textColor=colors.HexColor("#0F172A"),
+        alignment=0,
+    )
+    elements.append(Paragraph(route_str, cover_route_style))
     elements.append(Spacer(1, 6))
 
-    dates_info = trip.get("dates") or trip.get("start_date") or ""
+    dates_info = trip.get("dates") or trip.get("start_date") or trip.get("travel_dates") or ""
+    if trip.get("start_date") and trip.get("end_date") and not trip.get("dates"):
+        dates_info = f"{trip['start_date']} &ndash; {trip['end_date']}"
     dates_suffix = f" &bull; {dates_info}" if dates_info else ""
+    travel_mode_str = trip.get("travel_mode", "N/A").capitalize()
+
     elements.append(
         Paragraph(
-            f"{trip.get('days', 1)}-Day Comprehensive Travel Plan{dates_suffix} &bull; {trip.get('travel_mode', 'N/A').capitalize()} Journey",
+            f"{days_cnt}-Day Comprehensive Travel Plan{dates_suffix} &bull; {travel_mode_str} Journey",
             cover_meta_line,
         )
     )
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 9))
 
     accent_bar = Table([[""]], colWidths=[490], rowHeights=[2.5])
     accent_bar.setStyle(TableStyle([
@@ -263,21 +282,50 @@ def generate_pdf(trip: dict) -> str:
         ("TOPPADDING", (0, 0), (-1, -1), 0),
     ]))
     elements.append(accent_bar)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 13))
 
     # --- B. Trip At A Glance ---
     elements.append(Paragraph("Trip At A Glance", cover_section_heading))
-    elements.append(Spacer(1, 6))
+    elements.append(Spacer(1, 5))
 
     dist_display = f"{route_dist} km" if route_dist != "N/A" else "N/A"
+    dist_desc = "Direct & intermediate transit" if route_dist != "N/A" else "Transit distance pending"
+    traveler_desc = (
+        "Solo traveler dossier"
+        if travelers_cnt == 1
+        else (f"Coordinated party of {travelers_cnt}" if travelers_cnt > 1 else "Traveler party pending")
+    )
+    places_desc = f"Curated across {days_cnt} travel day" + ("s" if days_cnt != 1 else "")
+    mode_desc = f"Primary travel modality: {travel_mode_str}"
+
     glance_data = [
         [
-            Paragraph("<b>TRAVEL MODE</b><br/><font size=10 color='#0F172A'><b>" + trip.get("travel_mode", "N/A").capitalize() + "</b></font>", cover_cell_label),
-            Paragraph("<b>TRAVELERS</b><br/><font size=10 color='#0F172A'><b>" + str(travelers_cnt) + " Traveler" + ("s" if travelers_cnt != 1 else "") + "</b></font>", cover_cell_label),
+            Paragraph(
+                f"<font size=7.5 color='#64748B'><b>TRAVEL MODE</b></font><br/>"
+                f"<font size=12 color='#0F172A'><b>{travel_mode_str}</b></font><br/>"
+                f"<font size=7.2 color='#64748B'>{mode_desc}</font>",
+                cover_cell_label,
+            ),
+            Paragraph(
+                f"<font size=7.5 color='#64748B'><b>TRAVELERS</b></font><br/>"
+                f"<font size=12 color='#0F172A'><b>{travelers_cnt} Traveler{'s' if travelers_cnt != 1 else ''}</b></font><br/>"
+                f"<font size=7.2 color='#64748B'>{traveler_desc}</font>",
+                cover_cell_label,
+            ),
         ],
         [
-            Paragraph("<b>TOTAL ROUTE DISTANCE</b><br/><font size=10 color='#0F172A'><b>" + dist_display + "</b></font>", cover_cell_label),
-            Paragraph("<b>SCHEDULED ATTRACTIONS</b><br/><font size=10 color='#0F172A'><b>" + str(total_scheduled_places) + " Places Scheduled</b></font>", cover_cell_label),
+            Paragraph(
+                f"<font size=7.5 color='#64748B'><b>TOTAL ROUTE DISTANCE</b></font><br/>"
+                f"<font size=12 color='#0F172A'><b>{dist_display}</b></font><br/>"
+                f"<font size=7.2 color='#64748B'>{dist_desc}</font>",
+                cover_cell_label,
+            ),
+            Paragraph(
+                f"<font size=7.5 color='#64748B'><b>SCHEDULED ATTRACTIONS</b></font><br/>"
+                f"<font size=12 color='#0F172A'><b>{total_scheduled_places} Places Scheduled</b></font><br/>"
+                f"<font size=7.2 color='#64748B'>{places_desc}</font>",
+                cover_cell_label,
+            ),
         ],
     ]
     glance_table = Table(glance_data, colWidths=[245, 245])
@@ -288,32 +336,66 @@ def generate_pdf(trip: dict) -> str:
         ("PADDING", (0, 0), (-1, -1), 8),
         ("LEFTPADDING", (0, 0), (-1, -1), 12),
         ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     elements.append(glance_table)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 13))
 
     # --- C. Budget Snapshot ---
     elements.append(Paragraph("Budget Snapshot", cover_section_heading))
-    elements.append(Spacer(1, 6))
+    elements.append(Spacer(1, 5))
 
     budget = trip.get("budget", {})
     b_tot = budget.get("total_budget") if budget.get("total_budget") is not None else budget.get("total")
     b_est = budget.get("estimated_cost") if budget.get("estimated_cost") is not None else budget.get("estimated")
+    avg_per_person = budget.get("average_per_person")
 
     if isinstance(b_tot, (int, float)):
         b_tot_str = f"Rs. {b_tot:,.0f}"
-        avg_traveler_str = f"Rs. {(b_tot / travelers_cnt):,.0f}" if travelers_cnt > 0 else "N/A"
+        if isinstance(avg_per_person, (int, float)) and avg_per_person > 0:
+            avg_traveler_str = f"Rs. {avg_per_person:,.0f}"
+        elif travelers_cnt > 0:
+            avg_traveler_str = f"Rs. {(b_tot / travelers_cnt):,.0f}"
+        else:
+            avg_traveler_str = "N/A"
+    elif b_tot:
+        b_tot_str = str(b_tot)
+        avg_traveler_str = "N/A"
     else:
         b_tot_str = "Flexible"
         avg_traveler_str = "N/A"
 
-    b_est_str = f"Rs. {b_est:,.0f}" if isinstance(b_est, (int, float)) else "Standard"
+    if isinstance(b_est, (int, float)):
+        b_est_str = f"Rs. {b_est:,.0f}"
+    elif b_est:
+        b_est_str = str(b_est)
+    else:
+        b_est_str = "Standard"
+
+    status_note = f"Status: {budget.get('status')}" if budget.get("status") else "Projected expenditure"
+    avg_note = f"Per person allocation ({travelers_cnt})" if avg_traveler_str != "N/A" else "Individual breakdown N/A"
 
     budget_snap_data = [
         [
-            Paragraph("<b>TOTAL TRIP BUDGET</b><br/><font size=10 color='#0F172A'><b>" + b_tot_str + "</b></font>", cover_cell_label),
-            Paragraph("<b>ESTIMATED EXPENSE</b><br/><font size=10 color='#0F172A'><b>" + b_est_str + "</b></font>", cover_cell_label),
-            Paragraph("<b>AVG PER TRAVELER</b><br/><font size=10 color='#0F172A'><b>" + avg_traveler_str + "</b></font>", cover_cell_label),
+            Paragraph(
+                f"<font size=7.5 color='#4338CA'><b>TOTAL TRIP BUDGET</b></font><br/>"
+                f"<font size=12 color='#1E1B4B'><b>{b_tot_str}</b></font><br/>"
+                f"<font size=7.2 color='#6366F1'>Allocated overall budget</font>",
+                cover_cell_label,
+            ),
+            Paragraph(
+                f"<font size=7.5 color='#4338CA'><b>ESTIMATED EXPENSE</b></font><br/>"
+                f"<font size=12 color='#1E1B4B'><b>{b_est_str}</b></font><br/>"
+                f"<font size=7.2 color='#6366F1'>{status_note}</font>",
+                cover_cell_label,
+            ),
+            Paragraph(
+                f"<font size=7.5 color='#4338CA'><b>AVG PER TRAVELER</b></font><br/>"
+                f"<font size=12 color='#1E1B4B'><b>{avg_traveler_str}</b></font><br/>"
+                f"<font size=7.2 color='#6366F1'>{avg_note}</font>",
+                cover_cell_label,
+            ),
         ]
     ]
     budget_snap_table = Table(budget_snap_data, colWidths=[163, 163, 164])
@@ -324,13 +406,15 @@ def generate_pdf(trip: dict) -> str:
         ("PADDING", (0, 0), (-1, -1), 8),
         ("LEFTPADDING", (0, 0), (-1, -1), 10),
         ("RIGHTPADDING", (0, 0), (-1, -1), 10),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
     ]))
     elements.append(budget_snap_table)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 13))
 
     # --- D. Itinerary Highlights (Featured scheduled stops) ---
     elements.append(Paragraph("Itinerary Highlights", cover_section_heading))
-    elements.append(Spacer(1, 6))
+    elements.append(Spacer(1, 5))
 
     day_schedule = trip.get("day_schedule", {})
     highlights = []
@@ -346,6 +430,7 @@ def generate_pdf(trip: dict) -> str:
                         "day": f"Day {d_key}",
                         "name": p_name,
                         "category": p.get("category") or "Attraction",
+                        "best_time": p.get("best_time") or "",
                     })
                     break
         if len(highlights) >= 3:
@@ -363,6 +448,7 @@ def generate_pdf(trip: dict) -> str:
                             "day": f"Day {d_key}",
                             "name": p_name,
                             "category": p.get("category") or "Attraction",
+                            "best_time": p.get("best_time") or "",
                         })
                     if len(highlights) >= 3:
                         break
@@ -378,43 +464,48 @@ def generate_pdf(trip: dict) -> str:
             ]
         ]
         for hl in highlights:
+            time_sub = f"<br/><font size=7.2 color='#64748B'>Timing: {hl['best_time']}</font>" if hl.get("best_time") else ""
             hl_rows.append([
-                Paragraph(f"<b>{hl['day']}</b>", table_cell_style),
-                Paragraph(f"<b>{hl['name']}</b>", table_cell_style),
-                Paragraph(str(hl['category']), table_cell_style),
+                Paragraph(f"<b>{hl['day']}</b><br/><font size=7.2 color='#64748B'>Scheduled Stop</font>", table_cell_style),
+                Paragraph(f"<b>{hl['name']}</b>{time_sub}", table_cell_style),
+                Paragraph(f"<b>{hl['category']}</b><br/><font size=7.2 color='#64748B'>Curated Attraction</font>", table_cell_style),
             ])
-        hl_table = Table(hl_rows, colWidths=[75, 255, 160])
+        hl_table = Table(hl_rows, colWidths=[80, 260, 150])
         hl_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#312E81")),
             ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-            ("PADDING", (0, 0), (-1, -1), 6),
+            ("PADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 5.5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5.5),
+            ("LEFTPADDING", (0, 0), (-1, -1), 8),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 8),
             ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#F8FAFC")]),
         ]))
         elements.append(hl_table)
     else:
         no_hl = Table([[
-            Paragraph("Daily Itinerary Plan", table_cell_style),
-            Paragraph("Personalized attraction stops scheduled across travel days", table_cell_style),
+            Paragraph("<b>Daily Itinerary Plan</b><br/><font size=7.2 color='#64748B'>Schedule Status</font>", table_cell_style),
+            Paragraph("Personalized attraction stops scheduled across travel days.<br/><font size=7.2 color='#64748B'>Full daily breakdown provided in following sections.</font>", table_cell_style),
         ]], colWidths=[140, 350])
         no_hl.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F8FAFC")),
             ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
-            ("PADDING", (0, 0), (-1, -1), 7),
+            ("PADDING", (0, 0), (-1, -1), 8),
         ]))
         elements.append(no_hl)
-    elements.append(Spacer(1, 18))
+    elements.append(Spacer(1, 13))
 
     # --- E. Report Details & Footer ---
-    trip_id_str = str(trip.get("trip_id", "N/A"))
+    trip_id_str = str(trip.get("trip_id") or "N/A")
     gen_time = datetime.now().strftime("%d %B %Y, %H:%M")
     meta_data = [
         [
-            Paragraph(f"<b>Trip Reference ID:</b> {trip_id_str}", cover_report_meta),
-            Paragraph(f"<b>Issued:</b> {gen_time}", cover_report_meta),
+            Paragraph(f"<font size=7.2 color='#64748B'><b>TRIP REFERENCE ID</b></font><br/><b>{trip_id_str}</b>", cover_report_meta),
+            Paragraph(f"<font size=7.2 color='#64748B'><b>ISSUED DATE & TIME</b></font><br/><b>{gen_time}</b>", cover_report_meta),
         ],
         [
-            Paragraph("<b>Status:</b> Confirmed Itinerary Dossier", cover_report_meta),
-            Paragraph("<b>Generated By:</b> TravelSync AI Planning Engine", cover_report_meta),
+            Paragraph("<font size=7.2 color='#64748B'><b>DOSSIER STATUS</b></font><br/><b>Confirmed Itinerary Dossier</b>", cover_report_meta),
+            Paragraph("<font size=7.2 color='#64748B'><b>PLANNING ENGINE</b></font><br/><b>TravelSync AI Intelligent Itinerary System</b>", cover_report_meta),
         ],
     ]
     meta_table = Table(meta_data, colWidths=[245, 245])
@@ -422,10 +513,14 @@ def generate_pdf(trip: dict) -> str:
         ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor("#F1F5F9")),
         ("BOX", (0, 0), (-1, -1), 0.5, colors.HexColor("#CBD5E1")),
         ("INNERGRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#E2E8F0")),
-        ("PADDING", (0, 0), (-1, -1), 6),
+        ("PADDING", (0, 0), (-1, -1), 5.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5.5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5.5),
+        ("LEFTPADDING", (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 10),
     ]))
     elements.append(meta_table)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, 9))
 
     elements.append(
         Paragraph(

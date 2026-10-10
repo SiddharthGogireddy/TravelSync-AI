@@ -5,14 +5,22 @@ import uuid
 from datetime import datetime, timezone
 from backend.services.storage.trip_store import load_trip, save_trip
 
-FILE = "backend/data/templates.json"
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = BASE_DIR / "data"
+FILE = DATA_DIR / "templates.json"
 
 
 def _ensure_store_file():
-    os.makedirs(os.path.dirname(FILE), exist_ok=True)
-    if not os.path.exists(FILE):
-        with open(FILE, "w", encoding="utf-8") as f:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    if not FILE.exists():
+        temp_file = FILE.with_suffix(".tmp")
+        with open(temp_file, "w", encoding="utf-8") as f:
             json.dump([], f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_file, FILE)
 
 
 def load_all_templates() -> list:
@@ -26,8 +34,19 @@ def load_all_templates() -> list:
 
 def _save_all_templates(templates: list):
     _ensure_store_file()
-    with open(FILE, "w", encoding="utf-8") as f:
-        json.dump(templates, f, indent=2)
+    temp_file = FILE.with_suffix(".tmp")
+    try:
+        with open(temp_file, "w", encoding="utf-8") as f:
+            json.dump(templates, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temp_file, FILE)
+    except Exception:
+        if temp_file.exists():
+            try:
+                temp_file.unlink()
+            except Exception:
+                pass
 
 
 def get_template(template_id: str) -> dict | None:

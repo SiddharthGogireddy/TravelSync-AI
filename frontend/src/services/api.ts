@@ -203,15 +203,19 @@ export async function rateTrip(
 export type TripHistoryItem = {
   id: string;
   data: {
-    trip: {
+    trip?: {
       source?: string;
       destination?: string;
       days?: number;
-      destination_location: {
+      destination_location?: {
         lat: number;
         lon: number;
-      };
+      } | null;
+      [key: string]: unknown;
     };
+    dashboard?: unknown;
+    summary?: unknown;
+    [key: string]: unknown;
   };
 };
 
@@ -224,7 +228,7 @@ export async function getTripHistory(): Promise<TripHistoryItem[]> {
 
   const result = await res.json();
 
-  return result.trips;
+  return Array.isArray(result?.trips) ? result.trips : [];
 }
 
 export function downloadTripPdf(tripId: string): void {

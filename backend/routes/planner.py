@@ -81,4 +81,14 @@ Format:
 
     result["itinerary"] = itinerary
 
+    trip_id = result.get("trip_id")
+    if trip_id and itinerary:
+        from backend.services.storage.trip_store import load_trip, update_saved_trip
+        saved_record = load_trip(trip_id)
+        if isinstance(saved_record, dict):
+            saved_record["itinerary"] = itinerary
+            if "trip" in saved_record and isinstance(saved_record["trip"], dict):
+                saved_record["trip"]["itinerary"] = itinerary
+            update_saved_trip(trip_id, saved_record)
+
     return result
