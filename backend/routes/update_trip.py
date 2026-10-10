@@ -67,81 +67,51 @@ async def update_trip(
         )
 
     # --------------------------------
-    # Prompt-based updates
+    # Updates (Prompt or direct fields)
     # --------------------------------
+    parsed = {}
+    if update.add_place:
+        parsed["add_place"] = update.add_place
+    if update.remove_place:
+        parsed["remove_place"] = update.remove_place
+    if update.budget is not None:
+        parsed["budget"] = update.budget
+    if update.regenerate_day is not None:
+        parsed["regenerate_day"] = update.regenerate_day
 
     if update.prompt:
-
         # --------------------------------
         # Try LLM interpretation
         # --------------------------------
-
         try:
-
-            llm_result = interpret_trip_prompt(
-                update.prompt
-            )
-
-            actions = llm_result.get(
-                "actions",
-                [],
-            )
-
-            
+            llm_result = interpret_trip_prompt(update.prompt)
+            actions = llm_result.get("actions", [])
         except Exception as e:
             logger.warning(f"LLM failed: {e}")
             actions = []
 
-        # --------------------------------
-        # LLM -> existing command format
-        # --------------------------------
-
-        parsed = {}
-
+        llm_parsed = {}
         for action in actions:
-
-            action_type = action.get(
-                "type"
-            )
-
+            action_type = action.get("type")
             if action_type == "add_place":
-
-                parsed["add_place"] = (
-                    action.get("place")
-                )
-
+                llm_parsed["add_place"] = action.get("place")
             elif action_type == "remove_place":
-
-                parsed["remove_place"] = (
-                    action.get("place")
-                )
-
+                llm_parsed["remove_place"] = action.get("place")
             elif action_type == "set_budget":
-
-                parsed["budget"] = (
-                    action.get("amount")
-                )
-
+                llm_parsed["budget"] = action.get("amount")
             elif action_type == "regenerate_day":
-
-                parsed["regenerate_day"] = (
-                    action.get("day")
-                )
+                llm_parsed["regenerate_day"] = action.get("day")
             elif action_type == "set_interests":
-                parsed["regenerate_day"] = action.get("day")
-                parsed["preferred_interests"] = action.get(
-                    "interests", []
-                )
+                llm_parsed["regenerate_day"] = action.get("day")
+                llm_parsed["preferred_interests"] = action.get("interests", [])
 
-        # --------------------------------
         # Fallback to deterministic parser
-        # --------------------------------
+        if not llm_parsed:
+            llm_parsed = parse_prompt(update.prompt)
 
-        if not parsed:
-            parsed = parse_prompt(
-                update.prompt
-            )
+        parsed.update(llm_parsed)
 
+    if parsed:
         from backend.services.planner.distance import haversine
         from backend.services.planner.opening_hours_scheduler import schedule_day_opening_hours
         from backend.services.planner.dashboard import build_dashboard
@@ -309,6 +279,8 @@ async def update_trip(
         # Recalculate budget and summaries if places were changed
         if "remove_place" in parsed or "add_place" in parsed:
             scheduled_activity_count = sum(len(day_places) for day_places in day_schedule.values())
+            existing_budget = trip["trip"].get("budget") or {}
+            prior_budget = existing_budget.get("total_budget") or existing_budget.get("total") or 0
             trip["trip"]["budget"] = calculate_budget(
                 trip["trip"]["travelers"],
                 trip["trip"]["days"],
@@ -316,7 +288,7 @@ async def update_trip(
                 trip["trip"]["hotels"],
                 trip["trip"]["places"],
                 scheduled_activity_count=scheduled_activity_count,
-                total_budget=trip["trip"]["budget"]["total_budget"],
+                total_budget=prior_budget,
             )
             trip["dashboard"] = build_dashboard(trip["trip"])
             trip["trip"]["dashboard"] = trip["dashboard"]
@@ -786,5 +758,3 @@ async def optimize_trip_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
-
-

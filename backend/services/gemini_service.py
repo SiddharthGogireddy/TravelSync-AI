@@ -16,15 +16,15 @@ def generate(prompt: str):
             contents=prompt
         )
 
-        try:
-            print("GEMINI RAW RESPONSE:")
-            print(text)
-        except Exception:
-            pass
+        text = getattr(response, "text", "") or ""
+        text = text.strip()
         if text.startswith("```json"):
             text = text.replace("```json", "", 1)
+        if text.startswith("```"):
             text = text.replace("```", "", 1)
-            text = text.strip()
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
 
         return json.loads(text)
 

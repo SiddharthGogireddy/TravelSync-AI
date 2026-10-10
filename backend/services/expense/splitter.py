@@ -1,4 +1,6 @@
 def split_equally(expenses, travelers):
+    if not travelers:
+        return {}
     paid = {
         traveler["name"]: 0
         for traveler in travelers

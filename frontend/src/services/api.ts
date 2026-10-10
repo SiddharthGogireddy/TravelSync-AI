@@ -18,7 +18,7 @@ export async function generateTrip(
 
     const result = await res.json();
 
-    
+
 
     return result;
 }
@@ -202,11 +202,13 @@ export async function rateTrip(
 }
 export type TripHistoryItem = {
   id: string;
+  created_at?: string;
   data: {
     trip?: {
       source?: string;
       destination?: string;
       days?: number;
+      created_at?: string;
       destination_location?: {
         lat: number;
         lon: number;
@@ -215,6 +217,7 @@ export type TripHistoryItem = {
     };
     dashboard?: unknown;
     summary?: unknown;
+    created_at?: string;
     [key: string]: unknown;
   };
 };
@@ -674,5 +677,3 @@ export async function optimizeTrip(
 
   return await res.json();
 }
-
-

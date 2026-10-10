@@ -28,7 +28,7 @@ def test_trip_history_endpoint_structure():
             assert isinstance(dest_loc["lat"], (int, float))
             assert isinstance(dest_loc["lon"], (int, float))
 
-def test_trip_history_handles_unwrapped_and_malformed_trips():
+def test_trip_history_handles_unwrapped_and_malformed_trips(isolated_storage):
     """Verify that raw/unwrapped trips and trips with missing/malformed destination_location normalize properly."""
     # 1. Standard trip with valid destination_location
     id_valid = save_trip({
@@ -97,3 +97,58 @@ def test_trip_history_handles_unwrapped_and_malformed_trips():
     empty_trip = trips_map[id_empty]["data"]["trip"]
     assert isinstance(empty_trip, dict)
     assert empty_trip.get("destination_location") is None
+
+
+def test_trip_history_sorting_chronological(isolated_storage):
+    """Verify newest generated trips appear at the top, and updates do not change creation order."""
+    import time
+    from backend.services.storage.trip_store import update_saved_trip
+
+    # 1. Create first trip
+    id_first = save_trip({
+        "trip": {
+            "source": "Bengaluru",
+            "destination": "Destination Alpha Chrono",
+            "destination_location": {"lat": 12.9716, "lon": 77.5946},
+        }
+    })
+
+    # Ensure distinct timestamp
+    time.sleep(0.01)
+
+    # 2. Create second trip
+    id_second = save_trip({
+        "trip": {
+            "source": "Bengaluru",
+            "destination": "Destination Beta Chrono",
+            "destination_location": {"lat": 13.0827, "lon": 80.2707},
+        }
+    })
+
+    # 3. Fetch history and verify second trip appears before first trip
+    res = client.get("/trip/history")
+    assert res.status_code == 200
+    trips = res.json()["trips"]
+    ids_in_order = [t["id"] for t in trips]
+
+    assert id_second in ids_in_order
+    assert id_first in ids_in_order
+    idx_second = ids_in_order.index(id_second)
+    idx_first = ids_in_order.index(id_first)
+    assert idx_second < idx_first, f"Second trip index ({idx_second}) must be lower (higher in list) than first trip index ({idx_first})"
+
+    # 4. Update the first trip (e.g. simulated edit/replan)
+    first_record = load_trip(id_first)
+    assert first_record is not None
+    first_record["trip"]["notes"] = ["Updated note"]
+    update_saved_trip(id_first, first_record)
+
+    # 5. Fetch history again and verify creation order is preserved
+    res_after_update = client.get("/trip/history")
+    assert res_after_update.status_code == 200
+    trips_after = res_after_update.json()["trips"]
+    ids_after_order = [t["id"] for t in trips_after]
+
+    idx_second_after = ids_after_order.index(id_second)
+    idx_first_after = ids_after_order.index(id_first)
+    assert idx_second_after < idx_first_after, "Updating first trip must not move it ahead of second trip"

@@ -31,6 +31,8 @@ export interface Budget {
 
     average_per_person: number;
 
+    total?: number;
+    currency?: string;
     categories: BudgetCategory;
 
     category_percentage: CategoryPercentage;
@@ -153,4 +155,3 @@ export interface DayMealsAndBreaks {
     rest_breaks: RestBreakItem[];
     total_estimated_meal_cost: number;
 }
-

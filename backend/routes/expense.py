@@ -36,12 +36,19 @@ def create_expense(request: ExpenseRequest):
 def expense_summary(trip_id: str):
 
     trip = load_trip(trip_id)
+    if trip is None:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    raw_trip = trip.get("trip", trip) if isinstance(trip, dict) else {}
+    travelers = raw_trip.get("travelers", []) if isinstance(raw_trip, dict) else []
+    if not isinstance(travelers, list):
+        travelers = []
 
     expenses = get_expenses(trip_id)
 
     balances = split_equally(
         expenses,
-        trip["trip"]["travelers"],
+        travelers,
     )
 
     settlements = calculate_settlements(
@@ -54,7 +61,7 @@ def expense_summary(trip_id: str):
 
     budget_comparison = get_budget_comparison(
         trip_id,
-        trip["trip"],
+        raw_trip,
     )
     alerts = get_budget_alerts(
         budget_comparison

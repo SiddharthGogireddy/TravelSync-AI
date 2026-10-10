@@ -22,7 +22,10 @@ def download_pdf(trip_id: str):
             detail="Trip not found",
         )
 
-    trip_data = trip["trip"].copy()
+    if isinstance(trip, dict) and "trip" in trip and isinstance(trip["trip"], dict):
+        trip_data = trip["trip"].copy()
+    else:
+        trip_data = trip.copy() if isinstance(trip, dict) else {}
     trip_data["trip_id"] = trip_id
 
     from backend.services.storage.note_store import get_notes

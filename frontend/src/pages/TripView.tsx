@@ -56,6 +56,7 @@ import type {
   Traveler,
   TripResponse,
   Weather,
+  Dashboard as DashboardType,
 } from "../types/api";
 
 import type { ExpenseResponse } from "../types/expense";
@@ -533,14 +534,78 @@ if (savedRating) {
   }
 
 
-  const { trip, dashboard } = data;
+  const rawTrip = (data as any)?.trip ?? (data as any);
+  const trip: TripResponse["trip"] & Record<string, any> = {
+    ...rawTrip,
+    destination: rawTrip?.destination ?? "Trip",
+    source: rawTrip?.source ?? "",
+    start_date: rawTrip?.start_date ?? "",
+    end_date: rawTrip?.end_date ?? "",
+    destination_location: rawTrip?.destination_location ?? { lat: 0, lon: 0 },
+    budget: {
+      total: typeof rawTrip?.budget?.total === "number" ? rawTrip.budget.total : 0,
+      total_budget: typeof rawTrip?.budget?.total_budget === "number" ? rawTrip.budget.total_budget : (rawTrip?.budget?.total || 0),
+      estimated_cost: typeof rawTrip?.budget?.estimated_cost === "number" ? rawTrip.budget.estimated_cost : 0,
+      remaining: typeof rawTrip?.budget?.remaining === "number" ? rawTrip.budget.remaining : (rawTrip?.budget?.total || 0),
+      average_per_day: typeof rawTrip?.budget?.average_per_day === "number" ? rawTrip.budget.average_per_day : 0,
+      average_per_person: typeof rawTrip?.budget?.average_per_person === "number" ? rawTrip.budget.average_per_person : 0,
+      currency: rawTrip?.budget?.currency || "INR",
+      status: rawTrip?.budget?.status || "Within Budget",
+      breakdown: rawTrip?.budget?.breakdown || {},
+      categories: rawTrip?.budget?.categories || { hotel: 0, food: 0, transport: 0, activities: 0, emergency: 0 },
+      per_person: Array.isArray(rawTrip?.budget?.per_person) ? rawTrip.budget.per_person : [],
+      ...(typeof rawTrip?.budget === "object" && rawTrip?.budget !== null ? rawTrip.budget : {}),
+    },
+    weather: Array.isArray(rawTrip?.weather) ? rawTrip.weather : [],
+    hotels: Array.isArray(rawTrip?.hotels) ? rawTrip.hotels : [],
+    places: Array.isArray(rawTrip?.places) ? rawTrip.places : [],
+    day_schedule: rawTrip?.day_schedule ?? {},
+    route_coordinates: Array.isArray(rawTrip?.route_coordinates) ? rawTrip.route_coordinates : [],
+    travelers: Array.isArray(rawTrip?.travelers) ? rawTrip.travelers : [],
+    traveler_conflicts: Array.isArray(rawTrip?.traveler_conflicts) ? rawTrip.traveler_conflicts : [],
+    transport: rawTrip?.transport ?? {
+      mode: rawTrip?.travel_mode || "car",
+      label: "Road Trip",
+      description: "Direct travel",
+      distance_km: 0,
+      duration_hours: 0,
+      legs: [],
+    },
+  };
 
+  const rawDashboard = (data as any)?.dashboard ?? (data as any)?.trip?.dashboard;
+  const dashboard: DashboardType = rawDashboard ?? {
+    source: trip.source || "Origin",
+    destination: trip.destination || "Destination",
+    days: 1,
+    travel_mode: trip.transport?.mode || trip.travel_mode || "car",
+    weather: trip.weather?.[0]?.description || "Clear",
+    hotel_count: trip.hotels?.length || 0,
+    attraction_count: trip.places?.length || 0,
+    mandatory_count: 0,
+    total_activities: trip.places?.length || 0,
+    activities_per_day: trip.places?.length || 0,
+    distance: trip.transport?.distance_km || 0,
+    duration: trip.transport?.duration_hours || 0,
+    budget: typeof trip.budget?.total === "number" ? trip.budget.total : (trip.budget?.total_budget || 0),
+    estimated_cost: 0,
+    remaining: typeof trip.budget?.total === "number" ? trip.budget.total : 0,
+    budget_status: "Within Budget",
+    hotel_cost: 0,
+    food_cost: 0,
+    transport_cost: 0,
+    activity_cost: 0,
+    emergency_cost: 0,
+    average_per_day: 0,
+    average_per_person: 0,
+  };
 
-  const normalizedWeather: Weather[] =
-    trip.weather.map((w) => ({
-      ...w,
-      description: w.description ?? "",
-    }));
+  const normalizedWeather: Weather[] = Array.isArray(trip.weather)
+    ? trip.weather.map((w) => ({
+        ...w,
+        description: w.description ?? "",
+      }))
+    : [];
 
   const isMulti = (trip as any)?.is_multi_destination || ((trip as any)?.destinations && (trip as any).destinations.length > 1);
   const destinationsList = (trip as any)?.destinations || [];
@@ -1583,21 +1648,27 @@ if (savedRating) {
           Travelers
         </h2>
 
-        {trip.travelers.map(
-          (
-            traveler: Traveler,
-            index: number
-          ) => (
-            <div key={index}>
-              <strong>
-                {traveler.name}
-              </strong>
+        {trip.travelers && trip.travelers.length > 0 ? (
+          trip.travelers.map(
+            (
+              traveler: Traveler,
+              index: number
+            ) => (
+              <div key={index}>
+                <strong>
+                  {traveler.name}
+                </strong>
 
-              {" - "}
+                {" - "}
 
-              {traveler.budget}
-            </div>
+                {traveler.budget}
+              </div>
+            )
           )
+        ) : (
+          <p style={{ color: "#64748b", fontStyle: "italic", margin: 0 }}>
+            No travelers specified.
+          </p>
         )}
 
       </div>
@@ -1896,13 +1967,19 @@ if (savedRating) {
           Weather
         </h2>
 
-        {normalizedWeather.map(
-          (weather, index) => (
-            <WeatherCard
-              key={index}
-              weather={weather}
-            />
+        {normalizedWeather.length > 0 ? (
+          normalizedWeather.map(
+            (weather, index) => (
+              <WeatherCard
+                key={index}
+                weather={weather}
+              />
+            )
           )
+        ) : (
+          <p style={{ color: "#64748b", fontStyle: "italic", margin: 0 }}>
+            Weather forecast is not available for this trip.
+          </p>
         )}
 
 
@@ -1946,47 +2023,49 @@ if (savedRating) {
             </div>
 
 
-            <div className="transport-legs">
+            {Array.isArray(trip.transport.legs) && trip.transport.legs.length > 0 && (
+              <div className="transport-legs">
 
-              {trip.transport.legs.map(
-                (leg, index) => (
+                {trip.transport.legs.map(
+                  (leg, index) => (
 
-                  <div
-                    key={index}
-                    className="transport-leg"
-                  >
+                    <div
+                      key={index}
+                      className="transport-leg"
+                    >
 
-                    <div>
+                      <div>
 
-                      <strong>
-                        {leg.type}
-                      </strong>
+                        <strong>
+                          {leg.type}
+                        </strong>
 
-                      <p>
-                        {leg.from} → {leg.to}
-                      </p>
+                        <p>
+                          {leg.from} → {leg.to}
+                        </p>
+
+                      </div>
+
+
+                      <div>
+
+                        <span>
+                          {leg.distance_km} km
+                        </span>
+
+                        <span>
+                          {leg.duration_hours} hrs
+                        </span>
+
+                      </div>
 
                     </div>
 
+                  )
+                )}
 
-                    <div>
-
-                      <span>
-                        {leg.distance_km} km
-                      </span>
-
-                      <span>
-                        {leg.duration_hours} hrs
-                      </span>
-
-                    </div>
-
-                  </div>
-
-                )
-              )}
-
-            </div>
+              </div>
+            )}
 
           </div>
         )}
@@ -2318,7 +2397,7 @@ if (savedRating) {
                 key={day}
                 day={day}
                 places={places}
-                TravelMode={trip.transport.mode}
+                TravelMode={trip.transport?.mode || trip.travel_mode || "car"}
                 mealsAndBreaks={(trip as any)?.meals_and_breaks?.[day]}
                 onSelect={
                   setSelectedPlace
@@ -2345,22 +2424,23 @@ if (savedRating) {
           Map
         </h2>
 
-        <MapView
-          lat={
-            trip.destination_location.lat
-          }
-          lon={
-            trip.destination_location.lon
-          }
-          places={trip.places}
-          hotels={trip.hotels}
-          selectedPlace={
-            selectedPlace
-          }
-          routeCoordinates={
-            trip.route_coordinates
-          }
-        />
+        {typeof trip.destination_location?.lat === "number" &&
+        !isNaN(trip.destination_location.lat) &&
+        typeof trip.destination_location?.lon === "number" &&
+        !isNaN(trip.destination_location.lon) ? (
+          <MapView
+            lat={trip.destination_location.lat}
+            lon={trip.destination_location.lon}
+            places={trip.places || []}
+            hotels={trip.hotels || []}
+            selectedPlace={selectedPlace}
+            routeCoordinates={trip.route_coordinates || []}
+          />
+        ) : (
+          <div className="card" style={{ padding: "20px", textAlign: "center", color: "#64748b" }}>
+            <p style={{ margin: 0 }}>Map coordinates are not available for this trip location.</p>
+          </div>
+        )}
 
       </div>
 
@@ -2437,7 +2517,7 @@ if (savedRating) {
       <div className="section">
 
         <AddExpenseModal
-          travelers={trip.travelers.map(
+          travelers={(trip.travelers || []).map(
             (traveler) =>
               traveler.name
           )}

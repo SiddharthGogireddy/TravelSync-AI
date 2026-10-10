@@ -36,12 +36,49 @@ router = APIRouter(
 )
 
 
+def _extract_trip_timestamp(idx: int, item: dict) -> tuple[float, int]:
+    ts = None
+    if isinstance(item, dict):
+        candidates = [
+            item.get("created_at"),
+            item.get("data", {}).get("created_at") if isinstance(item.get("data"), dict) else None,
+            item.get("data", {}).get("trip", {}).get("created_at")
+            if isinstance(item.get("data"), dict) and isinstance(item.get("data", {}).get("trip"), dict)
+            else None,
+        ]
+        for c in candidates:
+            if c is not None:
+                if isinstance(c, (int, float)):
+                    ts = float(c)
+                    break
+                if isinstance(c, str) and c.strip():
+                    try:
+                        iso_str = c.strip().replace("Z", "+00:00") if c.strip().endswith("Z") else c.strip()
+                        dt = datetime.fromisoformat(iso_str)
+                        ts = dt.timestamp()
+                        break
+                    except Exception:
+                        continue
+
+    if ts is not None:
+        return (ts, idx)
+    return (0.0, idx)
+
+
 @router.get("/history")
 def get_trip_history():
     raw_trips = load_all_trips()
+    indexed_trips = list(enumerate(raw_trips))
+
+    # Sort newest-created first (descending by creation timestamp, breaking ties by index descending)
+    indexed_trips.sort(
+        key=lambda pair: _extract_trip_timestamp(pair[0], pair[1]),
+        reverse=True
+    )
+
     normalized_trips = []
 
-    for item in raw_trips:
+    for idx, item in indexed_trips:
         if not isinstance(item, dict):
             continue
 
@@ -79,12 +116,20 @@ def get_trip_history():
 
         trip_obj["destination_location"] = dest_loc
 
+        created_at = (
+            item.get("created_at")
+            or (raw_data.get("created_at") if isinstance(raw_data, dict) else None)
+            or (trip_obj.get("created_at") if isinstance(trip_obj, dict) else None)
+        )
+
         normalized_trips.append({
             "id": trip_id,
+            "created_at": created_at,
             "data": {
                 "trip": trip_obj,
                 "dashboard": dashboard,
                 "summary": summary,
+                "created_at": created_at,
             }
         })
 
@@ -665,11 +710,109 @@ def get_trip(trip_id: str):
             detail="Trip not found"
         )
 
-    trip["trip_id"] = trip_id
-    if "trip" in trip and isinstance(trip["trip"], dict):
-        trip["trip"]["trip_id"] = trip_id
+    # Normalize response shape so frontend always receives { trip_id, trip: {...}, dashboard: {...}, summary: {...} }
+    if isinstance(trip, dict) and "trip" in trip and isinstance(trip["trip"], dict):
+        trip_obj = dict(trip["trip"])
+        dashboard = trip.get("dashboard")
+        summary = trip.get("summary")
+        itinerary = trip.get("itinerary")
+    else:
+        trip_obj = dict(trip) if isinstance(trip, dict) else {}
+        dashboard = None
+        summary = None
+        itinerary = None
 
-    return trip
+    # Standardize destination_location
+    dest_loc = trip_obj.get("destination_location")
+    if isinstance(dest_loc, dict) and "lat" in dest_loc and "lon" in dest_loc:
+        try:
+            dest_loc = {
+                "lat": float(dest_loc["lat"]),
+                "lon": float(dest_loc["lon"]),
+            }
+        except (ValueError, TypeError):
+            dest_loc = None
+    else:
+        dest_loc = None
+    trip_obj["destination_location"] = dest_loc
+
+    # Default lists and structures if absent
+    if not isinstance(trip_obj.get("weather"), list):
+        trip_obj["weather"] = []
+    if not isinstance(trip_obj.get("hotels"), list):
+        trip_obj["hotels"] = []
+    if not isinstance(trip_obj.get("places"), list):
+        trip_obj["places"] = []
+    if not isinstance(trip_obj.get("travelers"), list):
+        trip_obj["travelers"] = []
+    if not isinstance(trip_obj.get("day_schedule"), dict):
+        trip_obj["day_schedule"] = {}
+    if not isinstance(trip_obj.get("route_coordinates"), list):
+        trip_obj["route_coordinates"] = []
+
+    # Ensure budget is an object
+    if not isinstance(trip_obj.get("budget"), dict):
+        trip_obj["budget"] = {
+            "total_budget": 0,
+            "estimated_cost": 0,
+            "remaining": 0,
+            "status": "N/A",
+            "categories": {},
+        }
+    else:
+        b = trip_obj["budget"]
+        b.setdefault("total_budget", 0)
+        b.setdefault("estimated_cost", 0)
+        b.setdefault("remaining", 0)
+        b.setdefault("status", "N/A")
+        if not isinstance(b.get("categories"), dict):
+            b["categories"] = {}
+
+    if not isinstance(dashboard, dict) or not dashboard:
+        sched = trip_obj.get("day_schedule", {})
+        total_acts = sum(len(v) for v in sched.values()) if isinstance(sched, dict) else len(trip_obj.get("places", []))
+        num_days = max(1, trip_obj.get("days", 1) or 1)
+        raw_b = trip_obj.get("budget", {}) if isinstance(trip_obj.get("budget"), dict) else {}
+        b_val = raw_b.get("total", raw_b.get("total_budget", 0))
+        est_val = raw_b.get("estimated_cost", 0)
+        rem_val = raw_b.get("remaining", b_val)
+        b_status = raw_b.get("status", "Within Budget")
+
+        dashboard = {
+            "source": trip_obj.get("source", "N/A"),
+            "destination": trip_obj.get("destination", "N/A"),
+            "days": num_days,
+            "travel_mode": trip_obj.get("travel_mode", "car"),
+            "weather": "N/A",
+            "hotel_count": len(trip_obj.get("hotels", [])),
+            "attraction_count": len(trip_obj.get("places", [])),
+            "mandatory_count": len(trip_obj.get("mandatory_visits", [])) if isinstance(trip_obj.get("mandatory_visits"), list) else 0,
+            "total_activities": total_acts,
+            "activities_per_day": round(total_acts / num_days, 1),
+            "distance": trip_obj.get("route", {}).get("distance_km", 0) if isinstance(trip_obj.get("route"), dict) else 0,
+            "duration": trip_obj.get("route", {}).get("duration_hr", num_days * 24) if isinstance(trip_obj.get("route"), dict) else num_days * 24,
+            "budget": b_val,
+            "estimated_cost": est_val,
+            "remaining": rem_val,
+            "budget_status": b_status,
+            "hotel_cost": 0,
+            "food_cost": 0,
+            "transport_cost": 0,
+            "activity_cost": 0,
+            "emergency_cost": 0,
+            "average_per_day": round(est_val / num_days, 2),
+            "average_per_person": est_val,
+        }
+
+    trip_obj["trip_id"] = trip_id
+
+    return {
+        "trip_id": trip_id,
+        "trip": trip_obj,
+        "dashboard": dashboard,
+        "summary": summary,
+        "itinerary": itinerary,
+    }
 
 
 @router.post("/{trip_id}/duplicate")
@@ -684,6 +827,10 @@ def duplicate_trip(trip_id: str):
 
     # Deep copy the trip data so changes to the duplicate do not mutate the original
     new_trip_data = copy.deepcopy(original_trip_data)
+    if isinstance(new_trip_data, dict):
+        new_trip_data.pop("created_at", None)
+        if "trip" in new_trip_data and isinstance(new_trip_data["trip"], dict):
+            new_trip_data["trip"].pop("created_at", None)
 
     # Save as a new trip with a unique trip ID
     new_trip_id = save_trip(new_trip_data)

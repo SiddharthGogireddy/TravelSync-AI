@@ -3,6 +3,7 @@ import logging
 import os
 from pathlib import Path
 import uuid
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +67,29 @@ def _write_trips(trips: list) -> bool:
 def save_trip(trip_data):
     trips = _read_trips()
     trip_id = str(uuid.uuid4())
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    # Determine creation timestamp: preserve explicit creation timestamp if passed, else assign now
+    created_at = None
+    if isinstance(trip_data, dict):
+        created_at = trip_data.get("created_at") or (
+            trip_data.get("trip", {}).get("created_at")
+            if isinstance(trip_data.get("trip"), dict)
+            else None
+        )
+    if not created_at:
+        created_at = now_iso
+
+    if isinstance(trip_data, dict):
+        if "created_at" not in trip_data:
+            trip_data["created_at"] = created_at
+        if "trip" in trip_data and isinstance(trip_data["trip"], dict) and "created_at" not in trip_data["trip"]:
+            trip_data["trip"]["created_at"] = created_at
 
     trips.append({
         "id": trip_id,
-        "data": trip_data
+        "data": trip_data,
+        "created_at": created_at,
     })
 
     _write_trips(trips)
@@ -98,6 +118,20 @@ def update_saved_trip(
     updated = False
     for trip in trips:
         if isinstance(trip, dict) and str(trip.get("id") or "").strip() == target_id:
+            # Preserve original creation timestamp so updating a trip does not change creation chronology
+            existing_created_at = trip.get("created_at")
+            if not existing_created_at and isinstance(trip.get("data"), dict):
+                existing_created_at = trip["data"].get("created_at")
+            if not existing_created_at and isinstance(trip.get("data"), dict) and isinstance(trip["data"].get("trip"), dict):
+                existing_created_at = trip["data"]["trip"].get("created_at")
+
+            if existing_created_at:
+                trip["created_at"] = existing_created_at
+                if isinstance(trip_data, dict):
+                    trip_data["created_at"] = existing_created_at
+                    if "trip" in trip_data and isinstance(trip_data["trip"], dict):
+                        trip_data["trip"]["created_at"] = existing_created_at
+
             trip["data"] = trip_data
             updated = True
             break

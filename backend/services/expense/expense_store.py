@@ -94,7 +94,8 @@ def get_budget_comparison(trip_id, trip):
 
     actual = get_category_totals(trip_id)
 
-    planned = trip["budget"].get(
+    budget_obj = trip.get("budget", {}) if isinstance(trip, dict) and isinstance(trip.get("budget"), dict) else {}
+    planned = budget_obj.get(
         "categories",
         {}
     )
