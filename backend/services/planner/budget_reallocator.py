@@ -131,7 +131,13 @@ def analyze_budget_reallocations(
                 "impact": "Allows selecting top-rated centrally located stays with complimentary breakfast.",
             })
 
-    remaining_after_reallocation = max(0, total_budget - total_proposed)
+    operational_proposed = sum(
+        proposed_val
+        for cat, proposed_val in [(c, round(base_amount * w)) for c, w in target_weights.items() if c != "emergency"]
+    )
+    reserve_proposed = round(base_amount * target_weights.get("emergency", 0.10))
+    total_proposed = operational_proposed
+    remaining_after_reallocation = max(0, total_budget - operational_proposed) if total_budget > 0 else reserve_proposed
 
     return {
         "active_strategy": strategy,
@@ -144,13 +150,14 @@ def analyze_budget_reallocations(
             {"id": k, "label": v["label"], "description": v["description"]}
             for k, v in STRATEGY_TARGET_WEIGHTS.items()
         ],
-        "projected_total": total_proposed,
+        "projected_total": operational_proposed,
         "projected_remaining": remaining_after_reallocation,
         "summary": (
             f"Optimized under '{strategy_info['label']}' strategy. "
             f"Allocates INR {category_analysis.get('hotel', {}).get('proposed_amount')} to Hotel, "
             f"INR {category_analysis.get('food', {}).get('proposed_amount')} to Dining, and "
-            f"INR {category_analysis.get('activities', {}).get('proposed_amount')} to Activities."
+            f"INR {category_analysis.get('activities', {}).get('proposed_amount')} to Activities. "
+            f"Projected trip cost: INR {operational_proposed} with INR {reserve_proposed} retained reserve."
         ),
     }
 
@@ -163,32 +170,48 @@ def apply_budget_reallocation(
     """
     Applies the selected reallocation strategy or custom values to the trip budget.
     """
-    current_budget = trip_data.get("budget", {})
+    import copy
+    current_budget = copy.deepcopy(trip_data.get("budget", {}))
     realloc_analysis = analyze_budget_reallocations(current_budget, strategy=strategy)
+
+    total_budget = (
+        current_budget.get("total_budget")
+        or realloc_analysis.get("base_budget_amount")
+        or current_budget.get("estimated_cost", 20000)
+    )
 
     new_categories: Dict[str, int] = {}
     if custom_categories and isinstance(custom_categories, dict):
-        for k in ["hotel", "food", "transport", "activities", "emergency"]:
+        for k in ["hotel", "food", "transport", "activities"]:
             if k in custom_categories and isinstance(custom_categories[k], (int, float)):
                 new_categories[k] = round(custom_categories[k])
             else:
                 new_categories[k] = realloc_analysis["categories"][k]["proposed_amount"]
+
+        if "emergency" in custom_categories and isinstance(custom_categories["emergency"], (int, float)):
+            new_categories["emergency"] = round(custom_categories["emergency"])
+        else:
+            new_categories["emergency"] = max(0, total_budget - sum(new_categories.values()))
     else:
         for k in ["hotel", "food", "transport", "activities", "emergency"]:
             new_categories[k] = realloc_analysis["categories"][k]["proposed_amount"]
 
-    new_estimated_total = sum(new_categories.values())
-    total_budget = current_budget.get("total_budget", new_estimated_total)
+    # Operational direct expenditures for the trip
+    new_operational_total = sum(
+        new_categories[k] for k in ["hotel", "food", "transport", "activities"] if k in new_categories
+    )
+    new_estimated_total = new_operational_total
+
     remaining = total_budget - new_estimated_total
 
-    if remaining > new_estimated_total * 0.20:
+    if remaining > total_budget * 0.15:
         new_status = "Under Budget"
     elif remaining >= 0:
         new_status = "Near Budget"
     else:
         new_status = "Over Budget"
 
-    category_total = max(1, new_estimated_total)
+    category_total = max(1, sum(new_categories.values()))
     new_percentages = {
         k: round(v / category_total * 100)
         for k, v in new_categories.items()
@@ -196,23 +219,45 @@ def apply_budget_reallocation(
 
     current_budget["categories"] = new_categories
     current_budget["category_percentage"] = new_percentages
+    current_budget["total_budget"] = total_budget
     current_budget["estimated_cost"] = new_estimated_total
     current_budget["remaining"] = remaining
     current_budget["status"] = new_status
 
+    days_cnt = max(1, int(trip_data.get("days") or 1))
+    trav_cnt = max(1, len(trip_data.get("travelers", [])) if trip_data.get("travelers") else 1)
+    current_budget["average_per_day"] = round(new_estimated_total / days_cnt)
+    current_budget["average_per_person"] = round(new_estimated_total / trav_cnt)
+    current_budget["budget_utilization_pct"] = (
+        round((new_estimated_total / total_budget) * 100, 1) if total_budget > 0 else 100.0
+    )
+
+    if "per_person" in current_budget and isinstance(current_budget["per_person"], list):
+        for p in current_budget["per_person"]:
+            if isinstance(p, dict):
+                p["share"] = round(new_estimated_total / trav_cnt)
+
     trip_data["budget"] = current_budget
+
+    # Synchronize dashboard so top overview matches budget exactly
+    from backend.services.planner.dashboard import build_dashboard
+    trip_data["dashboard"] = build_dashboard(trip_data)
 
     # Re-run analysis on updated budget
     updated_analysis = analyze_budget_reallocations(current_budget, strategy=strategy)
     trip_data["budget_reallocation"] = updated_analysis
 
+    strategy_info = STRATEGY_TARGET_WEIGHTS.get(strategy, STRATEGY_TARGET_WEIGHTS["conservative"])
     audit = {
         "success": True,
         "strategy": strategy,
         "new_estimated_cost": new_estimated_total,
         "new_remaining": remaining,
         "new_status": new_status,
-        "summary": f"Smart budget reallocation successfully applied ({strategy.replace('_', ' ').title()}). Total: INR {new_estimated_total}.",
+        "summary": (
+            f"Smart budget reallocation successfully applied ({strategy_info['label']}). "
+            f"Estimated Cost: INR {new_estimated_total} (Remaining Reserve: INR {remaining})."
+        ),
     }
 
     return trip_data, audit

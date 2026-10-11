@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API } from "../services/api";
 
 interface Props {
     tripId: string;
@@ -44,7 +45,7 @@ export default function ExpenseTracker({ tripId }: Props) {
     useEffect(() => {
         async function fetchExpenses() {
             const response = await fetch(
-                `http://127.0.0.1:8000/expense/${tripId}`
+                `${API}/expense/${tripId}`
             );
 
             if (!response.ok) {
@@ -67,7 +68,7 @@ export default function ExpenseTracker({ tripId }: Props) {
         }
 
         const response = await fetch(
-            "http://127.0.0.1:8000/expense/",
+            `${API}/expense/`,
             {
                 method: "POST",
                 headers: {
@@ -94,7 +95,7 @@ export default function ExpenseTracker({ tripId }: Props) {
         setAmount("");
 
         const updatedResponse = await fetch(
-            `http://127.0.0.1:8000/expense/${tripId}`
+            `${API}/expense/${tripId}`
         );
 
         if (updatedResponse.ok) {

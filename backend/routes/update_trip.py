@@ -483,6 +483,7 @@ async def replan_day_endpoint(
 class AddRouteStopRequest(BaseModel):
     day: int = 1
     route_stop: dict[str, Any]
+    allow_repeat: Optional[bool] = False
 
 
 @router.post("/{trip_id}/add-route-stop")
@@ -500,13 +501,19 @@ async def add_route_stop_endpoint(
         trip_data=inner_trip,
         day_number=request.day,
         route_stop=request.route_stop,
+        allow_repeat=bool(request.allow_repeat),
     )
 
     if not audit.get("success", False):
         raise HTTPException(status_code=400, detail=audit.get("error", "Failed to add route stop"))
 
+    from backend.services.planner.dashboard import build_dashboard
+    dash = build_dashboard(updated_inner)
+    updated_inner["dashboard"] = dash
+
     if "trip" in raw_trip:
         raw_trip["trip"] = updated_inner
+        raw_trip["dashboard"] = dash
     else:
         raw_trip = updated_inner
 
@@ -583,6 +590,8 @@ async def reallocate_budget_endpoint(
 
     if "trip" in raw_trip:
         raw_trip["trip"] = updated_inner
+        if "dashboard" in updated_inner:
+            raw_trip["dashboard"] = updated_inner["dashboard"]
     else:
         raw_trip = updated_inner
 
@@ -653,6 +662,8 @@ async def resolve_group_conflicts_endpoint(
 
     if "trip" in raw_trip:
         raw_trip["trip"] = updated_inner
+        if "dashboard" in updated_inner:
+            raw_trip["dashboard"] = updated_inner["dashboard"]
     else:
         raw_trip = updated_inner
 
@@ -684,6 +695,10 @@ async def assistant_chat_endpoint(
         message=request.message,
     )
 
+    mutation = result.get("mutation_action")
+    if mutation and mutation.get("applied") and mutation.get("updated_trip"):
+        inner_trip = mutation["updated_trip"]
+
     # Store message in history if exists
     history = inner_trip.get("assistant_history", [])
     history.append({"role": "user", "text": request.message})
@@ -692,6 +707,8 @@ async def assistant_chat_endpoint(
 
     if "trip" in raw_trip:
         raw_trip["trip"] = inner_trip
+        if "dashboard" in inner_trip:
+            raw_trip["dashboard"] = inner_trip["dashboard"]
     else:
         raw_trip = inner_trip
 
@@ -702,6 +719,8 @@ async def assistant_chat_endpoint(
         "topic": result["topic"],
         "suggested_actions": result["suggested_actions"],
         "trip_highlights": result["trip_highlights"],
+        "mutation_action": mutation,
+        "trip": inner_trip,
     }
 
 
@@ -748,6 +767,8 @@ async def optimize_trip_endpoint(
 
     if "trip" in raw_trip:
         raw_trip["trip"] = updated_inner
+        if "dashboard" in updated_inner:
+            raw_trip["dashboard"] = updated_inner["dashboard"]
     else:
         raw_trip = updated_inner
 

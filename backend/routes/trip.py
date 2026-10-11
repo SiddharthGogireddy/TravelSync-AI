@@ -804,6 +804,15 @@ def get_trip(trip_id: str):
             "average_per_person": est_val,
         }
 
+    # Ensure budget_reallocation analysis is present for UI cards
+    if "budget_reallocation" not in trip_obj or not trip_obj["budget_reallocation"]:
+        try:
+            from backend.services.planner.budget_reallocator import analyze_budget_reallocations
+            if isinstance(trip_obj.get("budget"), dict) and trip_obj["budget"]:
+                trip_obj["budget_reallocation"] = analyze_budget_reallocations(trip_obj["budget"])
+        except Exception:
+            pass
+
     trip_obj["trip_id"] = trip_id
 
     return {

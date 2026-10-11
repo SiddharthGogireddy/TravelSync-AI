@@ -72,10 +72,12 @@ async def discover_route_attractions(
     destination_places: Optional[List[Dict[str, Any]]] = None,
     travel_mode: str = "car",
     max_detour_km: float = 20.0,
+    day_schedule: Optional[Dict[str, Any]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Identifies high-value attractions along the travel route corridor
-    within an acceptable detour distance.
+    within an acceptable detour distance, evaluating suitability and distance
+    separately for each itinerary day.
     """
     discovered: List[Dict[str, Any]] = []
 
@@ -113,6 +115,88 @@ async def discover_route_attractions(
             continue
 
         stop_id = f"route_stop_{idx + 1}"
+
+        # Per-day distance calculations and suitability evaluation
+        day_evaluations: Dict[str, Any] = {}
+        candidate_days: List[int] = []
+
+        if day_schedule and isinstance(day_schedule, dict):
+            for d_str, d_places in day_schedule.items():
+                if not d_str.isdigit():
+                    continue
+                d_num = int(d_str)
+                candidate_days.append(d_num)
+                places_list = d_places if isinstance(d_places, list) else []
+
+                # Find nearest reference stop in this day's route
+                ref_stop_name = "Day Departure Point"
+                min_straight_dist = impact["one_way_km"]
+
+                if places_list:
+                    closest_place = None
+                    closest_dist = float("inf")
+                    for p in places_list:
+                        p_lat = p.get("lat")
+                        p_lon = p.get("lon")
+                        if p_lat is not None and p_lon is not None:
+                            d = haversine(p_lat, p_lon, attraction_lat, attraction_lon)
+                            if d < closest_dist:
+                                closest_dist = d
+                                closest_place = p
+
+                    if closest_place and closest_dist != float("inf"):
+                        ref_stop_name = closest_place.get("name", "Scheduled Stop")
+                        min_straight_dist = round(closest_dist, 1)
+
+                straight_line_dist = min_straight_dist
+                estimated_road_dist = round(straight_line_dist * 1.35, 1)
+                day_detour_dist = round(straight_line_dist * 1.8, 1)
+                speed = 45.0 if str(travel_mode).lower() in ["car", "bike"] else 30.0
+                day_added_transit_min = max(10, int(round((day_detour_dist / speed) * 60.0 + 5.0)))
+
+                current_day_dist = sum(
+                    float(p.get("travel_from_previous_km", 0.0) or 0.0)
+                    for p in places_list
+                    if isinstance(p, dict)
+                )
+                projected_day_dist = round(current_day_dist + day_detour_dist, 1)
+
+                day_evaluations[str(d_num)] = {
+                    "day": d_num,
+                    "reference_stop_name": ref_stop_name,
+                    "straight_line_distance_km": straight_line_dist,
+                    "estimated_road_distance_km": estimated_road_dist,
+                    "detour_distance_km": day_detour_dist,
+                    "added_transit_minutes": day_added_transit_min,
+                    "current_stop_count": len(places_list),
+                    "total_daily_route_km": projected_day_dist,
+                    "has_schedule_capacity": len(places_list) < 5,
+                    "distance_label": f"{straight_line_dist} km straight-line from {ref_stop_name} (~{estimated_road_dist} km road)",
+                }
+
+        # Select most suitable day
+        recommended_day = 1
+        recommendation_reason = "Day route data unavailable; defaulting to Day 1. Manual day selection available."
+
+        if day_evaluations:
+            # Score candidate days: prefer days with capacity (< 5 stops) and lowest detour
+            scored_days = []
+            for d_num, eval_data in day_evaluations.items():
+                cap_penalty = 0 if eval_data["has_schedule_capacity"] else 50
+                score = eval_data["detour_distance_km"] + cap_penalty + (eval_data["current_stop_count"] * 2.0)
+                scored_days.append((score, int(d_num), eval_data))
+
+            scored_days.sort(key=lambda x: x[0])
+            best_tuple = scored_days[0]
+            recommended_day = best_tuple[1]
+            best_eval = best_tuple[2]
+
+            recommendation_reason = (
+                f"Recommended for Day {recommended_day}: closest to '{best_eval['reference_stop_name']}' "
+                f"({best_eval['straight_line_distance_km']} km straight-line, ~{best_eval['estimated_road_distance_km']} km road) "
+                f"with +{best_eval['detour_distance_km']} km detour and ample schedule capacity ({best_eval['current_stop_count']} existing stops)."
+            )
+
         discovered.append({
             "id": stop_id,
             "name": preset["name"],
@@ -126,8 +210,11 @@ async def discover_route_attractions(
             "detour_distance_km": impact["round_trip_detour_km"],
             "added_travel_time_minutes": impact["added_transit_minutes"],
             "recommended_pause_minutes": preset["pause_min"],
-            "description": f"Scenic stop {wp['percent']}% along the route with only +{impact['round_trip_detour_km']} km detour.",
+            "description": f"Scenic stop {wp['percent']}% along the route with +{impact['round_trip_detour_km']} km detour.",
             "is_route_stop": True,
+            "recommended_day": recommended_day,
+            "recommendation_reason": recommendation_reason,
+            "day_evaluations": day_evaluations,
         })
 
     return discovered
@@ -147,7 +234,6 @@ async def get_route_attractions(
         travel_mode=travel_mode,
     )
     combined = list(destination_places or [])
-    # Append route stops so they can be discovered / scheduled
     combined.extend(discovered_route_stops)
     return combined
 
@@ -156,10 +242,12 @@ def insert_route_stop_into_day(
     trip_data: Dict[str, Any],
     day_number: int,
     route_stop: Dict[str, Any],
+    allow_repeat: bool = False,
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Inserts a discovered route stop into a specific day's schedule,
     recalculates transit times, and verifies that total travel time remains acceptable.
+    Supports confirmed duplicate/repeat visits.
     """
     day_key = str(day_number)
     day_schedule = trip_data.get("day_schedule", {})
@@ -173,24 +261,33 @@ def insert_route_stop_into_day(
 
     # Check for duplicate
     stop_name = route_stop.get("name", "").strip().lower()
-    if any(p.get("name", "").strip().lower() == stop_name for p in places):
+    is_already_present = any(p.get("name", "").strip().lower() == stop_name for p in places)
+
+    if is_already_present and not allow_repeat:
         return trip_data, {
             "success": False,
-            "error": f"Route stop '{route_stop.get('name')}' is already in Day {day_number} schedule.",
+            "is_duplicate": True,
+            "error": f"Route stop '{route_stop.get('name')}' is already scheduled in Day {day_number}. Confirm repeat visit to proceed.",
         }
 
     # Format the stop as a scheduled place
+    day_eval = (route_stop.get("day_evaluations") or {}).get(str(day_number), {})
+    detour_dist = day_eval.get("detour_distance_km", route_stop.get("detour_distance_km", 5.0))
+    transit_mins = day_eval.get("added_transit_minutes", route_stop.get("added_travel_time_minutes", 20))
+
     scheduled_entry = {
-        "name": route_stop.get("name"),
+        "name": route_stop.get("name") if not (is_already_present and allow_repeat) else f"{route_stop.get('name')} (Repeat Visit)",
         "category": route_stop.get("category", "En-Route Stop"),
         "lat": route_stop.get("lat"),
         "lon": route_stop.get("lon"),
-        "distance_km": route_stop.get("detour_distance_km", 5.0),
-        "travel_from_previous_km": route_stop.get("detour_distance_km", 5.0),
-        "travel_time_minutes": route_stop.get("added_travel_time_minutes", 20),
+        "distance_km": detour_dist,
+        "travel_from_previous_km": detour_dist,
+        "travel_time_minutes": transit_mins,
         "time_window": f"{route_stop.get('recommended_pause_minutes', 45)} min Scenic Pause",
-        "timing_status": "En-Route Scenic Stop",
+        "timing_status": "En-Route Scenic Stop (Repeat)" if (is_already_present and allow_repeat) else "En-Route Scenic Stop",
         "is_en_route": True,
+        "is_repeat": bool(is_already_present and allow_repeat),
+        "is_repeat_visit": bool(is_already_present and allow_repeat),
         "score": route_stop.get("score", 8),
     }
 
@@ -208,12 +305,12 @@ def insert_route_stop_into_day(
         "success": True,
         "day": day_number,
         "inserted_stop": scheduled_entry["name"],
-        "added_detour_km": route_stop.get("detour_distance_km", 5.0),
-        "added_transit_minutes": route_stop.get("added_travel_time_minutes", 20),
+        "added_detour_km": detour_dist,
+        "added_transit_minutes": transit_mins,
         "total_day_transit_minutes": total_day_transit_minutes,
         "travel_time_acceptable": is_acceptable,
         "summary": (
-            f"Added '{scheduled_entry['name']}' to Day {day_number} with a {route_stop.get('detour_distance_km')} km detour (+{route_stop.get('added_travel_time_minutes')} min transit). "
+            f"Added '{scheduled_entry['name']}' to Day {day_number} with a {detour_dist} km detour (+{transit_mins} min transit). "
             f"Total daily transit: {total_day_transit_minutes} min (Status: {'Acceptable' if is_acceptable else 'High Transit Warning'})."
         )
     }

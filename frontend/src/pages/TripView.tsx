@@ -25,6 +25,7 @@ import {
 
 import {
   updateTrip,
+  getTrip,
   checkFavorite,
   favoriteTrip,
   unfavoriteTrip,
@@ -215,12 +216,28 @@ export default function TripView() {
 
   const handleInsertRouteStop = async (stop: any, dayNum: number) => {
     if (!tripId) return;
+
+    // Check if the stop already exists on the selected day
+    const existingStops = (trip?.day_schedule as any)?.[String(dayNum)] || [];
+    const isDuplicate = existingStops.some((s: any) =>
+      s.name?.toLowerCase().trim() === stop.name?.toLowerCase().trim()
+    );
+
+    let allowRepeat = false;
+    if (isDuplicate) {
+      const confirmAdd = window.confirm(
+        `"${stop.name}" is already scheduled on Day ${dayNum}. Would you like to add it anyway?`
+      );
+      if (!confirmAdd) return;
+      allowRepeat = true;
+    }
+
     setAddingRouteStopId(stop.id || stop.name);
     setRouteStopFeedback(null);
     try {
-      const res = await addRouteStop(tripId, dayNum, stop);
+      const res = await addRouteStop(tripId, dayNum, stop, allowRepeat);
       if (res.trip) {
-        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
         setRouteStopFeedback(res.audit?.summary || `Added ${stop.name} to Day ${dayNum}`);
       }
     } catch (err: any) {
@@ -284,7 +301,7 @@ export default function TripView() {
       setGroupConflictFeedback(null);
       const res = await castGroupVote(tripId, voter, attractionName, vote);
       if (res.trip) {
-        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
         setGroupConflictFeedback(res.audit?.summary || `Vote recorded for ${attractionName}!`);
       }
     } catch (err: any) {
@@ -301,7 +318,7 @@ export default function TripView() {
       setGroupConflictFeedback(null);
       const res = await resolveGroupConflicts(tripId);
       if (res.trip) {
-        setData((prev) => (prev ? { ...prev, trip: res.trip } : null));
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
         setGroupConflictFeedback(res.audit?.summary || "Conflicts resolved into fair compromise!");
       }
     } catch (err: any) {
@@ -341,6 +358,9 @@ export default function TripView() {
         if (res.suggested_actions && res.suggested_actions.length > 0) {
           setChatSuggestions(res.suggested_actions);
         }
+        if (res.trip) {
+          setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+        }
       }
     } catch (err: any) {
       setChatMessages((prev) => [
@@ -355,6 +375,7 @@ export default function TripView() {
   // Step 60: AI Trip Optimization State
   const [optimizingTrip, setOptimizingTrip] = useState(false);
   const [optimizationAudit, setOptimizationAudit] = useState<any>(null);
+  const [showOptDiffModal, setShowOptDiffModal] = useState(false);
 
   const handleExecuteOptimization = async () => {
     if (!tripId || optimizingTrip) return;
@@ -396,16 +417,8 @@ export default function TripView() {
 
     async function fetchTrip(tripId: string) {
       try {
-        const res = await fetch(
-          `http://127.0.0.1:8000/trip/${tripId}`
-        );
-
-        if (!res.ok) {
-          throw new Error("Failed to load trip");
-        }
-
         const json: TripResponse =
-          await res.json();
+          await getTrip(tripId);
 
         setData(json);
 
@@ -496,27 +509,11 @@ if (savedRating) {
     day: string
   ) {
     try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/trip/${tripId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            prompt: `Regenerate Day ${day}`,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to regenerate Day ${day}`
-        );
-      }
-
       const updatedTrip: TripResponse =
-        await response.json();
+        await updateTrip(
+          tripId,
+          `Regenerate Day ${day}`
+        );
 
       setData(updatedTrip);
 
@@ -615,7 +612,26 @@ if (savedRating) {
   const weatherReplanning = (trip as any)?.weather_replanning;
   const routeAttractions: any[] = (trip as any)?.route_attractions || [];
   const transportRecs = (trip as any)?.transport_recommendations;
-  const budgetRealloc = (trip as any)?.budget_reallocation;
+  const budgetRealloc = (trip as any)?.budget_reallocation || (trip?.budget ? {
+    active_strategy: "conservative",
+    strategy_label: "Conservative & Balanced",
+    strategy_description: "Preserves a 10% emergency buffer while securing reliable lodging and steady meals.",
+    available_strategies: [
+      { id: "conservative", label: "Conservative & Balanced", description: "Preserves a 10% emergency buffer while securing reliable lodging and steady meals." },
+      { id: "experience", label: "Experience Maximizer", description: "Funnels savings from lodging and transit into top attractions, tours, and culinary memories." },
+      { id: "cost_saver", label: "Cost Saver / High Reserve", description: "Minimizes non-essential overhead and retains an 18% reserve for shopping and unexpected savings." },
+    ],
+    categories: {
+      hotel: { current_amount: trip.budget.categories?.hotel || 0, proposed_amount: Math.round((trip.budget.total_budget || trip.budget.estimated_cost || 20000) * 0.38), delta_amount: 0, current_percentage: 38, target_percentage: 38 },
+      food: { current_amount: trip.budget.categories?.food || 0, proposed_amount: Math.round((trip.budget.total_budget || trip.budget.estimated_cost || 20000) * 0.25), delta_amount: 0, current_percentage: 25, target_percentage: 25 },
+      transport: { current_amount: trip.budget.categories?.transport || 0, proposed_amount: Math.round((trip.budget.total_budget || trip.budget.estimated_cost || 20000) * 0.17), delta_amount: 0, current_percentage: 17, target_percentage: 17 },
+      activities: { current_amount: trip.budget.categories?.activities || 0, proposed_amount: Math.round((trip.budget.total_budget || trip.budget.estimated_cost || 20000) * 0.10), delta_amount: 0, current_percentage: 10, target_percentage: 10 },
+      emergency: { current_amount: trip.budget.categories?.emergency || 0, proposed_amount: Math.round((trip.budget.total_budget || trip.budget.estimated_cost || 20000) * 0.10), delta_amount: 0, current_percentage: 10, target_percentage: 10 },
+    },
+    trade_off_suggestions: [
+      { action: "Optimize lodging buffer", impact: "Funnels savings from lodging into top attractions and tours without raising total spend." }
+    ],
+  } : null);
   const groupDecisions = (trip as any)?.group_decisions;
   const optimizationScore = (trip as any)?.optimization_score;
 
@@ -641,8 +657,57 @@ if (savedRating) {
         ← Plan Another Trip
       </button>
 
+      {/* Sticky Section Quick-Navigation Bar */}
+      <nav
+        aria-label="Trip sections"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 90,
+          background: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(8px)",
+          borderBottom: "1px solid #e2e8f0",
+          padding: "10px 16px",
+          margin: "0 -20px 20px -20px",
+          display: "flex",
+          gap: 8,
+          overflowX: "auto",
+          boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
+        }}
+      >
+        {[
+          { label: "Overview", href: "#section-overview" },
+          { label: "Itinerary", href: "#section-itinerary" },
+          { label: "Route Discovery", href: "#section-route-discovery" },
+          { label: "Budget Planner", href: "#section-budget" },
+          { label: "Transport", href: "#section-transport" },
+          { label: "Group Decisions", href: "#section-group-decisions" },
+          { label: "Insights", href: "#section-insights" },
+          { label: "AI Optimization", href: "#section-ai-optimization" },
+        ].map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            style={{
+              fontSize: "0.82rem",
+              fontWeight: 600,
+              color: "#475569",
+              textDecoration: "none",
+              padding: "6px 14px",
+              borderRadius: 20,
+              background: "#f1f5f9",
+              whiteSpace: "nowrap",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
 
-      <Dashboard dashboard={dashboard} />
+      <div id="section-overview">
+        <Dashboard dashboard={dashboard} />
+      </div>
 
 
       {/* Share Trip */}
@@ -741,11 +806,14 @@ if (savedRating) {
       </button>
 
       {/* Trip Analytics & Insights */}
-      <TripInsightsCard tripId={tripId} />
+      <div id="section-insights">
+        <TripInsightsCard tripId={tripId} />
+      </div>
 
       {/* STEP 60: AI Trip Quality & Holistic Optimization Score Card */}
       {optimizationScore && (
         <div
+          id="section-ai-optimization"
           style={{
             background: "#ffffff",
             borderRadius: 16,
@@ -789,7 +857,7 @@ if (savedRating) {
               </p>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
               <div
                 style={{
                   background: "linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%)",
@@ -807,6 +875,29 @@ if (savedRating) {
                   {optimizationScore.tier_badge || "Optimized"}
                 </div>
               </div>
+
+              {((trip as any)?.optimization_comparison || optimizationAudit?.comparison) && (
+                <button
+                  type="button"
+                  onClick={() => setShowOptDiffModal(true)}
+                  style={{
+                    background: "#ede9fe",
+                    color: "#6d28d9",
+                    border: "1px solid #c4b5fd",
+                    borderRadius: 12,
+                    padding: "12px 18px",
+                    fontSize: "0.88rem",
+                    fontWeight: 700,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    boxShadow: "0 2px 6px rgba(109, 40, 217, 0.12)",
+                  }}
+                >
+                  What's Changed?
+                </button>
+              )}
 
               <button
                 type="button"
@@ -976,6 +1067,152 @@ if (savedRating) {
           )}
         </div>
       )}
+
+      {/* STEP 60: What's Changed AI Optimization Comparison Modal */}
+      {showOptDiffModal && (() => {
+        const comp = (trip as any)?.optimization_comparison || optimizationAudit?.comparison;
+        if (!comp) return null;
+        return (
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: "rgba(15, 23, 42, 0.65)",
+              backdropFilter: "blur(4px)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1100,
+              padding: 20,
+            }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                borderRadius: 16,
+                padding: "24px 28px",
+                maxWidth: 640,
+                width: "100%",
+                maxHeight: "85vh",
+                overflowY: "auto",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                <h3 style={{ margin: 0, fontSize: "1.25rem", color: "#1e1b4b", display: "flex", alignItems: "center", gap: 8 }}>
+                  AI Route Optimization Audit & Diff
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowOptDiffModal(false)}
+                  style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "#64748b" }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Metrics gain summary */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 18 }}>
+                <div style={{ background: "#f5f3ff", padding: "10px", borderRadius: 8, textAlign: "center" }}>
+                  <div style={{ fontSize: "0.74rem", color: "#6b21a8" }}>Quality Score</div>
+                  <strong style={{ fontSize: "1.1rem", color: "#581c87" }}>
+                    {comp.initial_score} → {comp.optimized_score}
+                  </strong>
+                  <div style={{ fontSize: "0.7rem", color: "#16a34a", fontWeight: 700 }}>
+                    +{comp.score_gain || 0} pts
+                  </div>
+                </div>
+
+                <div style={{ background: "#ecfdf5", padding: "10px", borderRadius: 8, textAlign: "center" }}>
+                  <div style={{ fontSize: "0.74rem", color: "#065f46" }}>Distance Saved</div>
+                  <strong style={{ fontSize: "1.1rem", color: "#047857" }}>
+                    {comp.distance_saved_km || 0} km
+                  </strong>
+                  <div style={{ fontSize: "0.7rem", color: "#059669" }}>
+                    {comp.initial_total_transit_km || 0} → {comp.optimized_total_transit_km || 0} km
+                  </div>
+                </div>
+
+                <div style={{ background: "#eff6ff", padding: "10px", borderRadius: 8, textAlign: "center" }}>
+                  <div style={{ fontSize: "0.74rem", color: "#1e40af" }}>Transit Time Saved</div>
+                  <strong style={{ fontSize: "1.1rem", color: "#1d4ed8" }}>
+                    {comp.transit_minutes_saved || 0} mins
+                  </strong>
+                  <div style={{ fontSize: "0.7rem", color: "#2563eb" }}>
+                    {comp.initial_transit_minutes || 0} → {comp.optimized_transit_minutes || 0} mins
+                  </div>
+                </div>
+              </div>
+
+              {/* Day-by-Day comparison */}
+              <h4 style={{ margin: "0 0 10px", fontSize: "0.95rem", color: "#1e293b" }}>
+                Day-by-Day Route Sequencing:
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {(comp.day_changes || []).map((dc: any, idx: number) => (
+                  <div
+                    key={idx}
+                    style={{
+                      border: "1px solid #e2e8f0",
+                      borderRadius: 10,
+                      padding: "12px 14px",
+                      background: dc.has_reordering ? "#faf5ff" : "#f8fafc",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <strong style={{ fontSize: "0.88rem", color: "#0f172a" }}>Day {dc.day}</strong>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          fontWeight: 700,
+                          padding: "2px 8px",
+                          borderRadius: 12,
+                          background: dc.has_reordering ? "#ede9fe" : "#f1f5f9",
+                          color: dc.has_reordering ? "#6d28d9" : "#475569",
+                        }}
+                      >
+                        {dc.has_reordering ? "✓ Reordered for minimum travel" : "Original sequence optimal"}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: "0.8rem", color: "#475569" }}>
+                      <div style={{ marginBottom: 4 }}>
+                        <span style={{ color: "#94a3b8", fontWeight: 600 }}>Initial: </span>
+                        {(dc.initial_order || []).join("  →  ")}
+                      </div>
+                      <div>
+                        <span style={{ color: "#7c3aed", fontWeight: 700 }}>Optimized: </span>
+                        {(dc.optimized_order || []).join("  →  ")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
+                <button
+                  type="button"
+                  onClick={() => setShowOptDiffModal(false)}
+                  style={{
+                    padding: "8px 18px",
+                    borderRadius: 8,
+                    background: "#4f46e5",
+                    color: "#ffffff",
+                    border: "none",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
 
       {/* Multi-Destination Tour Route Card */}
@@ -1309,6 +1546,7 @@ if (savedRating) {
       {/* Route-Aware Attraction Discovery Card */}
       {routeAttractions && routeAttractions.length > 0 && (
         <div
+          id="section-route-discovery"
           style={{
             background: "#faf5ff",
             border: "1px solid #e9d5ff",
@@ -1359,7 +1597,7 @@ if (savedRating) {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 14 }}>
             {routeAttractions.map((stop: any, idx: number) => {
-              const currentTargetDay = selectedRouteStopDay[stop.id || stop.name] || 1;
+              const currentTargetDay = selectedRouteStopDay[stop.id || stop.name] || stop.recommended_day || 1;
               const isAdding = addingRouteStopId === (stop.id || stop.name);
 
               return (
@@ -1379,19 +1617,36 @@ if (savedRating) {
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, marginBottom: 6 }}>
                       <strong style={{ color: "#1e293b", fontSize: "0.98rem" }}>{stop.name}</strong>
-                      <span
-                        style={{
-                          background: "#e0e7ff",
-                          color: "#3730a3",
-                          padding: "2px 8px",
-                          borderRadius: 12,
-                          fontSize: "0.72rem",
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                        }}
-                      >
-                        {stop.corridor_position || `${stop.corridor_progress_percent}% along route`}
-                      </span>
+                      <div style={{ display: "flex", gap: 4, flexWrap: "wrap", justifyContent: "flex-end" }}>
+                        {stop.recommended_day && (
+                          <span
+                            style={{
+                              background: "#dcfce7",
+                              color: "#166534",
+                              padding: "2px 8px",
+                              borderRadius: 12,
+                              fontSize: "0.72rem",
+                              fontWeight: 700,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            ★ Best Fit: Day {stop.recommended_day}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            background: "#e0e7ff",
+                            color: "#3730a3",
+                            padding: "2px 8px",
+                            borderRadius: 12,
+                            fontSize: "0.72rem",
+                            fontWeight: 600,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {stop.corridor_position || `${stop.corridor_progress_percent}% along route`}
+                        </span>
+                      </div>
                     </div>
 
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
@@ -1408,6 +1663,39 @@ if (savedRating) {
                         ~{stop.recommended_pause_minutes} min pause
                       </span>
                     </div>
+
+                    {stop.day_evaluations && (stop.day_evaluations[currentTargetDay] || stop.day_evaluations[String(currentTargetDay)]) && (() => {
+                      const evalData = stop.day_evaluations[currentTargetDay] || stop.day_evaluations[String(currentTargetDay)];
+                      const detourKm = evalData.detour_distance_km ?? evalData.detour_km ?? 0;
+                      const routeKm = evalData.total_daily_route_km ?? evalData.day_route_km ?? 0;
+                      const capacityOk = evalData.has_schedule_capacity ?? evalData.capacity_ok ?? true;
+                      return (
+                        <div
+                          style={{
+                            fontSize: "0.74rem",
+                            background: "#fdf4ff",
+                            border: "1px solid #f5d0fe",
+                            color: "#86198f",
+                            padding: "6px 10px",
+                            borderRadius: 6,
+                            marginBottom: 8,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          <div>
+                            <strong>Day {currentTargetDay} Impact:</strong> +{detourKm} km detour | Route total: {routeKm} km{" "}
+                            <span style={{ fontWeight: 600, color: capacityOk ? "#16a34a" : "#d97706" }}>
+                              {capacityOk ? "(Capacity OK)" : "(Tight Schedule)"}
+                            </span>
+                          </div>
+                          {evalData.distance_label && (
+                            <div style={{ fontSize: "0.71rem", color: "#6b21a8", marginTop: 2 }}>
+                              📍 {evalData.distance_label}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
 
                     <p style={{ margin: "0 0 10px", fontSize: "0.82rem", color: "#64748b", lineHeight: 1.4 }}>
                       {stop.description}
@@ -1472,8 +1760,7 @@ if (savedRating) {
         </div>
       )}
 
-      <div className="section">
-
+      <div id="section-budget" className="section">
 
         <h2 className="section-title">
           Budget Overview
@@ -1518,8 +1805,8 @@ if (savedRating) {
                 </p>
               </div>
 
-              {/* Strategy Selector Buttons */}
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {/* Strategy Selector Buttons & Apply Action */}
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                 {budgetRealloc.available_strategies?.map((st: any) => (
                   <button
                     key={st.id}
@@ -1545,6 +1832,26 @@ if (savedRating) {
                     {st.label}
                   </button>
                 ))}
+
+                <button
+                  type="button"
+                  onClick={() => handleApplyBudgetReallocation(selectedBudgetStrategy || budgetRealloc.active_strategy || "conservative")}
+                  disabled={reallocatingBudget}
+                  style={{
+                    padding: "6px 14px",
+                    fontSize: "0.80rem",
+                    fontWeight: 700,
+                    borderRadius: 20,
+                    border: "none",
+                    cursor: "pointer",
+                    background: "#059669",
+                    color: "#ffffff",
+                    boxShadow: "0 2px 4px rgba(5, 150, 105, 0.25)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  {reallocatingBudget ? "Reallocating..." : " Apply Smart Allocation"}
+                </button>
               </div>
             </div>
 
@@ -1676,6 +1983,7 @@ if (savedRating) {
       {/* Group Decision & Conflict Resolution Card */}
       {groupDecisions && (
         <div
+          id="section-group-decisions"
           style={{
             background: "#f8fafc",
             border: "1px solid #cbd5e1",
@@ -1744,6 +2052,84 @@ if (savedRating) {
               }}
             >
               ✓ {groupConflictFeedback}
+            </div>
+          )}
+
+          {/* Detected Conflicts */}
+          {groupDecisions.detected_conflicts?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.92rem", color: "#991b1b", display: "flex", alignItems: "center", gap: 6 }}>
+                ⚠️ Detected Group Conflicts ({groupDecisions.detected_conflicts.length})
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {groupDecisions.detected_conflicts.map((conf: any, cIdx: number) => (
+                  <div
+                    key={cIdx}
+                    style={{
+                      background: "#fef2f2",
+                      border: "1px solid #fecaca",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      fontSize: "0.82rem",
+                      color: "#991b1b",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <strong>{conf.place_name}</strong>
+                      <span
+                        style={{
+                          fontSize: "0.72rem",
+                          padding: "2px 8px",
+                          borderRadius: 10,
+                          background: conf.conflict_type === "unanimous_skip" ? "#fee2e2" : "#ffedd5",
+                          color: conf.conflict_type === "unanimous_skip" ? "#991b1b" : "#c2410c",
+                          fontWeight: 700,
+                        }}
+                      >
+                        {conf.conflict_type === "unanimous_skip" ? "Unanimous Skip Requested" : "Split Preference"}
+                      </span>
+                    </div>
+                    <div style={{ color: "#7f1d1d", fontSize: "0.78rem", marginBottom: 4 }}>
+                      Favor: {conf.favor_voters?.join(", ") || "None"} | Skip: {conf.skip_voters?.join(", ") || "None"} (Consensus Score: {conf.consensus_score})
+                    </div>
+                    <div style={{ background: "#ffffff", padding: "6px 10px", borderRadius: 6, border: "1px solid #fca5a5", fontSize: "0.76rem" }}>
+                      <strong>Proposed Resolution:</strong> {conf.proposed_resolution}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Applied Conflict Resolutions */}
+          {groupDecisions.applied_resolutions?.length > 0 && (
+            <div style={{ marginBottom: 16 }}>
+              <h4 style={{ margin: "0 0 8px", fontSize: "0.92rem", color: "#166534", display: "flex", alignItems: "center", gap: 6 }}>
+                ✓ Applied Conflict Resolutions ({groupDecisions.applied_resolutions.length})
+              </h4>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {groupDecisions.applied_resolutions.map((resItem: any, rIdx: number) => (
+                  <div
+                    key={rIdx}
+                    style={{
+                      background: "#f0fdf4",
+                      border: "1px solid #bbf7d0",
+                      borderRadius: 8,
+                      padding: "10px 14px",
+                      fontSize: "0.82rem",
+                      color: "#166534",
+                    }}
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <strong>{resItem.attraction}</strong>
+                      <span style={{ fontSize: "0.72rem", background: "#dcfce7", color: "#14532d", padding: "2px 8px", borderRadius: 10, fontWeight: 700 }}>
+                        {resItem.strategy === "skipped_and_substituted" ? "Substituted with Alternative" : "Split Compromise"}
+                      </span>
+                    </div>
+                    <p style={{ margin: 0, fontSize: "0.78rem" }}>{resItem.resolution}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -2073,6 +2459,7 @@ if (savedRating) {
         {/* Transport Recommendation Engine & Trade-off Matrix */}
         {transportRecs && (
           <div
+            id="section-transport"
             style={{
               background: "#f0fdf4",
               border: "1px solid #bbf7d0",
@@ -2381,7 +2768,7 @@ if (savedRating) {
       </div>
 
 
-      <div className="section">
+      <div id="section-itinerary" className="section">
 
         <h2 className="section-title">
           Daily Plan

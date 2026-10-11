@@ -481,6 +481,7 @@ async def build_trip(request):
         route=route,
         destination_places=matched_places,
         travel_mode=travel_mode,
+        day_schedule=day_schedule,
     )
 
     from backend.services.planner.transport_recommendation_engine import generate_transport_recommendations

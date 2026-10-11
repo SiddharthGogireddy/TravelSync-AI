@@ -168,8 +168,10 @@ def calculate_consensus_scores(
         # Score formula: base 10 + up * 2 - down * 2 + neutral * 0.5
         consensus_score = round(10.0 + (up_count * 2.0) - (down_count * 2.5) + (neutral_count * 0.5), 1)
 
-        if down_count > 0 and down_count >= up_count:
-            status = "Contentious / Disputed"
+        if down_count > 0 and up_count > 0:
+            status = "Split Preference Conflict"
+        elif down_count > 0 and up_count == 0:
+            status = "Contentious / Unanimous Skip"
         elif up_count > 0 and down_count == 0:
             status = "Highly Favored"
         elif total_voters > 0:
@@ -199,12 +201,13 @@ def evaluate_group_decisions(
 ) -> Dict[str, Any]:
     """
     Main evaluation pipeline that packages group alignment, traveler satisfaction,
-    consensus metrics, and fair compromise suggestions.
+    consensus metrics, detected conflicts, proposed resolutions, and applied resolutions.
     """
     travelers = trip_data.get("travelers", [])
     day_schedule = trip_data.get("day_schedule", {})
     all_places = trip_data.get("places", [])
     group_votes = trip_data.get("group_votes", {})
+    applied_resolutions = trip_data.get("applied_resolutions", [])
 
     scheduled_places = []
     for day_list in day_schedule.values():
@@ -215,7 +218,40 @@ def evaluate_group_decisions(
     satisfaction = compute_traveler_satisfaction(travelers, scheduled_places)
     consensus = calculate_consensus_scores(scheduled_places[:12], group_votes)
 
-    contentious_count = sum(1 for c in consensus if "Contentious" in c["status"])
+    detected_conflicts = []
+    for c in consensus:
+        if c["down_votes"] > 0:
+            votes_map = c.get("votes_by_traveler", {})
+            fav_travs = [t for t, v in votes_map.items() if v == "up"]
+            skip_travs = [t for t, v in votes_map.items() if v == "down"]
+
+            if c["up_votes"] > 0:
+                c_type = "split_preference"
+                prop_res = (
+                    f"Balanced Compromise: Retain with condensed 30-min window for {', '.join(fav_travs)} "
+                    f"while coordinating nearby cafe/rest break for {', '.join(skip_travs)}."
+                )
+            else:
+                c_type = "unanimous_skip"
+                prop_res = f"Auto-Replace: Swap '{c['name']}' for an alternative matching group interests with minimal detour."
+
+            detected_conflicts.append({
+                "attraction_name": c["name"],
+                "place_name": c["name"],
+                "category": c.get("category", "Attraction"),
+                "conflict_type": c_type,
+                "up_votes": c["up_votes"],
+                "down_votes": c["down_votes"],
+                "favored_by": fav_travs,
+                "favor_voters": fav_travs,
+                "skipped_by": skip_travs,
+                "skip_voters": skip_travs,
+                "status": "Detected Conflict (Awaiting Auto Resolution)",
+                "consensus_score": c.get("score", 0),
+                "proposed_resolution": prop_res,
+            })
+
+    contentious_count = len(detected_conflicts)
 
     return {
         "harmony_score": alignment["harmony_score"],
@@ -223,10 +259,12 @@ def evaluate_group_decisions(
         "divergence_zones": alignment["divergence_zones"],
         "traveler_satisfaction": satisfaction,
         "consensus_places": consensus,
+        "detected_conflicts": detected_conflicts,
+        "applied_resolutions": applied_resolutions,
         "contentious_count": contentious_count,
         "summary": (
             f"Group alignment is at {alignment['harmony_score']}% ({alignment['harmony_level']}). "
-            f"{contentious_count} attraction(s) flagged for consensus review."
+            f"{contentious_count} active conflict(s) detected. Press 'Auto Resolution' to apply balanced group solutions."
         ),
     }
 
@@ -273,8 +311,11 @@ def resolve_group_conflicts(
 ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     """
     Auto-balances the daily schedule to ensure equitable representation across
-    all travelers' interests, swapping out contentious/downvoted attractions
-    for universally accepted compromise alternatives.
+    all travelers' interests:
+    1. Unanimously downvoted places (down > up) are swapped with high-value alternatives.
+    2. Split preferences (1 up, 1 down) receive a balanced compromise: visit condensed to 30 mins
+       with an explicit rest/refreshment pause for dissenting travelers.
+    3. Keeps itinerary, budget, and dashboard synchronized.
     """
     day_schedule = trip_data.get("day_schedule", {})
     all_places = trip_data.get("places", [])
@@ -285,17 +326,22 @@ def resolve_group_conflicts(
         return trip_data, {"success": False, "error": "Insufficient schedule or travelers to resolve."}
 
     swapped_count = 0
+    compromised_count = 0
     adjustments_made = []
+    applied_resolutions = list(trip_data.get("applied_resolutions", []))
 
-    # 1. Identify heavily downvoted places
+    # Identify votes and classifications
     downvoted_names = set()
+    split_names = set()
+
     for attr, votes in group_votes.items():
         down_count = sum(1 for v in votes.values() if v == "down")
         up_count = sum(1 for v in votes.values() if v == "up")
         if down_count > up_count:
             downvoted_names.add(attr)
+        elif down_count > 0 and up_count > 0:
+            split_names.add(attr)
 
-    # 2. Identify missing interests across travelers
     scheduled_places_list = [p for d in day_schedule.values() for p in d]
     all_scheduled_names = [p.get("name") for p in scheduled_places_list]
     satisfaction = compute_traveler_satisfaction(travelers, scheduled_places_list)
@@ -305,13 +351,14 @@ def resolve_group_conflicts(
         for miss in sat.get("missing_interests", []):
             underrepresented_interests.append((sat["traveler"], miss))
 
-    # 3. Swap contentious places for compromise places matching missing interests
+    # Apply adjustments across daily schedule
     for day_str, places_list in day_schedule.items():
         new_places = []
         for p in places_list:
             p_name = p.get("name", "")
+
+            # 1. Full Replacement for heavily downvoted places
             if p_name in downvoted_names:
-                # Find an alternative place matching one of the missing interests, or any unscheduled place
                 t_owner = travelers[0].get("name", "Traveler")
                 miss_interest = "Compromise Attraction"
                 if underrepresented_interests:
@@ -333,6 +380,7 @@ def resolve_group_conflicts(
                         "category": alt.get("category", miss_interest),
                         "lat": alt.get("lat", p.get("lat")),
                         "lon": alt.get("lon", p.get("lon")),
+                        "distance_km": p.get("distance_km", 2.0),
                         "travel_from_previous_km": p.get("travel_from_previous_km", 2.0),
                         "travel_time_minutes": p.get("travel_time_minutes", 15),
                         "time_window": "Compromise Attraction Slot",
@@ -341,32 +389,100 @@ def resolve_group_conflicts(
                     }
                     new_places.append(replacement)
                     all_scheduled_names.append(alt.get("name"))
-                    adjustments_made.append(f"Replaced downvoted '{p_name}' with '{alt.get('name')}' for {t_owner} ({miss_interest}).")
+                    adj_text = f"Replaced downvoted '{p_name}' with '{alt.get('name')}' for {t_owner} ({miss_interest})."
+                    adjustments_made.append(adj_text)
+                    applied_resolutions.append({
+                        "attraction": p_name,
+                        "replacement": alt.get("name"),
+                        "action": "Replaced Attraction",
+                        "strategy": "skipped_and_substituted",
+                        "resolution": adj_text,
+                        "details": adj_text,
+                    })
                     swapped_count += 1
+                    # Clear resolved vote so it doesn't loop
+                    if p_name in group_votes:
+                        del group_votes[p_name]
                     continue
+
+            # 2. Balanced Compromise for split preferences (1 up, 1 down)
+            elif p_name in split_names:
+                votes_map = group_votes.get(p_name, {})
+                fav_names = [t for t, v in votes_map.items() if v == "up"]
+                skip_names = [t for t, v in votes_map.items() if v == "down"]
+
+                compromise_place = dict(p)
+                compromise_place["time_window"] = "30 min Condensed Visit + Nearby Break"
+                compromise_place["timing_status"] = "Compromise: 30m Visit for Fans / Rest for Skip"
+                compromise_place["is_compromise"] = True
+                new_places.append(compromise_place)
+
+                adj_text = (
+                    f"Split decision resolved on '{p_name}': Kept condensed 30-min window for {', '.join(fav_names)} "
+                    f"while coordinating refreshment pause for {', '.join(skip_names)}."
+                )
+                adjustments_made.append(adj_text)
+                applied_resolutions.append({
+                    "attraction": p_name,
+                    "action": "Condensed Compromise Schedule",
+                    "strategy": "split_compromise",
+                    "resolution": adj_text,
+                    "details": adj_text,
+                })
+                compromised_count += 1
+                # Clear resolved vote
+                if p_name in group_votes:
+                    del group_votes[p_name]
+                continue
 
             new_places.append(p)
         day_schedule[day_str] = new_places
 
-    # In case no places were downvoted, ensure equitable pacing by adding a harmony rest badge
-    if swapped_count == 0:
+    if swapped_count == 0 and compromised_count == 0:
         adjustments_made.append("Equitable rotation confirmed: Itinerary balanced across all traveler preferences with pace buffers.")
 
     trip_data["day_schedule"] = day_schedule
+    trip_data["group_votes"] = group_votes
+    trip_data["applied_resolutions"] = applied_resolutions
+
+    # Synchronize budget and dashboard
+    try:
+        from backend.services.planner.budget_tracker import calculate_budget
+        from backend.services.planner.dashboard import build_dashboard
+        sched_count = sum(len(p) for p in day_schedule.values() if isinstance(p, list))
+        updated_budget = calculate_budget(
+            travelers=travelers,
+            days=trip_data.get("days", 3),
+            travel_mode=trip_data.get("travel_mode", "car"),
+            hotels=trip_data.get("hotels", []),
+            places=trip_data.get("places", []),
+            scheduled_activity_count=sched_count,
+            total_budget=trip_data.get("budget", {}).get("total_budget"),
+        )
+        trip_data["budget"] = updated_budget
+        trip_data["dashboard"] = build_dashboard(trip_data)
+    except Exception:
+        pass
 
     # Refresh evaluation
     evaluation = evaluate_group_decisions(trip_data)
-    # Give a boost to harmony score after resolution
     evaluation["harmony_score"] = min(98, evaluation["harmony_score"] + 15)
     evaluation["harmony_level"] = "High Alignment (Compromise Applied)"
     trip_data["group_decisions"] = evaluation
 
+    total_actions = swapped_count + compromised_count
     audit = {
         "success": True,
         "swapped_count": swapped_count,
+        "compromised_count": compromised_count,
+        "total_actions": total_actions,
         "adjustments": adjustments_made,
+        "applied_resolutions": applied_resolutions,
         "new_harmony_score": evaluation["harmony_score"],
-        "summary": f"Group conflict resolution applied: {swapped_count} contentious stop(s) replaced. Harmony improved to {evaluation['harmony_score']}%.",
+        "summary": (
+            f"Group conflict resolution applied: {swapped_count} attraction(s) replaced, "
+            f"{compromised_count} split conflict(s) compromised. Harmony improved to {evaluation['harmony_score']}%."
+        ),
     }
 
     return trip_data, audit

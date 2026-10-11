@@ -13,6 +13,11 @@ DATA_DIR = BASE_DIR / "data"
 FILE = DATA_DIR / "trips.json"
 
 
+class StorageCorruptedError(RuntimeError):
+    """Raised when trip storage JSON file exists but is corrupted, truncated, or unreadable."""
+    pass
+
+
 def _ensure_store_file():
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     if not FILE.exists():
@@ -28,20 +33,27 @@ def _read_trips() -> list:
     _ensure_store_file()
     try:
         with open(FILE, "r", encoding="utf-8") as f:
-            content = f.read().strip()
-            if not content:
-                return []
-            data = json.loads(content)
-            if isinstance(data, list):
-                return data
-            logger.warning(f"Unexpected data shape in {FILE}, expected list, got {type(data)}")
-            return []
-    except json.JSONDecodeError as e:
-        logger.error(f"Malformed JSON in {FILE}: {e}")
-        return []
+            content = f.read()
     except Exception as e:
-        logger.error(f"Failed to read trips from {FILE}: {e}")
-        return []
+        logger.critical(f"Failed to open trip storage file {FILE}: {e}")
+        raise StorageCorruptedError(f"Cannot read trip storage file {FILE}: {e}") from e
+
+    content_str = content.strip()
+    if not content_str:
+        logger.critical(f"Trip storage file {FILE} is empty (0 bytes). Corrupt or truncated file detected.")
+        raise StorageCorruptedError(f"Trip storage file {FILE} is empty/truncated and cannot be safely parsed.")
+
+    try:
+        data = json.loads(content_str)
+    except json.JSONDecodeError as e:
+        logger.critical(f"Malformed JSON in {FILE}: {e}")
+        raise StorageCorruptedError(f"Malformed JSON in trip storage {FILE}: {e}") from e
+
+    if not isinstance(data, list):
+        logger.critical(f"Unexpected data shape in {FILE}: expected list, got {type(data).__name__}")
+        raise StorageCorruptedError(f"Unexpected data shape in {FILE}: expected list, got {type(data).__name__}")
+
+    return data
 
 
 def _write_trips(trips: list) -> bool:
@@ -52,7 +64,20 @@ def _write_trips(trips: list) -> bool:
             json.dump(trips, f, indent=2)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
+        try:
+            os.replace(temp_file, FILE)
+        except PermissionError:
+            # On Windows, os.replace into a file open by an editor/service raises Access is denied.
+            # Fall back to overwriting FILE directly in-place:
+            with open(FILE, "w", encoding="utf-8") as f:
+                json.dump(trips, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
         return True
     except Exception as e:
         logger.error(f"Failed to write trips to {FILE}: {e}")

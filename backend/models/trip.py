@@ -1,5 +1,5 @@
 from typing import List, Literal, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class Traveler(BaseModel):
@@ -11,12 +11,12 @@ class Traveler(BaseModel):
 
 class MandatoryVisit(BaseModel):
     name: str
-    day: int | None = None
+    day: int | None = Field(default=None, ge=1, le=30, description="Day number for visit")
 
 
 class DestinationStop(BaseModel):
     name: str
-    days: int = 1
+    days: int = Field(default=1, ge=1, le=30, description="Duration in days for this stop")
 
 
 class PlanningConstraints(BaseModel):
@@ -34,7 +34,7 @@ class PlanningConstraints(BaseModel):
 class TripRequest(BaseModel):
     source: str
     destination: str
-    days: int
+    days: int = Field(ge=1, le=30, description="Total trip duration in days (1 to 30)")
     destinations: Optional[List[DestinationStop]] = None
     travelers: List[Traveler]
     mandatory_visits: List[MandatoryVisit] = []

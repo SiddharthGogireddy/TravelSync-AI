@@ -33,6 +33,7 @@ def build_dashboard(trip_data):
         "distance": distance,
         "duration": duration,
         "budget": budget.get("total_budget", 0),
+        "total_budget": budget.get("total_budget", 0),
         "estimated_cost": budget.get("estimated_cost", 0),
         "remaining": budget.get("remaining", 0),
         "budget_status": budget.get("status", "Near Budget"),

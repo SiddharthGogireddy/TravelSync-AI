@@ -81,6 +81,7 @@ export interface Place {
     lat: number;
     lon: number;
     score?: number;
+    reference_point?: string;
     matched_travelers?: string[];
     matched_interests?: string[];
     matched_traveler_preferences?: Array<{ traveler: string; interests: string[] }>;

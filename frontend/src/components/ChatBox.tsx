@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Expense } from "../types/expense";
 import type { TripResponse } from "../types/api";
+import { API } from "../services/api";
 
 interface ChatContext {
     expenses: Expense[];
@@ -11,7 +12,7 @@ export default function ChatBox({ context }: { context: ChatContext }) {
     const [reply, setReply] = useState("");
 
     const send = async () => {
-        const res = await fetch("/ai/chat", {
+        const res = await fetch(`${API}/ai/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

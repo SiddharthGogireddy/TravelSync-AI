@@ -129,17 +129,17 @@ export default function DayCard({
                             </div>
 
                             <p style={{ margin: "4px 0", color: "#64748b", fontSize: "0.84rem" }}>
-                                {place.category} • {place.distance_km} km from center
+                                {place.category} • {place.distance_km} km {place.reference_point ? `from ${place.reference_point}` : "straight-line from arrival center"}
                             </p>
 
                             {index > 0 && (
                                 place.travel_from_previous_km != null && place.travel_from_previous_km > 0.05 ? (
                                     <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#475569" }}>
-                                        <strong>{place.travel_from_previous_km.toFixed(1)} km</strong> ({travelDurationStr}) from previous stop
+                                        <strong>{place.travel_from_previous_km.toFixed(1)} km</strong> ({travelDurationStr}) from {places[index - 1]?.name || "previous stop"}
                                     </p>
                                 ) : (
                                     <p style={{ margin: "4px 0", fontSize: "0.8rem", color: "#94a3b8" }}>
-                                        Distance from previous stop: N/A
+                                        Distance from {places[index - 1]?.name || "previous stop"}: N/A
                                     </p>
                                 )
                             )}
@@ -194,7 +194,7 @@ export default function DayCard({
                             Daily Dining & Rest Breaks
                         </span>
                         <span style={{ fontSize: "0.78rem", color: "#64748b" }}>
-                            Est. Dining: <strong>${Math.round(mealsAndBreaks.total_estimated_meal_cost / 80)}</strong> / person
+                            Est. Dining: <strong>₹{mealsAndBreaks.total_estimated_meal_cost.toLocaleString()}</strong> / person
                         </span>
                     </div>
 

@@ -18,6 +18,9 @@ def optimize_trip(
     - Applying user planning constraints (max daily distance, min attractions)
     """
 
+    if not isinstance(days, int) or days < 1:
+        raise ValueError(f"Trip duration 'days' must be an integer >= 1, got {days!r}")
+
     PACE_LIMITS = {
         "Relaxed": 3,
         "Balanced": 4,

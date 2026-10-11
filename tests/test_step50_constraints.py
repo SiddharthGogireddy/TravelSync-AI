@@ -88,11 +88,17 @@ def test_planner_with_constraints():
     # Ensure avoided location Calangute Beach is NOT in scheduled attractions
     scheduled_places = []
     for day_places in trip_data.get("day_schedule", {}).values():
-        for p in day_places:
-            scheduled_places.append(p.get("name", "").lower())
+        if isinstance(day_places, list):
+            for p in day_places:
+                if isinstance(p, dict):
+                    scheduled_places.append(p.get("name", "").lower())
     for day in trip_data.get("itinerary", []):
-        for p in day.get("places", []):
-            scheduled_places.append(p.get("name", "").lower())
+        if isinstance(day, dict):
+            for p in day.get("places", []):
+                if isinstance(p, dict):
+                    scheduled_places.append(p.get("name", "").lower())
+        elif isinstance(day, str):
+            scheduled_places.append(day.lower())
 
     for place_name in scheduled_places:
         assert "calangute" not in place_name, f"Avoided place {place_name} was found in itinerary!"

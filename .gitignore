@@ -22,3 +22,5 @@ Thumbs.db
 # Generated PDFs
 backend/pdfs/
 backend/data_backup/
+brain/
+scratch/

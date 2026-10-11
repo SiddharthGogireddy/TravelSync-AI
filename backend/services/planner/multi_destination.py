@@ -310,6 +310,7 @@ async def build_multi_destination_trip(request) -> dict:
         route={"routes": [{"geometry": {"coordinates": [[stops_info[0]["location"]["lon"], stops_info[0]["location"]["lat"]], [stops_info[-1]["location"]["lon"], stops_info[-1]["location"]["lat"]]]}}]},
         destination_places=all_places,
         travel_mode=travel_mode,
+        day_schedule=day_schedule,
     )
 
     from backend.services.planner.transport_recommendation_engine import generate_transport_recommendations

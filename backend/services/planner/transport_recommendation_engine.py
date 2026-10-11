@@ -282,6 +282,7 @@ def switch_trip_transport(
     route = trip_data.get("route", {})
     dist_km = route.get("distance_km", 200.0)
     dur_hours = route.get("duration_hours", 4.0)
+    party_size = max(1, len(trip_data.get("travelers", [])) if trip_data.get("travelers") else 1)
 
     # 1. Rebuild transport plan
     new_transport_summary = build_transport_plan(
@@ -294,30 +295,44 @@ def switch_trip_transport(
     trip_data["transport"] = new_transport_summary
     trip_data["travel_mode"] = new_mode
 
-    # 2. Recalculate trip budget with new transport mode
+    # 2. Compute realistic transport expense for this mode, party size, and distance
+    mode_metrics = estimate_mode_metrics(
+        mode=new_mode,
+        distance_km=dist_km,
+        party_size=party_size,
+    )
+    mode_cost_inr = mode_metrics.get("total_cost_inr")
+
+    # 3. Recalculate trip budget with new transport cost and synchronized categories
     try:
         travelers = trip_data.get("travelers", [])
         days = trip_data.get("days", 3)
         hotels = trip_data.get("hotels", [])
         places = trip_data.get("places", [])
+        day_sched = trip_data.get("day_schedule", {})
+        sched_count = sum(len(p) for p in day_sched.values() if isinstance(p, list)) if day_sched else None
+        existing_budget = trip_data.get("budget", {})
+        existing_total_budget = existing_budget.get("total_budget")
+
         updated_budget = calculate_budget(
             travelers=travelers,
             days=days,
             travel_mode=new_mode,
             hotels=hotels,
             places=places,
+            scheduled_activity_count=sched_count,
+            total_budget=existing_total_budget,
+            custom_transport_cost=mode_cost_inr,
         )
         trip_data["budget"] = updated_budget
     except Exception:
         pass
 
-    # 3. Update dashboard transit metrics
-    if "dashboard" in trip_data:
-        trip_data["dashboard"]["travel_mode"] = new_mode
-        trip_data["dashboard"]["duration"] = new_transport_summary["duration_hours"]
+    # 4. Synchronize dashboard with updated budget and transit metrics
+    from backend.services.planner.dashboard import build_dashboard
+    trip_data["dashboard"] = build_dashboard(trip_data)
 
-    # 4. Refresh recommendation status
-    party_size = len(trip_data.get("travelers", [{}])) or 1
+    # 5. Refresh recommendation status
     recs = generate_transport_recommendations(
         source=source,
         destination=destination,
@@ -332,7 +347,12 @@ def switch_trip_transport(
         "previous_mode": recs.get("current_mode"),
         "new_mode": new_mode,
         "new_duration_hours": new_transport_summary["duration_hours"],
-        "summary": f"Transport switched to {new_mode.upper()} ({new_transport_summary['duration_hours']} hrs transit).",
+        "new_transport_cost": mode_cost_inr,
+        "new_estimated_cost": trip_data.get("budget", {}).get("estimated_cost"),
+        "summary": (
+            f"Transport switched to {new_mode.upper()} ({new_transport_summary['duration_hours']} hrs transit). "
+            f"Transport expense updated to INR {mode_cost_inr}, total estimated cost: INR {trip_data.get('budget', {}).get('estimated_cost')}."
+        ),
     }
 
     return trip_data, audit

@@ -1,6 +1,5 @@
 import type { ExpenseResponse } from "../types/expense";
-
-const API = "http://127.0.0.1:8000";
+import { API } from "./api";
 
 export async function getExpenses(
     tripId: string

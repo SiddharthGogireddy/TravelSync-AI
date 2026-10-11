@@ -3,7 +3,8 @@ import type { TripResponse } from "../types/api";
 
 // Base API URL for the frontend service layer.
 // Falls back to a local development server if no Vite env URL is configured.
-const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const API = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+export const API_BASE = API;
 
 export async function generateTrip(
     data: TripRequest
@@ -511,14 +512,15 @@ export async function replanActiveDay(
 export async function addRouteStop(
   tripId: string,
   day: number,
-  routeStop: any
+  routeStop: any,
+  allowRepeat: boolean = false
 ): Promise<{ success: boolean; trip: any; audit: any }> {
   const res = await fetch(`${API}/trip/${tripId}/add-route-stop`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ day, route_stop: routeStop }),
+    body: JSON.stringify({ day, route_stop: routeStop, allow_repeat: allowRepeat }),
   });
 
   if (!res.ok) {
@@ -626,6 +628,8 @@ export async function sendAssistantChatMessage(
   topic: string;
   suggested_actions: string[];
   trip_highlights: any;
+  trip?: any;
+  audit?: any;
 }> {
   const res = await fetch(`${API}/trip/${tripId}/assistant-chat`, {
     method: "POST",
