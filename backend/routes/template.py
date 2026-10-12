@@ -69,15 +69,24 @@ def get_template_details(template_id: str):
     return template
 
 
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
+from fastapi import Header, Query
+
+
 @router.post("/from-trip/{trip_id}")
 def create_template_from_trip_endpoint(
     trip_id: str,
-    payload: CreateTemplateRequest = Body(default_factory=CreateTemplateRequest)
+    payload: CreateTemplateRequest = Body(default_factory=CreateTemplateRequest),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
     """
     Convert an existing saved trip into a reusable template.
     Validates trip existence and extracts planning information.
+    Enforces viewer access to the source trip.
     """
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
     try:
         template = save_template_from_trip(
             trip_id=trip_id,
@@ -101,12 +110,16 @@ def create_template_from_trip_endpoint(
 @router.post("/{template_id}/create-trip")
 def instantiate_trip_from_template(
     template_id: str,
-    payload: CreateTripFromTemplateRequest = Body(default_factory=CreateTripFromTemplateRequest)
+    payload: CreateTripFromTemplateRequest = Body(default_factory=CreateTripFromTemplateRequest),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
     """
     Create a new trip from an existing template.
     Guarantees the original trip and template remain completely unmodified.
+    Assigns ownership to the requesting user.
     """
+    uid = extract_user_id(None, x_user_id, user_id)
     try:
         overrides = {}
         if payload.source is not None:
@@ -118,7 +131,8 @@ def instantiate_trip_from_template(
 
         new_trip_id, _ = create_trip_from_template(
             template_id=template_id,
-            overrides=overrides
+            overrides=overrides,
+            owner_id=uid,
         )
 
         template = get_template(template_id)

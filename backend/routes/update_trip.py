@@ -1,11 +1,11 @@
 import logging
-from fastapi import APIRouter, HTTPException
-from typing import Optional, List, Dict, Any
+from fastapi import APIRouter, HTTPException, Query, Header
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel
 
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
+
 logger = logging.getLogger(__name__)
-
-
 
 from backend.models.trip_update import (
     TripUpdateRequest,
@@ -39,6 +39,8 @@ from backend.services.planner.budget_replanner import (
 from backend.services.planner.day_regenerator import (
     regenerate_day,
 )
+from backend.services.planner.distance import haversine
+from backend.services.planner.opening_hours_scheduler import schedule_day_opening_hours
 
 router = APIRouter(
     prefix="/trip",
@@ -46,19 +48,51 @@ router = APIRouter(
 )
 
 
+def recalculate_day_transit_and_legs(day_places: list, mode_str: str = "car"):
+    for idx, p in enumerate(day_places):
+        if idx == 0:
+            p["travel_from_previous_km"] = None
+            p["travel_time_minutes"] = 0
+            continue
+        prev = day_places[idx - 1]
+        lat1, lon1 = prev.get("lat"), prev.get("lon")
+        lat2, lon2 = p.get("lat"), p.get("lon")
+        if (
+            lat1 is not None and lon1 is not None
+            and lat2 is not None and lon2 is not None
+            and (lat1 != 0 or lon1 != 0) and (lat2 != 0 or lon2 != 0)
+        ):
+            d = round(haversine(lat1, lon1, lat2, lon2), 2)
+            if d > 0.05:
+                p["travel_from_previous_km"] = d
+                p["travel_time_minutes"] = max(5, int(round((d / 30.0) * 60.0)))
+            else:
+                p["travel_from_previous_km"] = None
+                p["travel_time_minutes"] = 10
+        else:
+            p["travel_from_previous_km"] = None
+            p["travel_time_minutes"] = 15
+    try:
+        updated, _ = schedule_day_opening_hours(day_places, travel_mode=mode_str)
+        return updated
+    except Exception:
+        return day_places
 
 
 @router.patch("/{trip_id}")
 async def update_trip(
     trip_id: str,
     update: TripUpdateRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
 
     # --------------------------------
-    # Load trip
+    # Load trip & verify editor access
     # --------------------------------
-
-    trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    trip = trip_record.get("data")
 
     if trip is None:
         raise HTTPException(
@@ -450,8 +484,12 @@ class RealtimeReplanRequest(BaseModel):
 async def replan_day_endpoint(
     trip_id: str,
     request: RealtimeReplanRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -490,8 +528,12 @@ class AddRouteStopRequest(BaseModel):
 async def add_route_stop_endpoint(
     trip_id: str,
     request: AddRouteStopRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -533,8 +575,12 @@ class SwitchTransportRequest(BaseModel):
 async def switch_transport_endpoint(
     trip_id: str,
     request: SwitchTransportRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -572,8 +618,12 @@ class ReallocateBudgetRequest(BaseModel):
 async def reallocate_budget_endpoint(
     trip_id: str,
     request: ReallocateBudgetRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -613,8 +663,12 @@ class GroupVoteRequest(BaseModel):
 async def group_vote_endpoint(
     trip_id: str,
     request: GroupVoteRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -646,8 +700,12 @@ async def group_vote_endpoint(
 @router.post("/{trip_id}/resolve-group-conflicts")
 async def resolve_group_conflicts_endpoint(
     trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -683,8 +741,12 @@ class AssistantChatRequest(BaseModel):
 async def assistant_chat_endpoint(
     trip_id: str,
     request: AssistantChatRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, user_role = verify_trip_access(trip_id, uid, required_role="viewer")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -696,23 +758,30 @@ async def assistant_chat_endpoint(
     )
 
     mutation = result.get("mutation_action")
+    # Only allow mutation to modify the saved trip if user is editor or owner
     if mutation and mutation.get("applied") and mutation.get("updated_trip"):
-        inner_trip = mutation["updated_trip"]
+        if user_role in ("editor", "owner"):
+            inner_trip = mutation["updated_trip"]
+        else:
+            mutation["applied"] = False
+            mutation["error"] = "Viewers cannot apply trip mutations"
 
-    # Store message in history if exists
-    history = inner_trip.get("assistant_history", [])
-    history.append({"role": "user", "text": request.message})
-    history.append({"role": "assistant", "text": result["reply"]})
-    inner_trip["assistant_history"] = history[-20:]  # Keep latest 20
+    # Store message in history if exists (only for editors/owners or keep in-memory for session)
+    if user_role in ("editor", "owner"):
+        history = inner_trip.get("assistant_history", [])
+        history.append({"role": "user", "text": request.message})
+        history.append({"role": "assistant", "text": result["reply"]})
+        inner_trip["assistant_history"] = history[-20:]  # Keep latest 20
 
-    if "trip" in raw_trip:
-        raw_trip["trip"] = inner_trip
-        if "dashboard" in inner_trip:
-            raw_trip["dashboard"] = inner_trip["dashboard"]
-    else:
-        raw_trip = inner_trip
+        if "trip" in raw_trip:
+            raw_trip["trip"] = inner_trip
+            if "dashboard" in inner_trip:
+                raw_trip["dashboard"] = inner_trip["dashboard"]
+        else:
+            raw_trip = inner_trip
 
-    update_saved_trip(trip_id, raw_trip)
+        update_saved_trip(trip_id, raw_trip)
+
     return {
         "success": True,
         "reply": result["reply"],
@@ -727,8 +796,12 @@ async def assistant_chat_endpoint(
 @router.get("/{trip_id}/optimization-score")
 async def get_optimization_score_endpoint(
     trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -753,8 +826,12 @@ async def get_optimization_score_endpoint(
 @router.post("/{trip_id}/optimize-trip")
 async def optimize_trip_endpoint(
     trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    raw_trip = load_trip(trip_id)
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
     if not raw_trip:
         raise HTTPException(status_code=404, detail="Trip not found")
 
@@ -779,3 +856,325 @@ async def optimize_trip_endpoint(
         "trip": updated_inner,
         "audit": audit,
     }
+
+
+class AttractionActionRequest(BaseModel):
+    day: str
+    attraction_name: str
+    action: Literal["remove", "replace"]
+    replacement_place: Optional[Dict[str, Any]] = None
+
+
+@router.get("/{trip_id}/attraction-alternatives")
+async def get_attraction_alternatives(
+    trip_id: str,
+    day: str = Query(..., description="Day number/key to find alternatives for"),
+    attraction_name: str = Query(..., description="Name of attraction to replace or remove"),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    raw_trip = trip_record.get("data")
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    day_schedule = inner_trip.get("day_schedule", {})
+
+    # Determine destination context and coordinates for this day
+    dest_name = inner_trip.get("destination", "Destination")
+    dest_lat = None
+    dest_lon = None
+
+    # Check multi-destination stops
+    destinations = inner_trip.get("destinations", [])
+    if destinations:
+        try:
+            day_num = int(day)
+            for stop in destinations:
+                if stop.get("start_day", 1) <= day_num <= stop.get("end_day", 1):
+                    dest_name = stop.get("name", dest_name)
+                    loc = stop.get("location") or {}
+                    dest_lat = loc.get("lat")
+                    dest_lon = loc.get("lon")
+                    break
+        except (ValueError, TypeError):
+            pass
+
+    if dest_lat is None or dest_lon is None:
+        dest_loc = inner_trip.get("destination_location") or {}
+        dest_lat = dest_loc.get("lat")
+        dest_lon = dest_loc.get("lon")
+
+    # If still not found, check existing places in the day
+    if dest_lat is None or dest_lon is None:
+        for p in day_schedule.get(str(day), []):
+            if p.get("lat") is not None and p.get("lon") is not None:
+                dest_lat = p.get("lat")
+                dest_lon = p.get("lon")
+                break
+
+    # Gather all places already present in the trip schedule
+    scheduled_names = set()
+    for d_key, places_list in day_schedule.items():
+        for p in places_list:
+            p_name = p.get("name")
+            if p_name:
+                scheduled_names.add(normalize_place_name(p_name))
+
+    excluded_names = {
+        normalize_place_name(x) for x in inner_trip.get("excluded_places", []) if x
+    }
+    target_norm = normalize_place_name(attraction_name)
+    scheduled_names.add(target_norm)
+
+    alternatives = []
+    seen_names = set()
+
+    # 1. First look in inner_trip's candidate places
+    for p in inner_trip.get("places", []):
+        p_name = p.get("name")
+        if not p_name:
+            continue
+        p_norm = normalize_place_name(p_name)
+        if p_norm in scheduled_names or p_norm in excluded_names or p_norm in seen_names:
+            continue
+
+        seen_names.add(p_norm)
+        category = p.get("category") or "Attraction"
+        alternatives.append({
+            "name": p_name,
+            "category": category,
+            "description": p.get("description") or p.get("explanation") or f"Popular {category.lower()} in {dest_name}.",
+            "score": p.get("score", 0),
+            "lat": p.get("lat"),
+            "lon": p.get("lon"),
+            "distance_km": p.get("distance_km", 0),
+            "estimated_cost": p.get("estimated_cost", 0),
+        })
+
+    # 2. If pool is small and coordinates exist, fetch external places
+    if len(alternatives) < 8 and dest_lat is not None and dest_lon is not None:
+        try:
+            from backend.services.external.place_service import get_places
+            external_places = await get_places(float(dest_lat), float(dest_lon))
+            for ep in external_places:
+                ep_name = ep.get("name")
+                if not ep_name:
+                    continue
+                ep_norm = normalize_place_name(ep_name)
+                if ep_norm in scheduled_names or ep_norm in excluded_names or ep_norm in seen_names:
+                    continue
+
+                seen_names.add(ep_norm)
+                raw_kinds = ep.get("kinds", "")
+                cat = raw_kinds.split(",")[0].replace("_", " ").title() if raw_kinds else "Attraction"
+                point = ep.get("point") or {}
+                alternatives.append({
+                    "name": ep_name,
+                    "category": cat,
+                    "description": f"Verified {cat.lower()} located in {dest_name}.",
+                    "score": round(ep.get("rate", 3.5), 1),
+                    "lat": point.get("lat", dest_lat),
+                    "lon": point.get("lon", dest_lon),
+                    "distance_km": round(ep.get("dist", 0) / 1000, 2),
+                    "estimated_cost": 0,
+                })
+                if len(alternatives) >= 15:
+                    break
+        except Exception as e:
+            logger.warning(f"Failed to fetch external place alternatives: {e}")
+
+    # Sort alternatives by score descending
+    alternatives.sort(key=lambda x: x.get("score", 0), reverse=True)
+
+    return {
+        "success": True,
+        "destination": dest_name,
+        "day": str(day),
+        "attraction_name": attraction_name,
+        "alternatives": alternatives,
+        "total_available": len(alternatives),
+    }
+
+
+@router.post("/{trip_id}/attraction-action")
+async def execute_attraction_action_endpoint(
+    trip_id: str,
+    request: AttractionActionRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
+    raw_trip = trip_record.get("data")
+    if not raw_trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    inner_trip = raw_trip.get("trip", raw_trip)
+    day_schedule = inner_trip.get("day_schedule", {})
+    day_key = str(request.day)
+
+    if day_key not in day_schedule:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Day {day_key} not found in trip itinerary",
+        )
+
+    day_places = day_schedule[day_key]
+    target_norm = normalize_place_name(request.attraction_name)
+
+    # Locate the target attraction in day_places
+    match_idx = None
+    for idx, p in enumerate(day_places):
+        p_name = p.get("name", "")
+        if normalize_place_name(p_name) == target_norm:
+            match_idx = idx
+            break
+
+    if match_idx is None:
+        for idx, p in enumerate(day_places):
+            p_name = p.get("name", "").lower()
+            if target_norm in p_name or p_name in target_norm:
+                match_idx = idx
+                break
+
+    if match_idx is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Attraction '{request.attraction_name}' not found on Day {day_key}",
+        )
+
+    travel_mode = inner_trip.get("travel_mode", "car")
+
+    if request.action == "remove":
+        removed_place = day_places.pop(match_idx)
+        removed_name = removed_place.get("name", request.attraction_name)
+        inner_trip.setdefault("excluded_places", []).append(removed_name)
+        inner_trip["places"] = [
+            p for p in inner_trip.get("places", [])
+            if normalize_place_name(p.get("name", "")) != target_norm
+        ]
+        # Recalculate schedule timings, legs, distances for the affected day
+        day_schedule[day_key] = recalculate_day_transit_and_legs(day_places, travel_mode)
+
+    elif request.action == "replace":
+        if not request.replacement_place or not request.replacement_place.get("name"):
+            raise HTTPException(
+                status_code=400,
+                detail="A valid replacement_place object with a name is required for replace action.",
+            )
+
+        replacement = dict(request.replacement_place)
+        rep_name = replacement.get("name", "").strip()
+        norm_rep = normalize_place_name(rep_name)
+
+        if not rep_name:
+            raise HTTPException(status_code=400, detail="Replacement attraction name cannot be empty.")
+
+        # Ensure replacement is not already scheduled in any day of the itinerary
+        for d_k, d_pls in day_schedule.items():
+            for p in d_pls:
+                if normalize_place_name(p.get("name", "")) == norm_rep:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Attraction '{rep_name}' is already scheduled on Day {d_k}.",
+                    )
+
+        removed_place = day_places[match_idx]
+        removed_name = removed_place.get("name", request.attraction_name)
+
+        # Attach explanation if missing
+        if not replacement.get("explanation"):
+            try:
+                replacement["explanation"] = explain_attraction(replacement, inner_trip)
+            except Exception:
+                pass
+
+        # In-place slot replacement to preserve ordering
+        day_places[match_idx] = replacement
+        inner_trip.setdefault("excluded_places", []).append(removed_name)
+
+        # Update candidate places list
+        inner_trip["places"] = [
+            p for p in inner_trip.get("places", [])
+            if normalize_place_name(p.get("name", "")) != target_norm
+        ]
+        if not any(normalize_place_name(p.get("name", "")) == norm_rep for p in inner_trip.get("places", [])):
+            inner_trip.setdefault("places", []).append(replacement)
+
+        # Recalculate schedule timings, legs, distances for the affected day
+        day_schedule[day_key] = recalculate_day_transit_and_legs(day_places, travel_mode)
+
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported action '{request.action}'. Must be 'remove' or 'replace'.",
+        )
+
+    # Recalculate overall budget
+    from backend.services.planner.budget_tracker import calculate_budget
+    scheduled_activity_count = sum(len(pls) for pls in day_schedule.values())
+    existing_budget = inner_trip.get("budget") or {}
+    prior_budget = existing_budget.get("total_budget") or existing_budget.get("total") or 0
+    inner_trip["budget"] = calculate_budget(
+        inner_trip.get("travelers", []),
+        inner_trip.get("days", len(day_schedule)),
+        inner_trip.get("travel_mode", "car"),
+        inner_trip.get("hotels", []),
+        inner_trip.get("places", []),
+        scheduled_activity_count=scheduled_activity_count,
+        total_budget=prior_budget,
+    )
+
+    # Recalculate dashboard & summary
+    from backend.services.planner.dashboard import build_dashboard
+    from backend.services.planner.trip_summary import build_summary
+    inner_trip["dashboard"] = build_dashboard(inner_trip)
+    inner_trip["summary"] = build_summary(inner_trip)
+
+    # Recalculate optimization score
+    try:
+        from backend.services.planner.ai_trip_optimizer import calculate_trip_optimization_score
+        inner_trip["optimization_score"] = calculate_trip_optimization_score(inner_trip)
+    except Exception as e:
+        logger.warning(f"Could not recalculate optimization score: {e}")
+
+    # Recalculate meals and breaks if present
+    if "meals_and_breaks" in inner_trip:
+        try:
+            from backend.services.planner.meal_and_break_engine import attach_meals_and_breaks_to_itinerary
+            inner_trip["meals_and_breaks"] = attach_meals_and_breaks_to_itinerary(
+                day_schedule=inner_trip["day_schedule"],
+                travelers=inner_trip.get("travelers", []),
+                destination=inner_trip.get("destination", ""),
+            )
+        except Exception as e:
+            logger.warning(f"Could not recalculate meals and breaks: {e}")
+
+    # Prepare and persist updated trip
+    if "trip" in raw_trip:
+        raw_trip["trip"] = inner_trip
+        if "dashboard" in inner_trip:
+            raw_trip["dashboard"] = inner_trip["dashboard"]
+        if "summary" in inner_trip:
+            raw_trip["summary"] = inner_trip["summary"]
+    else:
+        raw_trip = inner_trip
+
+    try:
+        update_saved_trip(trip_id, raw_trip)
+    except Exception as e:
+        logger.error(f"Failed to persist trip updates for {trip_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to persist itinerary updates: {str(e)}",
+        )
+
+    return {
+        "success": True,
+        "trip": inner_trip,
+        "message": f"Attraction '{request.attraction_name}' successfully {'removed' if request.action == 'remove' else 'replaced'} on Day {day_key}.",
+    }
+

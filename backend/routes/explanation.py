@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Header, Query
 from pydantic import BaseModel
 
 from backend.routes import trip
 from backend.services.storage.trip_store import load_trip
 from backend.services.trip_editor.explanation_service import explain_attraction
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
 from backend.utils.helpers import normalize_place_name
 
 router = APIRouter()
@@ -14,13 +16,19 @@ class ExplanationRequest(BaseModel):
 
 
 @router.post("/{trip_id}")
-def explain_place(trip_id: str, request: ExplanationRequest):
-
-    trip = load_trip(trip_id)
-    trip_data = trip["trip"]
-    
+def explain_place(
+    trip_id: str,
+    request: ExplanationRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip = trip_record.get("data")
     if not trip:
         raise HTTPException(status_code=404, detail="Trip not found")
+
+    trip_data = trip.get("trip", trip) if isinstance(trip, dict) else {}
 
     place = None
 

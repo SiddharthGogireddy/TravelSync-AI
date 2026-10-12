@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Header, Query
 from fastapi.responses import FileResponse
 import os
+from typing import Optional
 from backend.services.storage.trip_store import load_trip
 from backend.services.pdf.pdf_generator import generate_pdf
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
 
 router = APIRouter(
     prefix="/trip",
@@ -11,10 +13,14 @@ router = APIRouter(
 
 
 @router.get("/{trip_id}/pdf")
-def download_pdf(trip_id: str):
-    trip = load_trip(trip_id)
-
-    
+def download_pdf(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip = trip_record.get("data")
 
     if trip is None:
         raise HTTPException(

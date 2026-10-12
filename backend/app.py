@@ -7,6 +7,10 @@ from backend.routes.planner import router as planner_router
 from backend.routes.trip import router as trip_router
 from backend.routes.template import router as template_router
 from backend.routes.pdf import router as pdf_router
+from backend.routes.place import router as place_router
+from backend.routes.currency import router as currency_router
+from backend.routes.weather import router as weather_router
+from backend.routes.invitation import router as invitation_router
 from backend.routes.update_trip import (
     router as update_trip_router,
 )
@@ -17,10 +21,14 @@ app = FastAPI(title="TravelSync AI")
 
 app.include_router(planner_router)
 app.include_router(trip_router)
+app.include_router(invitation_router)
 app.include_router(template_router)
 app.include_router(ai_router)
 app.include_router(expense_router)
 app.include_router(pdf_router)
+app.include_router(place_router)
+app.include_router(currency_router)
+app.include_router(weather_router)
 
 app.add_middleware(
     CORSMiddleware,

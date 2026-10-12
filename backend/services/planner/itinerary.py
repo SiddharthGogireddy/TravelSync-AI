@@ -35,10 +35,11 @@ from backend.services.planner.weather_planner import (
 
 from backend.services.storage.trip_store import save_trip
 
-async def build_trip(request):
+async def build_trip(request, owner_id=None):
+    resolved_owner = owner_id or getattr(request, "user_id", None)
     if getattr(request, "destinations", None) and len(request.destinations) > 1:
         from backend.services.planner.multi_destination import build_multi_destination_trip
-        return await build_multi_destination_trip(request)
+        return await build_multi_destination_trip(request, owner_id=resolved_owner)
 
     source = request.source
     destination = request.destination
@@ -423,6 +424,8 @@ async def build_trip(request):
         "source": source,
         "destination": destination,
         "days": days,
+        "start_date": getattr(request, "start_date", None) or "",
+        "end_date": getattr(request, "end_date", None) or "",
         
         "travelers": traveler_profiles,
         "traveler_conflicts": traveler_conflicts,
@@ -518,7 +521,8 @@ async def build_trip(request):
             "trip": trip_data,
             "dashboard": trip_data["dashboard"],
             "summary": trip_data["summary"],
-        }
+        },
+        owner_id=resolved_owner,
     )
 
 

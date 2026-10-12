@@ -1,5 +1,6 @@
 import type { TripRequest } from "../types/trip";
 import type { TripResponse } from "../types/api";
+import { getAuthHeaders } from "./identity";
 
 // Base API URL for the frontend service layer.
 // Falls back to a local development server if no Vite env URL is configured.
@@ -13,6 +14,7 @@ export async function generateTrip(
         method: "POST",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify(data),
     });
@@ -31,6 +33,7 @@ export async function updateTrip(
         method: "PATCH",
         headers: {
             "Content-Type": "application/json",
+            ...getAuthHeaders(),
         },
         body: JSON.stringify({
             prompt,
@@ -49,7 +52,11 @@ export async function updateTrip(
 export async function getTrip(
     tripId: string
 ): Promise<TripResponse> {
-    const res = await fetch(`${API}/trip/${tripId}`);
+    const res = await fetch(`${API}/trip/${tripId}`, {
+        headers: {
+            ...getAuthHeaders(),
+        },
+    });
 
     if (!res.ok) {
         const error = await res.text();
@@ -247,6 +254,15 @@ export function exportTrip(tripId: string): void {
     `${API}/trip/${tripId}/export`,
     "_blank"
   );
+}
+
+export function exportTripCalendar(tripId: string): void {
+  const link = document.createElement("a");
+  link.href = `${API}/trip/${tripId}/export/calendar.ics`;
+  link.setAttribute("download", "");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 export async function importTrip(
@@ -681,3 +697,252 @@ export async function optimizeTrip(
 
   return await res.json();
 }
+
+export interface AlternativeAttraction {
+  name: string;
+  category: string;
+  description: string;
+  score?: number;
+  lat?: number;
+  lon?: number;
+  distance_km?: number;
+  estimated_cost?: number;
+}
+
+export interface AttractionAlternativesResponse {
+  success: boolean;
+  destination: string;
+  day: string;
+  attraction_name: string;
+  alternatives: AlternativeAttraction[];
+  total_available: number;
+}
+
+export async function getAttractionAlternatives(
+  tripId: string,
+  day: string,
+  attractionName: string
+): Promise<AttractionAlternativesResponse> {
+  const url = `${API}/trip/${tripId}/attraction-alternatives?day=${encodeURIComponent(day)}&attraction_name=${encodeURIComponent(attractionName)}`;
+  const res = await fetch(url, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to load alternative attractions");
+  }
+
+  return await res.json();
+}
+
+export async function executeAttractionAction(
+  tripId: string,
+  day: string,
+  attractionName: string,
+  action: "remove" | "replace",
+  replacementPlace?: Partial<AlternativeAttraction> | Record<string, any>
+): Promise<{ success: boolean; trip: any; message: string }> {
+  const res = await fetch(`${API}/trip/${tripId}/attraction-action`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      day,
+      attraction_name: attractionName,
+      action,
+      replacement_place: replacementPlace || null,
+    }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || `Failed to ${action} attraction`);
+  }
+
+  return await res.json();
+}
+
+export interface PlaceDetail {
+  name: string;
+  place_type: string; // "attraction" | "hotel" | "dining" | "place"
+  category?: string;
+  description?: string;
+  image_url?: string | null;
+  image_source?: string | null;
+  address?: string | null;
+  lat?: number | null;
+  lon?: number | null;
+  map_url?: string | null;
+  provider_rating?: number | null;
+  provider_rating_source?: string | null;
+  provider_reviews_count?: number | null;
+  travelsync_match_score?: number | null;
+  opening_hours?: {
+    opens?: string;
+    closes?: string;
+    display?: string;
+    closed_days?: string[];
+    visit_duration_minutes?: number;
+  } | null;
+  estimated_visit_duration?: string | null;
+  entry_fee?: string | null;
+  best_time_to_visit?: string | null;
+  website_url?: string | null;
+  accessibility?: string | null;
+  star_rating?: string | null;
+  price_per_night?: string | null;
+  amenities?: string[] | null;
+  check_in_time?: string | null;
+  check_out_time?: string | null;
+  booking_url?: string | null;
+  note?: string | null;
+}
+
+export async function getPlaceDetails(
+  name: string,
+  placeType: string = "attraction",
+  category?: string,
+  lat?: number,
+  lon?: number
+): Promise<{ success: boolean; details: PlaceDetail }> {
+  const params = new URLSearchParams({
+    name,
+    place_type: placeType,
+  });
+  if (category) params.append("category", category);
+  if (lat != null && !isNaN(lat)) params.append("lat", String(lat));
+  if (lon != null && !isNaN(lon)) params.append("lon", String(lon));
+
+  const res = await fetch(`${API}/places/details?${params.toString()}`, {
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to load place details");
+  }
+
+  return await res.json();
+}
+
+export interface TripInvitation {
+  invitation_id: string;
+  trip_id?: string;
+  token?: string;
+  role: "viewer" | "editor";
+  created_at: string;
+  expires_at: string;
+  status: "pending" | "accepted" | "declined" | "revoked" | "expired";
+  accepted_by?: string | null;
+  accepted_at?: string | null;
+}
+
+export interface InvitationPreview {
+  valid: boolean;
+  status: string;
+  role: "viewer" | "editor";
+  trip_id: string;
+  destination: string;
+  source: string;
+  days: number;
+  expires_at: string;
+}
+
+export async function createTripInvitation(
+  tripId: string,
+  role: "viewer" | "editor" = "viewer",
+  expiresInDays: number = 7
+): Promise<TripInvitation> {
+  const res = await fetch(`${API}/trip/${tripId}/invitations`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ role, expires_in_days: expiresInDays }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to create invitation");
+  }
+
+  return await res.json();
+}
+
+export async function getTripInvitations(tripId: string): Promise<TripInvitation[]> {
+  const res = await fetch(`${API}/trip/${tripId}/invitations`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to load invitations");
+  }
+
+  const data = await res.json();
+  return data.invitations || [];
+}
+
+export async function revokeTripInvitation(tripId: string, invitationId: string): Promise<void> {
+  const res = await fetch(`${API}/trip/${tripId}/invitations/${invitationId}`, {
+    method: "DELETE",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to revoke invitation");
+  }
+}
+
+export async function previewInvitation(token: string): Promise<InvitationPreview> {
+  const res = await fetch(`${API}/invitations/${token}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Invalid or expired invitation");
+  }
+  return await res.json();
+}
+
+export async function acceptInvitation(token: string): Promise<{ status: string; trip_id: string; role: string }> {
+  const res = await fetch(`${API}/invitations/${token}/accept`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to accept invitation");
+  }
+  return await res.json();
+}
+
+export async function declineInvitation(token: string): Promise<{ status: string }> {
+  const res = await fetch(`${API}/invitations/${token}/decline`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to decline invitation");
+  }
+  return await res.json();
+}
+
+

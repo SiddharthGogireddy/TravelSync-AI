@@ -18,7 +18,8 @@ from backend.services.planner.best_time_suggester import suggest_best_days, sugg
 from backend.services.storage.trip_store import save_trip
 
 
-async def build_multi_destination_trip(request) -> dict:
+async def build_multi_destination_trip(request, owner_id=None) -> dict:
+    resolved_owner = owner_id or getattr(request, "user_id", None)
     """
     Generates a coordinated itinerary across multiple destination stops.
     Example: Hyderabad -> Bengaluru -> Mysuru -> Goa
@@ -276,6 +277,8 @@ async def build_multi_destination_trip(request) -> dict:
         "source": source,
         "destination": composite_destination,
         "days": total_days,
+        "start_date": getattr(request, "start_date", None) or "",
+        "end_date": getattr(request, "end_date", None) or "",
         "destinations": stops_info,
         "inter_destination_travel": inter_destination_travel,
         "travelers": traveler_profiles,
@@ -346,11 +349,14 @@ async def build_multi_destination_trip(request) -> dict:
     trip_data["summary"]["destinations_count"] = len(stops_info)
 
     # 9. Save trip
-    trip_id = save_trip({
-        "trip": trip_data,
-        "dashboard": trip_data["dashboard"],
-        "summary": trip_data["summary"],
-    })
+    trip_id = save_trip(
+        {
+            "trip": trip_data,
+            "dashboard": trip_data["dashboard"],
+            "summary": trip_data["summary"],
+        },
+        owner_id=resolved_owner,
+    )
 
     return {
         "trip_id": trip_id,

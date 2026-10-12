@@ -10,6 +10,9 @@ interface Props {
     onSelect: (place: Place) => void;
     onRegenerate?: (day: string) => void;
     onReplanDay?: (day: string) => void;
+    onRemoveAttraction?: (day: string, place: Place) => void;
+    onReplaceAttraction?: (day: string, place: Place) => void;
+    onShowPlaceInfo?: (place: any) => void;
 }
 
 
@@ -47,6 +50,9 @@ export default function DayCard({
     TravelMode,
     mealsAndBreaks,
     onReplanDay,
+    onRemoveAttraction,
+    onReplaceAttraction,
+    onShowPlaceInfo,
 }: Props) {
 
 
@@ -111,7 +117,40 @@ export default function DayCard({
 
                         <div className="attraction-content">
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
-                                <h4 style={{ margin: 0 }}>{place.name}</h4>
+                                <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                                    <h4 style={{ margin: 0 }}>{place.name}</h4>
+                                    {onShowPlaceInfo && (
+                                        <button
+                                            type="button"
+                                            className="place-info-btn"
+                                            aria-label={`View details for ${place.name}`}
+                                            title={`View details for ${place.name}`}
+                                            style={{
+                                                background: "#e0e7ff",
+                                                border: "1px solid #c7d2fe",
+                                                color: "#4338ca",
+                                                borderRadius: "50%",
+                                                width: 22,
+                                                height: 22,
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "0.78rem",
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                                padding: 0,
+                                                lineHeight: 1,
+                                                flexShrink: 0,
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onShowPlaceInfo(place);
+                                            }}
+                                        >
+                                            ⓘ
+                                        </button>
+                                    )}
+                                </div>
                                 {place.timing_status && (
                                     <span
                                         style={{
@@ -173,10 +212,121 @@ export default function DayCard({
                                     )}
                                 </div>
                             )}
+
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "8px",
+                                    marginTop: "10px",
+                                    paddingTop: "6px",
+                                    borderTop: "1px dashed #e2e8f0",
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                {onShowPlaceInfo && (
+                                    <button
+                                        type="button"
+                                        className="attraction-details-btn"
+                                        aria-label={`View details for ${place.name}`}
+                                        title={`View details for ${place.name}`}
+                                        style={{
+                                            fontSize: "0.76rem",
+                                            padding: "4px 10px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #cbd5e1",
+                                            background: "#f8fafc",
+                                            color: "#1e293b",
+                                            cursor: "pointer",
+                                            fontWeight: 600,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            transition: "background 0.15s ease",
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onShowPlaceInfo(place);
+                                        }}
+                                    >
+                                        <span>ⓘ</span> Details
+                                    </button>
+                                )}
+                                {onReplaceAttraction && (
+                                    <button
+                                        type="button"
+                                        className="attraction-replace-btn"
+                                        style={{
+                                            fontSize: "0.76rem",
+                                            padding: "4px 10px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #c7d2fe",
+                                            background: "#eef2ff",
+                                            color: "#4338ca",
+                                            cursor: "pointer",
+                                            fontWeight: 600,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            transition: "background 0.15s ease",
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onReplaceAttraction(day, place);
+                                        }}
+                                        title={`Replace ${place.name} with another attraction`}
+                                    >
+                                        <span>🔄</span> Replace
+                                    </button>
+                                )}
+                                {onRemoveAttraction && (
+                                    <button
+                                        type="button"
+                                        className="attraction-remove-btn"
+                                        style={{
+                                            fontSize: "0.76rem",
+                                            padding: "4px 10px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #fecaca",
+                                            background: "#fef2f2",
+                                            color: "#b91c1c",
+                                            cursor: "pointer",
+                                            fontWeight: 600,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            transition: "background 0.15s ease",
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onRemoveAttraction(day, place);
+                                        }}
+                                        title={`Remove ${place.name} from itinerary`}
+                                    >
+                                        <span>🗑️</span> Remove
+                                    </button>
+                                )}
+                            </div>
                         </div>
                     </div>
                 );
             })}
+
+            {places.length === 0 && (
+                <div
+                    style={{
+                        padding: "16px",
+                        textAlign: "center",
+                        color: "#64748b",
+                        fontSize: "0.85rem",
+                        background: "#f8fafc",
+                        borderRadius: "8px",
+                        border: "1px dashed #cbd5e1",
+                        margin: "8px 0",
+                    }}
+                >
+                    No attractions scheduled for this day (slot kept empty).
+                </div>
+            )}
 
             {/* Daily Meals & Rest Breaks Section */}
             {mealsAndBreaks && (
@@ -219,8 +369,45 @@ export default function DayCard({
                                         {meal.time_slot}
                                     </span>
                                 </div>
-                                <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.88rem", marginBottom: 2 }}>
-                                    {meal.name}
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 2 }}>
+                                    <div style={{ fontWeight: 600, color: "#0f172a", fontSize: "0.88rem" }}>
+                                        {meal.name}
+                                    </div>
+                                    {onShowPlaceInfo && (
+                                        <button
+                                            type="button"
+                                            aria-label={`View details for ${meal.name}`}
+                                            title={`View details for ${meal.name}`}
+                                            style={{
+                                                background: "#ede9fe",
+                                                border: "1px solid #c4b5fd",
+                                                color: "#6d28d9",
+                                                borderRadius: "50%",
+                                                width: 20,
+                                                height: 20,
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                fontSize: "0.72rem",
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                                padding: 0,
+                                                lineHeight: 1,
+                                            }}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                onShowPlaceInfo({
+                                                    name: meal.name,
+                                                    category: meal.cuisine ? `${meal.cuisine} Cuisine` : "Dining",
+                                                    place_type: "restaurant",
+                                                    description: `${meal.meal_type} recommendation (${meal.price_tier}) near ${meal.near_location || "itinerary area"}.`,
+                                                    distance_km: meal.distance_km,
+                                                });
+                                            }}
+                                        >
+                                            ⓘ
+                                        </button>
+                                    )}
                                 </div>
                                 <div style={{ fontSize: "0.76rem", color: "#64748b", marginBottom: 4 }}>
                                     {meal.cuisine} • {meal.price_tier}

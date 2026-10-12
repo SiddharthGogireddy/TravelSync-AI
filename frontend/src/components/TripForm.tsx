@@ -1,6 +1,8 @@
 import { useState } from "react";
 import type { DestinationStop, TravelerRequest, TripRequest } from "../types/trip";
-import {useLocation} from  "react-router-dom";
+import { useLocation } from "react-router-dom";
+import TravelDatePicker from "./TravelDatePicker";
+import { calculateDaysBetween } from "../utils/dateUtils";
 const locations: Record<string, string[]> = {
     India: [
         "Bengaluru, Karnataka, India",
@@ -74,6 +76,22 @@ const [destination, setDestination] = useState<string>(
     const [days, setDays] = useState(
     previousTrip?.days ?? 3
 );
+    const [startDate, setStartDate] = useState<string>(
+        previousTrip?.start_date ?? ""
+    );
+    const [endDate, setEndDate] = useState<string>(
+        previousTrip?.end_date ?? ""
+    );
+    const [dateValidationError, setDateValidationError] = useState<string>("");
+
+    const handleDatesChange = (newStart: string, newEnd: string, durationDays: number) => {
+        setStartDate(newStart);
+        setEndDate(newEnd);
+        setDateValidationError("");
+        if (durationDays > 0) {
+            setDays(durationDays);
+        }
+    };
     
     const [travelers, setTravelers] = useState<
     TravelerRequest[]
@@ -130,6 +148,26 @@ const [destination, setDestination] = useState<string>(
     e.preventDefault();
     const constraintsObj = getParsedConstraints();
 
+    // Validate travel dates
+    if (!startDate || !endDate) {
+        setDateValidationError("Please select both a start date and an end date on the calendar.");
+        alert("Please select both a start date and an end date on the calendar.");
+        return;
+    }
+
+    if (startDate > endDate) {
+        setDateValidationError("End date cannot precede start date.");
+        alert("End date cannot precede start date.");
+        return;
+    }
+
+    const calculatedDays = calculateDaysBetween(startDate, endDate);
+    if (calculatedDays < 1 || calculatedDays > 30) {
+        setDateValidationError("Trip duration must be between 1 and 30 days.");
+        alert("Trip duration must be between 1 and 30 days.");
+        return;
+    }
+
     if (isMultiDest) {
         if (multiStops.length < 2) {
             alert("Please add at least 2 destination stops for a multi-destination trip.");
@@ -142,11 +180,17 @@ const [destination, setDestination] = useState<string>(
             }
         }
         const totalDays = multiStops.reduce((sum, s) => sum + (Number(s.days) || 1), 0);
+        if (totalDays !== calculatedDays) {
+            alert(`The total duration across your destination stops (${totalDays} days) does not match your selected travel dates (${calculatedDays} days). Please align the duration.`);
+            return;
+        }
         const compositeDest = multiStops.map(s => s.name.split(",")[0].trim()).join(" -> ");
         onSubmit({
             source,
             destination: compositeDest,
-            days: totalDays,
+            days: calculatedDays,
+            start_date: startDate,
+            end_date: endDate,
             destinations: multiStops,
             travelers,
             mandatory_visits: [],
@@ -166,7 +210,9 @@ const [destination, setDestination] = useState<string>(
     onSubmit({
         source,
         destination,
-        days,
+        days: calculatedDays,
+        start_date: startDate,
+        end_date: endDate,
         travelers,
         constraints: constraintsObj,
         mandatory_visits: [],
@@ -565,17 +611,46 @@ const [destinationSearch, setDestinationSearch] = useState(
             </div>
 
             <div className="form-group">
-                <label>Days</label>
+                <label>Trip Duration (Days)</label>
                 <input
                     type="number"
                     min="1"
                     max="30"
                     value={days}
+                    readOnly={Boolean(startDate && endDate)}
                     onChange={(e) => setDays(Number(e.target.value))}
+                    style={startDate && endDate ? { background: "#f8fafc", color: "#64748b" } : {}}
+                    title={startDate && endDate ? "Auto-calculated from selected travel dates" : ""}
                 />
+                {startDate && endDate && (
+                    <small style={{ color: "#4f46e5", display: "block", marginTop: "4px", fontWeight: 600 }}>
+                        Auto-calculated from selected travel dates ({days} {days === 1 ? "day" : "days"})
+                    </small>
+                )}
             </div>
         </>
     )}
+
+    {/* Month-Specific Travel Date Selection */}
+    <div className="form-group" style={{ margin: "20px 0" }}>
+        <label style={{ display: "block", marginBottom: "6px", fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
+            Travel Dates & Calendar
+        </label>
+        <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "0 0 10px 0" }}>
+            Navigate across months to select your departure and return dates. Trips can span single or multiple months (1 to 30 days).
+        </p>
+        <TravelDatePicker
+            startDate={startDate}
+            endDate={endDate}
+            onChange={handleDatesChange}
+            maxTripDurationDays={30}
+        />
+        {dateValidationError && (
+            <div style={{ color: "#dc2626", fontSize: "0.82rem", marginTop: "6px", fontWeight: 600 }}>
+                {dateValidationError}
+            </div>
+        )}
+    </div>
 
             <div className="form-group">
                 <label>Travel Mode</label>

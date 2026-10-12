@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, HTTPException, Header, Query
 
 from backend.models.expense import ExpenseRequest
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
 
 from backend.services.expense.expense_store import (
     add_expense,
@@ -21,7 +23,14 @@ router = APIRouter(
 
 
 @router.post("/")
-def create_expense(request: ExpenseRequest):
+def create_expense(
+    request: ExpenseRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    if getattr(request, "trip_id", None):
+        verify_trip_access(request.trip_id, uid, required_role="editor")
 
     add_expense(
         request.trip_id,
@@ -33,9 +42,14 @@ def create_expense(request: ExpenseRequest):
     }
 
 @router.get("/{trip_id}")
-def expense_summary(trip_id: str):
-
-    trip = load_trip(trip_id)
+def expense_summary(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip = trip_record.get("data")
     if trip is None:
         raise HTTPException(status_code=404, detail="Trip not found")
 

@@ -232,7 +232,7 @@ def save_template_from_trip(
     return template
 
 
-def create_trip_from_template(template_id: str, overrides: dict = None) -> tuple[str, dict]:
+def create_trip_from_template(template_id: str, overrides: dict = None, owner_id: str = None) -> tuple[str, dict]:
     """
     Creates a new trip from a template.
     Does NOT mutate the original template or the original source trip.
@@ -268,7 +268,7 @@ def create_trip_from_template(template_id: str, overrides: dict = None) -> tuple
     }
 
     # Save as a brand new independent trip
-    new_trip_id = save_trip(new_trip_payload)
+    new_trip_id = save_trip(new_trip_payload, owner_id=owner_id)
 
     return new_trip_id, new_trip_payload
 

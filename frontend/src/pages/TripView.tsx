@@ -23,6 +23,19 @@ import {
   getExpenses,
 } from "../services/expense";
 
+import PlaceDetailModal from "../components/PlaceDetailModal";
+import TripShareModal from "../components/TripShareModal";
+import CurrencySelector from "../components/CurrencySelector";
+import WeatherAlertsBanner from "../components/WeatherAlertsBanner";
+import { getTripWeatherAlerts } from "../services/weather";
+import type { TripWeatherAlertsResponse } from "../services/weather";
+import {
+  getExchangeRates,
+  getSupportedCurrencies,
+  convertCurrency,
+  formatCurrency,
+} from "../services/currency";
+import type { CurrencyInfo, ExchangeRatesResponse } from "../services/currency";
 import {
   updateTrip,
   getTrip,
@@ -33,10 +46,10 @@ import {
   addTripNote,
   deleteTripNote,
   getTripRating,
-  
   rateTrip,
   downloadTripPdf,
   exportTrip,
+  exportTripCalendar,
   importTrip,
   duplicateTrip,
   saveTripAsTemplate,
@@ -48,7 +61,11 @@ import {
   resolveGroupConflicts,
   sendAssistantChatMessage,
   optimizeTrip,
+  getAttractionAlternatives,
+  executeAttractionAction,
+  getPlaceDetails,
 } from "../services/api";
+import type { AlternativeAttraction, PlaceDetail } from "../services/api";
 
 
 
@@ -99,6 +116,9 @@ export default function TripView() {
   const [tripRating, setTripRating] = useState<number | null>(null);
   const [ratingFeedback, setRatingFeedback] = useState("");
   const [ratingSaved, setRatingSaved] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const userRole = data?.role || "owner";
+  const isViewer = userRole === "viewer";
   const importFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleQuickImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -392,6 +412,249 @@ export default function TripView() {
       setOptimizingTrip(false);
     }
   };
+
+  // Step 70: Attraction Remove / Replace State
+  const [attractionActionModal, setAttractionActionModal] = useState<{
+    open: boolean;
+    mode: "choice" | "replace";
+    day: string;
+    place: Place | null;
+  }>({
+    open: false,
+    mode: "choice",
+    day: "",
+    place: null,
+  });
+
+  const [alternativesLoading, setAlternativesLoading] = useState(false);
+  const [alternativesList, setAlternativesList] = useState<AlternativeAttraction[]>([]);
+  const [alternativesError, setAlternativesError] = useState<string | null>(null);
+  const [actionExecuting, setActionExecuting] = useState(false);
+  const [attractionActionMessage, setAttractionActionMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const fetchAlternatives = async (day: string, placeName: string) => {
+    if (!tripId) return;
+    try {
+      setAlternativesLoading(true);
+      setAlternativesError(null);
+      const res = await getAttractionAlternatives(tripId, day, placeName);
+      setAlternativesList(res.alternatives || []);
+    } catch (err: any) {
+      setAlternativesError(err.message || "Failed to load alternative attractions");
+      setAlternativesList([]);
+    } finally {
+      setAlternativesLoading(false);
+    }
+  };
+
+  const handleOpenRemoveAttraction = (day: string, place: Place) => {
+    setAttractionActionMessage(null);
+    setAlternativesError(null);
+    setAlternativesList([]);
+    setAttractionActionModal({
+      open: true,
+      mode: "choice",
+      day,
+      place,
+    });
+  };
+
+  const handleOpenReplaceAttraction = async (day: string, place: Place) => {
+    setAttractionActionMessage(null);
+    setAlternativesError(null);
+    setAttractionActionModal({
+      open: true,
+      mode: "replace",
+      day,
+      place,
+    });
+    await fetchAlternatives(day, place.name);
+  };
+
+  const handleExecuteKeepEmpty = async () => {
+    const { day, place } = attractionActionModal;
+    if (!tripId || !place || !day || actionExecuting) return;
+
+    try {
+      setActionExecuting(true);
+      const res = await executeAttractionAction(tripId, day, place.name, "remove");
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+      }
+      setAttractionActionMessage({
+        type: "success",
+        text: res.message || `Removed "${place.name}" from Day ${day} (slot kept empty).`,
+      });
+      setAttractionActionModal({ open: false, mode: "choice", day: "", place: null });
+    } catch (err: any) {
+      setAttractionActionMessage({
+        type: "error",
+        text: err.message || `Failed to remove "${place.name}". Itinerary preserved.`,
+      });
+    } finally {
+      setActionExecuting(false);
+    }
+  };
+
+  const handleExecuteReplace = async (replacement: AlternativeAttraction) => {
+    const { day, place } = attractionActionModal;
+    if (!tripId || !place || !day || actionExecuting) return;
+
+    try {
+      setActionExecuting(true);
+      const res = await executeAttractionAction(tripId, day, place.name, "replace", replacement);
+      if (res.trip) {
+        setData((prev) => (prev ? { ...prev, trip: res.trip, dashboard: res.trip.dashboard || prev.dashboard } : null));
+      }
+      setAttractionActionMessage({
+        type: "success",
+        text: res.message || `Replaced "${place.name}" with "${replacement.name}" on Day ${day}.`,
+      });
+      setAttractionActionModal({ open: false, mode: "choice", day: "", place: null });
+    } catch (err: any) {
+      setAttractionActionMessage({
+        type: "error",
+        text: err.message || `Failed to replace "${place.name}". Itinerary preserved.`,
+      });
+    } finally {
+      setActionExecuting(false);
+    }
+  };
+
+  // Step 71: Place Information Detail Modal State
+  const [placeDetailModal, setPlaceDetailModal] = useState<{
+    isOpen: boolean;
+    initialPlace: any;
+    details: PlaceDetail | null;
+    loading: boolean;
+    error: string | null;
+  }>({
+    isOpen: false,
+    initialPlace: null,
+    details: null,
+    loading: false,
+    error: null,
+  });
+
+  const handleShowPlaceInfo = async (place: any) => {
+    if (!place || !place.name) return;
+    setPlaceDetailModal({
+      isOpen: true,
+      initialPlace: place,
+      details: null,
+      loading: true,
+      error: null,
+    });
+
+    try {
+      const placeType = place.place_type || (place.category?.toLowerCase().includes("hotel") ? "hotel" : "attraction");
+      const res = await getPlaceDetails(
+        place.name,
+        placeType,
+        place.category,
+        place.lat,
+        place.lon
+      );
+      if (res.details) {
+        setPlaceDetailModal((prev) => ({
+          ...prev,
+          details: res.details,
+          loading: false,
+        }));
+      }
+    } catch (err: any) {
+      setPlaceDetailModal((prev) => ({
+        ...prev,
+        loading: false,
+        error: err.message || "Failed to load additional place details",
+      }));
+    }
+  };
+
+  // Step 73: Live Currency Conversion State
+  const [selectedCurrency, setSelectedCurrency] = useState<string>("INR");
+  const [supportedCurrencies, setSupportedCurrencies] = useState<Record<string, CurrencyInfo>>({});
+  const [ratesData, setRatesData] = useState<ExchangeRatesResponse | null>(null);
+  const [currencyLoading, setCurrencyLoading] = useState<boolean>(false);
+  const [currencyError, setCurrencyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function initCurrencies() {
+      setCurrencyLoading(true);
+      try {
+        const [suppRes, ratesRes] = await Promise.allSettled([
+          getSupportedCurrencies(),
+          getExchangeRates("USD"),
+        ]);
+        if (mounted) {
+          if (suppRes.status === "fulfilled") {
+            setSupportedCurrencies(suppRes.value.currencies || {});
+          }
+          if (ratesRes.status === "fulfilled") {
+            setRatesData(ratesRes.value);
+            setCurrencyError(null);
+          } else {
+            setCurrencyError("Live exchange rates unavailable");
+          }
+        }
+      } catch (err: any) {
+        if (mounted) {
+          setCurrencyError(err.message || "Failed to load currency rates");
+        }
+      } finally {
+        if (mounted) {
+          setCurrencyLoading(false);
+        }
+      }
+    }
+    initCurrencies();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const formatTripAmount = (amount: number, itemCurrency = trip?.budget?.currency || "INR") => {
+    const src = itemCurrency || "INR";
+    if (!ratesData?.rates || selectedCurrency === src) {
+      return formatCurrency(amount, selectedCurrency);
+    }
+    const converted = convertCurrency(amount, src, selectedCurrency, ratesData.rates);
+    return formatCurrency(converted, selectedCurrency);
+  };
+
+  // Step 74: Live Weather Forecasts & Disruption Alerts State
+  const [weatherAlertsData, setWeatherAlertsData] = useState<TripWeatherAlertsResponse | null>(null);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!tripId) return;
+    let mounted = true;
+    async function loadWeather() {
+      setWeatherLoading(true);
+      try {
+        const res = await getTripWeatherAlerts(tripId);
+        if (mounted) {
+          setWeatherAlertsData(res);
+          setWeatherError(null);
+        }
+      } catch (err: any) {
+        if (mounted) {
+          setWeatherError(err.message || "Failed to load live weather alerts");
+        }
+      } finally {
+        if (mounted) {
+          setWeatherLoading(false);
+        }
+      }
+    }
+    loadWeather();
+    return () => {
+      mounted = false;
+    };
+  }, [tripId]);
+
 
 
 
@@ -710,19 +973,61 @@ if (savedRating) {
       </div>
 
 
-      {/* Share Trip */}
-      <button
-        onClick={() => {
-          const url =
-            `${window.location.origin}/trip/${tripId}`;
+      {/* Role Badge & Collaboration Share */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+        <span
+          style={{
+            padding: "6px 14px",
+            borderRadius: "20px",
+            fontSize: "0.85rem",
+            fontWeight: 700,
+            backgroundColor: userRole === "owner" ? "#fef3c7" : userRole === "editor" ? "#dbeafe" : "#f1f5f9",
+            color: userRole === "owner" ? "#92400e" : userRole === "editor" ? "#1e40af" : "#475569",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            border: "1px solid rgba(0,0,0,0.06)",
+          }}
+        >
+          {userRole === "owner" ? "👑 Trip Owner" : userRole === "editor" ? "✏️ Editor" : "👁️ Viewer (Read Only)"}
+        </span>
 
-          navigator.clipboard.writeText(url);
+        {userRole === "owner" && (
+          <button
+            onClick={() => setShowShareModal(true)}
+            style={{
+              padding: "7px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#4f46e5",
+              color: "#fff",
+              border: "none",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            🔗 Share & Invite
+          </button>
+        )}
+      </div>
 
-          alert("Trip link copied!");
-        }}
-      >
-        Share Trip
-      </button>
+      {isViewer && (
+        <div
+          style={{
+            padding: "10px 16px",
+            margin: "12px 0",
+            backgroundColor: "#f8fafc",
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            color: "#475569",
+            fontSize: "0.85rem",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          ℹ️ <strong>View-only mode:</strong> You were invited as a viewer. You can explore the full itinerary, weather, and budget, but editing actions are disabled.
+        </div>
+      )}
 
 
       {/* Favorite Trip */}
@@ -752,6 +1057,20 @@ if (savedRating) {
         }}
       >
         Export Trip
+      </button>
+
+      {/* Export to Calendar (.ics) */}
+      <button
+        className="export-calendar-btn"
+        aria-label="Export itinerary to calendar (.ics)"
+        onClick={() => {
+          if (tripId) {
+            exportTripCalendar(tripId);
+          }
+        }}
+        title="Download .ics calendar file for Google Calendar, Apple Calendar, and Outlook"
+      >
+        📅 Export to Calendar
       </button>
 
 
@@ -1762,12 +2081,28 @@ if (savedRating) {
 
       <div id="section-budget" className="section">
 
-        <h2 className="section-title">
-          Budget Overview
-        </h2>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 16 }}>
+          <h2 className="section-title" style={{ margin: 0 }}>
+            Budget Overview
+          </h2>
+          <CurrencySelector
+            selectedCurrency={selectedCurrency}
+            onCurrencyChange={setSelectedCurrency}
+            supportedCurrencies={supportedCurrencies}
+            rateTimestamp={ratesData?.timestamp}
+            isCached={ratesData?.is_cached}
+            isFallback={ratesData?.is_fallback}
+            isStale={ratesData?.is_stale}
+            loading={currencyLoading}
+            error={currencyError}
+          />
+        </div>
 
         <BudgetCard
           budget={trip.budget}
+          displayCurrency={selectedCurrency}
+          originalCurrency={trip.budget?.currency || "INR"}
+          formatAmount={(amt) => formatTripAmount(amt, trip.budget?.currency || "INR")}
         />
 
         <BudgetStatus
@@ -2347,25 +2682,24 @@ if (savedRating) {
       )}
 
 
-      <div className="section">
+      <div id="section-weather" className="section">
 
         <h2 className="section-title">
-          Weather
+          Weather Forecast & Itinerary Alerts
         </h2>
 
-        {normalizedWeather.length > 0 ? (
-          normalizedWeather.map(
-            (weather, index) => (
-              <WeatherCard
-                key={index}
-                weather={weather}
-              />
-            )
-          )
-        ) : (
-          <p style={{ color: "#64748b", fontStyle: "italic", margin: 0 }}>
-            Weather forecast is not available for this trip.
-          </p>
+        <WeatherAlertsBanner
+          weatherData={weatherAlertsData}
+          loading={weatherLoading}
+          error={weatherError}
+        />
+
+        {!weatherAlertsData && !weatherLoading && normalizedWeather.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 12, marginTop: 12 }}>
+            {normalizedWeather.map((weather, index) => (
+              <WeatherCard key={index} weather={weather} />
+            ))}
+          </div>
         )}
 
 
@@ -2774,6 +3108,40 @@ if (savedRating) {
           Daily Plan
         </h2>
 
+        {attractionActionMessage && (
+          <div
+            style={{
+              padding: "10px 16px",
+              borderRadius: 8,
+              marginBottom: 16,
+              fontSize: "0.88rem",
+              fontWeight: 500,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: attractionActionMessage.type === "success" ? "#f0fdf4" : "#fef2f2",
+              color: attractionActionMessage.type === "success" ? "#166534" : "#991b1b",
+              border: `1px solid ${attractionActionMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`,
+            }}
+          >
+            <span>{attractionActionMessage.type === "success" ? "✓" : "⚠️"} {attractionActionMessage.text}</span>
+            <button
+              type="button"
+              onClick={() => setAttractionActionMessage(null)}
+              style={{
+                background: "transparent",
+                border: "none",
+                fontSize: "1rem",
+                cursor: "pointer",
+                color: "inherit",
+                marginLeft: 12,
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        )}
+
         {trip.day_schedule &&
           Object.entries(
             trip.day_schedule
@@ -2795,12 +3163,130 @@ if (savedRating) {
                 onReplanDay={
                   handleOpenReplan
                 }
+                onRemoveAttraction={
+                  handleOpenRemoveAttraction
+                }
+                onReplaceAttraction={
+                  handleOpenReplaceAttraction
+                }
+                onShowPlaceInfo={
+                  handleShowPlaceInfo
+                }
               />
 
 
 
             )
           )}
+
+        {/* Recommended Accommodations Section */}
+        {Array.isArray(trip.hotels) && trip.hotels.length > 0 && (
+          <div style={{ marginTop: 24, borderTop: "1px solid #e2e8f0", paddingTop: 20 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.15rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
+                  🏨 Recommended Accommodations ({trip.hotels.length})
+                </h3>
+                <p style={{ margin: "2px 0 0", fontSize: "0.84rem", color: "#64748b" }}>
+                  Selected hotel options near your destination itinerary.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+              {trip.hotels.map((hotel: any, hIdx: number) => (
+                <div
+                  key={hIdx}
+                  style={{
+                    background: "#ffffff",
+                    borderRadius: 10,
+                    border: "1px solid #e2e8f0",
+                    padding: "14px 16px",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+                  }}
+                >
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+                      <strong style={{ fontSize: "0.95rem", color: "#0f172a" }}>{hotel.name}</strong>
+                      <button
+                        type="button"
+                        className="hotel-info-btn"
+                        aria-label={`View details for ${hotel.name}`}
+                        title={`View details for ${hotel.name}`}
+                        style={{
+                          background: "#e0e7ff",
+                          border: "1px solid #c7d2fe",
+                          color: "#4338ca",
+                          borderRadius: "50%",
+                          width: 22,
+                          height: 22,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontSize: "0.78rem",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                          padding: 0,
+                          lineHeight: 1,
+                          flexShrink: 0,
+                        }}
+                        onClick={() => handleShowPlaceInfo({
+                          name: hotel.name,
+                          place_type: "hotel",
+                          category: "Hotel Accommodation",
+                          lat: hotel.lat,
+                          lon: hotel.lon,
+                          distance_km: hotel.distance_km,
+                        })}
+                      >
+                        ⓘ
+                      </button>
+                    </div>
+                    <p style={{ margin: "2px 0 8px", fontSize: "0.82rem", color: "#64748b" }}>
+                      Hotel • {hotel.distance_km != null ? `${hotel.distance_km} km from arrival center` : "Near destination"}
+                    </p>
+                  </div>
+
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed #e2e8f0", paddingTop: 8, marginTop: 4 }}>
+                    <span style={{ fontSize: "0.78rem", color: "#475569", fontWeight: 500 }}>
+                      Lodging Option
+                    </span>
+                    <button
+                      type="button"
+                      aria-label={`View details for ${hotel.name}`}
+                      style={{
+                        fontSize: "0.76rem",
+                        padding: "4px 10px",
+                        borderRadius: 6,
+                        border: "1px solid #bfdbfe",
+                        background: "#eff6ff",
+                        color: "#1d4ed8",
+                        cursor: "pointer",
+                        fontWeight: 600,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                      }}
+                      onClick={() => handleShowPlaceInfo({
+                        name: hotel.name,
+                        place_type: "hotel",
+                        category: "Hotel Accommodation",
+                        lat: hotel.lat,
+                        lon: hotel.lon,
+                        distance_km: hotel.distance_km,
+                      })}
+                    >
+                      <span>ⓘ</span> Hotel Details
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
       </div>
 
@@ -3075,6 +3561,22 @@ if (savedRating) {
           }}
         >
           Export Trip
+        </button>
+
+        <button
+          className="download-button export-calendar-btn"
+          aria-label="Export itinerary to calendar (.ics)"
+          onClick={() => {
+            if (tripId) {
+              exportTripCalendar(tripId);
+            }
+          }}
+          style={{
+            background: "#059669",
+          }}
+          title="Download .ics calendar file for Google Calendar, Apple Calendar, and Outlook"
+        >
+          📅 Export to Calendar
         </button>
 
         <button
@@ -3610,6 +4112,422 @@ if (savedRating) {
           </div>
         </div>
       )}
+
+      {/* Attraction Remove / Replace Modal Dialog */}
+      {attractionActionModal.open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1050,
+            padding: 16,
+          }}
+          onClick={() => {
+            if (!actionExecuting) {
+              setAttractionActionModal((prev) => ({ ...prev, open: false }));
+            }
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#ffffff",
+              borderRadius: 12,
+              maxWidth: 580,
+              width: "100%",
+              maxHeight: "88vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)",
+              display: "flex",
+              flexDirection: "column",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div
+              style={{
+                padding: "18px 24px",
+                borderBottom: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <div>
+                <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#0f172a" }}>
+                  {attractionActionModal.mode === "choice"
+                    ? `Remove Attraction: ${attractionActionModal.place?.name}`
+                    : `Replace: ${attractionActionModal.place?.name}`}
+                </h3>
+                <p style={{ margin: "4px 0 0", fontSize: "0.84rem", color: "#64748b" }}>
+                  Day {attractionActionModal.day} • {trip.destination}
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={actionExecuting}
+                onClick={() => setAttractionActionModal((prev) => ({ ...prev, open: false }))}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  fontSize: "1.25rem",
+                  cursor: "pointer",
+                  color: "#94a3b8",
+                  padding: "4px 8px",
+                  borderRadius: 6,
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: "20px 24px", flex: 1 }}>
+              {attractionActionModal.mode === "choice" ? (
+                <div>
+                  <p style={{ marginTop: 0, marginBottom: 16, fontSize: "0.92rem", color: "#334155" }}>
+                    How would you like to handle removing <strong>{attractionActionModal.place?.name}</strong> from Day {attractionActionModal.day}?
+                  </p>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    {/* Choice A: Keep empty */}
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 10,
+                        border: "1px solid #e2e8f0",
+                        background: "#f8fafc",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#0f172a" }}>
+                          Option 1: Keep slot empty
+                        </span>
+                        <span style={{ fontSize: "0.75rem", background: "#e2e8f0", padding: "2px 8px", borderRadius: 12, fontWeight: 600, color: "#475569" }}>
+                          No replacement
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "0.84rem", color: "#64748b", lineHeight: 1.4 }}>
+                        Remove this attraction only. Does not auto-generate another stop. Day schedule, ordering, and unrelated activities remain preserved.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={actionExecuting}
+                        onClick={handleExecuteKeepEmpty}
+                        style={{
+                          alignSelf: "flex-start",
+                          marginTop: 6,
+                          padding: "8px 16px",
+                          borderRadius: 6,
+                          border: "1px solid #fca5a5",
+                          background: "#fee2e2",
+                          color: "#991b1b",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          cursor: actionExecuting ? "default" : "pointer",
+                        }}
+                      >
+                        {actionExecuting ? "Removing..." : "Remove and Keep Slot Empty"}
+                      </button>
+                    </div>
+
+                    {/* Choice B: Replace with another attraction */}
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 10,
+                        border: "1px solid #c7d2fe",
+                        background: "#eef2ff",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#312e81" }}>
+                          Option 2: Replace with another attraction
+                        </span>
+                        <span style={{ fontSize: "0.75rem", background: "#c7d2fe", padding: "2px 8px", borderRadius: 12, fontWeight: 600, color: "#3730a3" }}>
+                          Discover alternatives
+                        </span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: "0.84rem", color: "#4338ca", lineHeight: 1.4 }}>
+                        Browse verified alternative attractions for {trip.destination} (excluding already scheduled stops) to replace this slot in place.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={actionExecuting}
+                        onClick={() => {
+                          setAttractionActionModal((prev) => ({ ...prev, mode: "replace" }));
+                          if (attractionActionModal.place) {
+                            fetchAlternatives(attractionActionModal.day, attractionActionModal.place.name);
+                          }
+                        }}
+                        style={{
+                          alignSelf: "flex-start",
+                          marginTop: 6,
+                          padding: "8px 16px",
+                          borderRadius: 6,
+                          border: "none",
+                          background: "#4f46e5",
+                          color: "#ffffff",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Browse Alternative Attractions →
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Mode: replace */
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                    <span style={{ fontSize: "0.88rem", color: "#475569" }}>
+                      Select an alternative attraction for this slot:
+                    </span>
+                    <button
+                      type="button"
+                      disabled={actionExecuting}
+                      onClick={() => setAttractionActionModal((prev) => ({ ...prev, mode: "choice" }))}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: "#4f46e5",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                    >
+                      ← Back to options
+                    </button>
+                  </div>
+
+                  {alternativesLoading && (
+                    <div style={{ padding: "30px 0", textAlign: "center", color: "#64748b" }}>
+                      <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>🔄</div>
+                      <p style={{ margin: 0, fontSize: "0.9rem" }}>Finding suitable alternatives for {trip.destination}...</p>
+                    </div>
+                  )}
+
+                  {alternativesError && (
+                    <div
+                      style={{
+                        padding: 12,
+                        borderRadius: 8,
+                        background: "#fef2f2",
+                        border: "1px solid #fecaca",
+                        color: "#991b1b",
+                        fontSize: "0.85rem",
+                        marginBottom: 12,
+                      }}
+                    >
+                      ⚠️ {alternativesError}
+                    </div>
+                  )}
+
+                  {!alternativesLoading && !alternativesError && alternativesList.length === 0 && (
+                    <div
+                      style={{
+                        padding: 24,
+                        textAlign: "center",
+                        background: "#f8fafc",
+                        border: "1px dashed #cbd5e1",
+                        borderRadius: 10,
+                        color: "#475569",
+                      }}
+                    >
+                      <p style={{ margin: "0 0 12px", fontSize: "0.92rem", fontWeight: 600, color: "#334155" }}>
+                        No suitable alternative attractions available
+                      </p>
+                      <p style={{ margin: "0 0 16px", fontSize: "0.84rem", color: "#64748b" }}>
+                        All known attractions for this destination are already in your itinerary or excluded. You can keep this slot empty instead.
+                      </p>
+                      <button
+                        type="button"
+                        disabled={actionExecuting}
+                        onClick={handleExecuteKeepEmpty}
+                        style={{
+                          padding: "8px 18px",
+                          borderRadius: 6,
+                          border: "1px solid #cbd5e1",
+                          background: "#ffffff",
+                          color: "#334155",
+                          fontWeight: 600,
+                          fontSize: "0.85rem",
+                          cursor: actionExecuting ? "default" : "pointer",
+                        }}
+                      >
+                        {actionExecuting ? "Removing..." : "Keep Slot Empty"}
+                      </button>
+                    </div>
+                  )}
+
+                  {!alternativesLoading && alternativesList.length > 0 && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10, maxHeight: 380, overflowY: "auto", paddingRight: 4 }}>
+                      {alternativesList.map((alt, aIdx) => (
+                        <div
+                          key={aIdx}
+                          style={{
+                            padding: "12px 14px",
+                            borderRadius: 8,
+                            border: "1px solid #e2e8f0",
+                            background: "#ffffff",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                            gap: 12,
+                            transition: "border-color 0.15s ease",
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 3 }}>
+                              <strong style={{ fontSize: "0.92rem", color: "#0f172a" }}>{alt.name}</strong>
+                              <span
+                                style={{
+                                  fontSize: "0.72rem",
+                                  padding: "2px 7px",
+                                  borderRadius: 10,
+                                  background: "#f1f5f9",
+                                  color: "#475569",
+                                  fontWeight: 600,
+                                }}
+                              >
+                                {alt.category}
+                              </span>
+                              {alt.score != null && alt.score > 0 && (
+                                <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 600 }}>
+                                  ★ {alt.score}
+                                </span>
+                              )}
+                            </div>
+                            <p
+                              style={{
+                                margin: 0,
+                                fontSize: "0.8rem",
+                                color: "#64748b",
+                                lineHeight: 1.35,
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "normal",
+                              }}
+                            >
+                              {alt.description}
+                            </p>
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={actionExecuting}
+                            onClick={() => handleExecuteReplace(alt)}
+                            style={{
+                              padding: "6px 14px",
+                              borderRadius: 6,
+                              border: "1px solid #c7d2fe",
+                              background: "#eef2ff",
+                              color: "#4338ca",
+                              fontWeight: 600,
+                              fontSize: "0.8rem",
+                              cursor: actionExecuting ? "default" : "pointer",
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                            }}
+                          >
+                            {actionExecuting ? "Updating..." : "Select & Replace"}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: "14px 24px",
+                borderTop: "1px solid #e2e8f0",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                background: "#f8fafc",
+                borderBottomLeftRadius: 12,
+                borderBottomRightRadius: 12,
+              }}
+            >
+              {attractionActionModal.mode === "replace" ? (
+                <button
+                  type="button"
+                  disabled={actionExecuting}
+                  onClick={handleExecuteKeepEmpty}
+                  style={{
+                    background: "transparent",
+                    border: "none",
+                    color: "#b91c1c",
+                    fontSize: "0.82rem",
+                    cursor: actionExecuting ? "default" : "pointer",
+                    fontWeight: 600,
+                    padding: 0,
+                  }}
+                >
+                  Or keep slot empty instead
+                </button>
+              ) : (
+                <div />
+              )}
+
+              <button
+                type="button"
+                disabled={actionExecuting}
+                onClick={() => setAttractionActionModal((prev) => ({ ...prev, open: false }))}
+                style={{
+                  padding: "6px 16px",
+                  borderRadius: 6,
+                  border: "1px solid #cbd5e1",
+                  background: "#ffffff",
+                  color: "#475569",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  fontWeight: 500,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Place Information Detail Modal */}
+      <PlaceDetailModal
+        isOpen={placeDetailModal.isOpen}
+        onClose={() => setPlaceDetailModal((prev) => ({ ...prev, isOpen: false }))}
+        initialPlace={placeDetailModal.initialPlace}
+        details={placeDetailModal.details}
+        loading={placeDetailModal.loading}
+        error={placeDetailModal.error}
+      />
+
+      {/* Collaboration Share Modal */}
+      <TripShareModal
+        tripId={tripId || ""}
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        userRole={userRole}
+      />
 
     </div>
   );

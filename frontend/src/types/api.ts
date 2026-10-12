@@ -156,4 +156,7 @@ export interface TripResponse {
     };
 
     itinerary?: Itinerary;
+    role?: "owner" | "editor" | "viewer";
+    owner_id?: string | null;
+    is_shared?: boolean;
 }

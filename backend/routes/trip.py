@@ -5,9 +5,10 @@ from datetime import datetime, timezone
 
 from typing import Optional
 from pydantic import BaseModel
-from fastapi import APIRouter, HTTPException, Response, Body
+from fastapi import APIRouter, HTTPException, Response, Body, Header, Query
 from fastapi.responses import FileResponse
 
+from backend.services.auth.authorization import extract_user_id, verify_trip_access
 from backend.services.expense.expense_store import get_expenses, add_expense
 from backend.services.storage.favorite_store import (
     add_favorite,
@@ -66,8 +67,12 @@ def _extract_trip_timestamp(idx: int, item: dict) -> tuple[float, int]:
 
 
 @router.get("/history")
-def get_trip_history():
-    raw_trips = load_all_trips()
+def get_trip_history(
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    raw_trips = load_all_trips(user_id=uid)
     indexed_trips = list(enumerate(raw_trips))
 
     # Sort newest-created first (descending by creation timestamp, breaking ties by index descending)
@@ -256,21 +261,30 @@ def build_comparison(m1: dict, m2: dict) -> dict:
 
 
 @router.get("/compare")
-def compare_trips(trip1: str, trip2: str):
+def compare_trips(
+    trip1: str,
+    trip2: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
     if not trip1 or not trip2:
         raise HTTPException(
             status_code=400,
             detail="Both 'trip1' and 'trip2' query parameters are required"
         )
 
-    t1_data = load_trip(trip1)
+    uid = extract_user_id(None, x_user_id, user_id)
+    t1_record, _ = verify_trip_access(trip1, uid, required_role="viewer")
+    t2_record, _ = verify_trip_access(trip2, uid, required_role="viewer")
+
+    t1_data = t1_record.get("data")
     if t1_data is None:
         raise HTTPException(
             status_code=404,
             detail=f"Trip '{trip1}' not found"
         )
 
-    t2_data = load_trip(trip2)
+    t2_data = t2_record.get("data")
     if t2_data is None:
         raise HTTPException(
             status_code=404,
@@ -290,8 +304,14 @@ def compare_trips(trip1: str, trip2: str):
 
 
 @router.get("/{trip_id}/export")
-def export_trip(trip_id: str):
-    trip_data = load_trip(trip_id)
+def export_trip(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip_data = trip_record.get("data")
 
     if trip_data is None:
         raise HTTPException(
@@ -327,6 +347,44 @@ def export_trip(trip_id: str):
         media_type="application/json",
         headers={
             "Content-Disposition": f'attachment; filename="{filename}"'
+        }
+    )
+
+
+@router.get("/{trip_id}/export/calendar.ics")
+@router.get("/{trip_id}/calendar")
+@router.get("/{trip_id}/export/ics")
+def export_trip_calendar(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    """
+    Exports a saved trip itinerary as an RFC 5545 compliant iCalendar (.ics) file.
+    Includes scheduled attractions, meals, breaks, and lodging milestones.
+    """
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip_data = trip_record.get("data")
+
+    if trip_data is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Trip not found"
+        )
+
+    from backend.services.calendar.ics_generator import generate_trip_ics, get_calendar_filename
+
+    trip_info = trip_data.get("trip", trip_data) if isinstance(trip_data, dict) else {}
+    filename = get_calendar_filename(trip_info, trip_id)
+    ics_content = generate_trip_ics(trip_data, trip_id)
+
+    return Response(
+        content=ics_content,
+        media_type="text/calendar; charset=utf-8",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Cache-Control": "no-cache, no-store, must-revalidate",
         }
     )
 
@@ -516,8 +574,14 @@ def compute_trip_insights(trip_wrapper: dict, trip_id: str) -> dict:
 
 
 @router.get("/{trip_id}/insights")
-def get_trip_insights(trip_id: str):
-    trip_data = load_trip(trip_id)
+def get_trip_insights(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip_data = trip_record.get("data")
 
     if trip_data is None:
         raise HTTPException(
@@ -529,7 +593,12 @@ def get_trip_insights(trip_id: str):
 
 
 @router.post("/import")
-def import_trip(payload: dict = Body(...)):
+def import_trip(
+    payload: dict = Body(...),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
     if not isinstance(payload, dict):
         raise HTTPException(
             status_code=400,
@@ -664,7 +733,7 @@ def import_trip(payload: dict = Body(...)):
         "dashboard": dashboard,
         "summary": summary,
     }
-    new_trip_id = save_trip(new_trip_payload)
+    new_trip_id = save_trip(new_trip_payload, owner_id=uid)
 
     # 6. Restore auxiliary metadata when present
     # Notes
@@ -701,8 +770,14 @@ def import_trip(payload: dict = Body(...)):
 
 
 @router.get("/{trip_id}")
-def get_trip(trip_id: str):
-    trip = load_trip(trip_id)
+def get_trip(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, active_role = verify_trip_access(trip_id, uid, required_role="viewer")
+    trip = trip_record.get("data")
 
     if trip is None:
         raise HTTPException(
@@ -821,12 +896,21 @@ def get_trip(trip_id: str):
         "dashboard": dashboard,
         "summary": summary,
         "itinerary": itinerary,
+        "role": active_role,
+        "owner_id": trip_record.get("owner_id"),
+        "is_shared": bool(trip_record.get("members")) and len(trip_record.get("members", {})) > 1,
     }
 
 
 @router.post("/{trip_id}/duplicate")
-def duplicate_trip(trip_id: str):
-    original_trip_data = load_trip(trip_id)
+def duplicate_trip(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
+    original_trip_data = trip_record.get("data")
 
     if original_trip_data is None:
         raise HTTPException(
@@ -841,8 +925,8 @@ def duplicate_trip(trip_id: str):
         if "trip" in new_trip_data and isinstance(new_trip_data["trip"], dict):
             new_trip_data["trip"].pop("created_at", None)
 
-    # Save as a new trip with a unique trip ID
-    new_trip_id = save_trip(new_trip_data)
+    # Save as a new trip with a unique trip ID, owned by requester
+    new_trip_id = save_trip(new_trip_data, owner_id=uid)
 
     # Metadata decisions:
     # 1. Notes: Copy existing notes over to the duplicate under new_trip_id
@@ -865,15 +949,13 @@ def duplicate_trip(trip_id: str):
 
 
 @router.post("/{trip_id}/favorite")
-def favorite_trip(trip_id: str):
-    trip = load_trip(trip_id)
-
-    if trip is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Trip not found"
-        )
-
+def favorite_trip(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
     add_favorite(trip_id)
 
     return {
@@ -883,7 +965,13 @@ def favorite_trip(trip_id: str):
 
 
 @router.delete("/{trip_id}/favorite")
-def unfavorite_trip(trip_id: str):
+def unfavorite_trip(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
     remove_favorite(trip_id)
 
     return {
@@ -893,20 +981,27 @@ def unfavorite_trip(trip_id: str):
 
 
 @router.get("/{trip_id}/favorite")
-def check_favorite(trip_id: str):
+def check_favorite(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
     return {
         "trip_id": trip_id,
         "favorite": is_favorite(trip_id)
     }
-@router.get("/{trip_id}/notes")
-def get_trip_notes(trip_id: str):
-    trip = load_trip(trip_id)
 
-    if trip is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Trip not found"
-        )
+
+@router.get("/{trip_id}/notes")
+def get_trip_notes(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
 
     return {
         "trip_id": trip_id,
@@ -928,14 +1023,11 @@ def create_trip_note(
     trip_id: str,
     note: Optional[str] = None,
     payload: Optional[NotePayload] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    trip = load_trip(trip_id)
-
-    if trip is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Trip not found"
-        )
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="editor")
 
     actual_note = (payload.note if payload and payload.note is not None else note) or ""
 
@@ -959,8 +1051,13 @@ def create_trip_note(
 @router.delete("/{trip_id}/notes/{note_index}")
 def remove_trip_note(
     trip_id: str,
-    note_index: int
+    note_index: int,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="editor")
+
     deleted = delete_note(
         trip_id,
         note_index
@@ -977,14 +1074,13 @@ def remove_trip_note(
         "deleted": True
     }
 @router.get("/{trip_id}/rating")
-def get_trip_rating(trip_id: str):
-    trip = load_trip(trip_id)
-
-    if trip is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Trip not found"
-        )
+def get_trip_rating(
+    trip_id: str,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
 
     return {
         "trip_id": trip_id,
@@ -998,14 +1094,11 @@ def rate_trip(
     rating: Optional[int] = None,
     feedback: str = "",
     payload: Optional[RatingPayload] = None,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
-    trip = load_trip(trip_id)
-
-    if trip is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Trip not found"
-        )
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
 
     actual_rating = payload.rating if payload and payload.rating is not None else rating
     actual_feedback = (payload.feedback if payload and payload.feedback is not None else feedback) or ""
@@ -1031,8 +1124,13 @@ def rate_trip(
 @router.post("/{trip_id}/template")
 def convert_trip_to_template(
     trip_id: str,
-    payload: dict = Body(default_factory=dict)
+    payload: dict = Body(default_factory=dict),
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
 ):
+    uid = extract_user_id(None, x_user_id, user_id)
+    verify_trip_access(trip_id, uid, required_role="viewer")
+
     from backend.services.storage.template_store import save_template_from_trip
     name = payload.get("name", "")
     description = payload.get("description", "")

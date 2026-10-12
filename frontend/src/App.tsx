@@ -8,6 +8,7 @@ import TripView from "./pages/TripView";
 import TripHistory from "./pages/TripHistory";
 import TripComparison from "./pages/TripComparison";
 import TripTemplates from "./pages/TripTemplates";
+import InvitationAcceptPage from "./pages/InvitationAcceptPage";
 import { generateTrip } from "./services/api";
 
 import type { TripRequest } from "./types/trip";
@@ -145,6 +146,7 @@ export default function App() {
   element={<TripHistory />}
 />
                     <Route path="/trip/:id" element={<TripView />} />
+                    <Route path="/invite/:token" element={<InvitationAcceptPage />} />
                     <Route
     path="/load-trip"
     element={<LoadTrip />}

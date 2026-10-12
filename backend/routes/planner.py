@@ -1,5 +1,7 @@
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Header, Query
 from backend.models.trip import TripRequest
+from backend.services.auth.authorization import extract_user_id
 from backend.services.gemini_service import generate
 from backend.services.planner.itinerary import build_trip
 
@@ -10,9 +12,13 @@ router = APIRouter(
 
 
 @router.post("/")
-async def planner(request: TripRequest):
-
-    result = await build_trip(request)
+async def planner(
+    request: TripRequest,
+    x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
+    user_id: Optional[str] = Query(None),
+):
+    uid = extract_user_id(None, x_user_id, user_id) or getattr(request, "user_id", None)
+    result = await build_trip(request, owner_id=uid)
     if not isinstance(result, dict) or "trip" not in result:
         return result
 

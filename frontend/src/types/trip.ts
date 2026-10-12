@@ -121,6 +121,8 @@ export interface TripRequest {
     source: string;
     destination: string;
     days: number;
+    start_date?: string;
+    end_date?: string;
     destinations?: DestinationStop[];
     travel_mode: string;
     travelers: TravelerRequest[];
