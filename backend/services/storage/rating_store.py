@@ -10,29 +10,67 @@ DATA_DIR = BASE_DIR / "data"
 FILE = DATA_DIR / "trip_ratings.json"
 
 
+class StorageCorruptedError(RuntimeError):
+    """Raised when rating storage JSON file exists but is corrupted, truncated, or unreadable."""
+    pass
+
+
 def _ensure_store_file():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    FILE.parent.mkdir(parents=True, exist_ok=True)
     if not FILE.exists():
         temp_file = FILE.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump({}, f, indent=4)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
+        try:
+            os.replace(temp_file, FILE)
+        except PermissionError:
+            with open(FILE, "w", encoding="utf-8") as f:
+                json.dump({}, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
 
 
-def load_ratings():
+def load_ratings() -> dict:
     _ensure_store_file()
     try:
         with open(FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {}
+            content = f.read()
     except Exception as e:
-        logger.error(f"Failed to load ratings: {e}")
-        return {}
+        logger.critical(f"Failed to open rating storage file {FILE}: {e}")
+        raise StorageCorruptedError(f"Cannot read rating storage file {FILE}: {e}") from e
+
+    content_str = content.strip()
+    if not content_str:
+        logger.critical(f"Rating storage file {FILE} is empty (0 bytes). Corrupt or truncated file detected.")
+        raise StorageCorruptedError(f"Rating storage file {FILE} is empty/truncated and cannot be safely parsed.")
+
+    try:
+        data = json.loads(content_str)
+    except json.JSONDecodeError as e:
+        logger.critical(f"Malformed JSON in rating storage {FILE}: {e}")
+        raise StorageCorruptedError(f"Malformed JSON in rating storage {FILE}: {e}") from e
+
+    if not isinstance(data, dict):
+        logger.critical(f"Unexpected data shape in rating storage {FILE}: expected dict, got {type(data).__name__}")
+        raise StorageCorruptedError(f"Unexpected data shape in {FILE}: expected dict, got {type(data).__name__}")
+
+    if any(not isinstance(v, dict) for v in data.values()):
+        logger.critical(f"Unexpected data shape in rating storage {FILE}: rating entries must be dicts")
+        raise StorageCorruptedError(f"Unexpected data shape in {FILE}: rating entries must be dicts")
+
+    return data
 
 
-def save_ratings(ratings):
+def save_ratings(ratings: dict) -> bool:
+    if not isinstance(ratings, dict):
+        raise ValueError(f"ratings must be a dict, got {type(ratings).__name__}")
     _ensure_store_file()
     temp_file = FILE.with_suffix(".tmp")
     try:
@@ -40,14 +78,27 @@ def save_ratings(ratings):
             json.dump(ratings, f, indent=4)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
+        try:
+            os.replace(temp_file, FILE)
+        except PermissionError:
+            with open(FILE, "w", encoding="utf-8") as f:
+                json.dump(ratings, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+        return True
     except Exception as e:
-        logger.error(f"Failed to save ratings: {e}")
+        logger.error(f"Failed to save ratings to {FILE}: {e}")
         if temp_file.exists():
             try:
                 temp_file.unlink()
             except Exception:
                 pass
+        return False
 
 
 def get_rating(trip_id):

@@ -1,5 +1,6 @@
 import copy
 import json
+import logging
 import os
 import uuid
 from datetime import datetime, timezone
@@ -7,32 +8,74 @@ from backend.services.storage.trip_store import load_trip, save_trip
 
 from pathlib import Path
 
+logger = logging.getLogger(__name__)
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 FILE = DATA_DIR / "templates.json"
 
 
+class StorageCorruptedError(RuntimeError):
+    """Raised when template storage JSON file exists but is corrupted, truncated, or unreadable."""
+    pass
+
+
 def _ensure_store_file():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    FILE.parent.mkdir(parents=True, exist_ok=True)
     if not FILE.exists():
         temp_file = FILE.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump([], f, indent=2)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
+        try:
+            os.replace(temp_file, FILE)
+        except PermissionError:
+            with open(FILE, "w", encoding="utf-8") as f:
+                json.dump([], f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
 
 
 def load_all_templates() -> list:
     _ensure_store_file()
     try:
         with open(FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return []
+            content = f.read()
+    except Exception as e:
+        logger.critical(f"Failed to open template storage file {FILE}: {e}")
+        raise StorageCorruptedError(f"Cannot read template storage file {FILE}: {e}") from e
+
+    content_str = content.strip()
+    if not content_str:
+        logger.critical(f"Template storage file {FILE} is empty (0 bytes). Corrupt or truncated file detected.")
+        raise StorageCorruptedError(f"Template storage file {FILE} is empty/truncated and cannot be safely parsed.")
+
+    try:
+        data = json.loads(content_str)
+    except json.JSONDecodeError as e:
+        logger.critical(f"Malformed JSON in template storage {FILE}: {e}")
+        raise StorageCorruptedError(f"Malformed JSON in template storage {FILE}: {e}") from e
+
+    if not isinstance(data, list):
+        logger.critical(f"Unexpected data shape in template storage {FILE}: expected list, got {type(data).__name__}")
+        raise StorageCorruptedError(f"Unexpected data shape in {FILE}: expected list, got {type(data).__name__}")
+
+    if any(not isinstance(item, dict) for item in data):
+        logger.critical(f"Unexpected data shape in template storage {FILE}: template entries must be dicts")
+        raise StorageCorruptedError(f"Unexpected data shape in {FILE}: template entries must be dicts")
+
+    return data
 
 
-def _save_all_templates(templates: list):
+def _save_all_templates(templates: list) -> bool:
+    if not isinstance(templates, list):
+        raise ValueError(f"templates must be a list, got {type(templates).__name__}")
     _ensure_store_file()
     temp_file = FILE.with_suffix(".tmp")
     try:
@@ -40,13 +83,27 @@ def _save_all_templates(templates: list):
             json.dump(templates, f, indent=2)
             f.flush()
             os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
-    except Exception:
+        try:
+            os.replace(temp_file, FILE)
+        except PermissionError:
+            with open(FILE, "w", encoding="utf-8") as f:
+                json.dump(templates, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+        return True
+    except Exception as e:
+        logger.error(f"Failed to save templates to {FILE}: {e}")
         if temp_file.exists():
             try:
                 temp_file.unlink()
             except Exception:
                 pass
+        return False
 
 
 def get_template(template_id: str) -> dict | None:
