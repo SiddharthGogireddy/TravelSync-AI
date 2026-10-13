@@ -18,3 +18,5 @@ typing_extensions==4.16.0
 google-genai==2.18.0
 reportlab==5.0.0
 uvicorn==0.52.0
+pyjwt==2.15.1
+cryptography==50.0.0

@@ -41,8 +41,18 @@ from backend.services.sharing.invitation_service import (
     accept_invitation,
     decline_invitation,
 )
+from backend.services.auth.jwt_service import create_access_token
 
 client = TestClient(app)
+
+
+def auth_headers(user_id: str) -> dict:
+    token = create_access_token(user_id=user_id)
+    return {
+        "Authorization": f"Bearer {token}",
+        "X-User-ID": user_id,
+    }
+
 
 
 def _sample_trip_payload(destination="Goa", source="Mumbai"):
@@ -86,25 +96,25 @@ def test_private_trip_isolation_blocks_strangers():
 
     trip_id = save_trip(payload, owner_id=owner_id)
 
-    # 1. Unauthenticated request (no X-User-ID) -> 403 Forbidden
+    # 1. Unauthenticated request (no credentials) -> 401 Unauthorized
     res_no_auth = client.get(f"/trip/{trip_id}")
-    assert res_no_auth.status_code == 403
-    assert "Access denied" in res_no_auth.json().get("detail", "")
+    assert res_no_auth.status_code == 401
+    assert "Authentication required" in res_no_auth.json().get("detail", "")
 
-    # 2. Stranger request (different X-User-ID) -> 403 Forbidden
-    res_stranger = client.get(f"/trip/{trip_id}", headers={"X-User-ID": stranger_id})
+    # 2. Stranger request (different user credentials) -> 403 Forbidden
+    res_stranger = client.get(f"/trip/{trip_id}", headers=auth_headers(stranger_id))
     assert res_stranger.status_code == 403
     assert "Access denied" in res_stranger.json().get("detail", "")
 
     # 3. Stranger tries to export or view calendar -> 403 Forbidden
-    res_export = client.get(f"/trip/{trip_id}/export", headers={"X-User-ID": stranger_id})
+    res_export = client.get(f"/trip/{trip_id}/export", headers=auth_headers(stranger_id))
     assert res_export.status_code == 403
 
-    res_cal = client.get(f"/trip/{trip_id}/calendar", headers={"X-User-ID": stranger_id})
+    res_cal = client.get(f"/trip/{trip_id}/calendar", headers=auth_headers(stranger_id))
     assert res_cal.status_code == 403
 
-    # 4. Owner request with X-User-ID -> 200 OK
-    res_owner = client.get(f"/trip/{trip_id}", headers={"X-User-ID": owner_id})
+    # 4. Owner request with credentials -> 200 OK
+    res_owner = client.get(f"/trip/{trip_id}", headers=auth_headers(owner_id))
     assert res_owner.status_code == 200
     data = res_owner.json()
     assert data["trip_id"] == trip_id
@@ -114,7 +124,7 @@ def test_private_trip_isolation_blocks_strangers():
 
 def test_guessing_random_trip_id_returns_404():
     """Accessing non-existent trip ID returns 404, not unauthorized."""
-    res = client.get("/trip/non-existent-uuid-12345", headers={"X-User-ID": "anyone"})
+    res = client.get("/trip/non-existent-uuid-12345", headers=auth_headers("anyone"))
     assert res.status_code == 404
 
 
@@ -132,7 +142,7 @@ def test_invitation_token_creation_and_hash_storage():
     res = client.post(
         f"/trip/{trip_id}/invitations",
         json={"role": "viewer", "expires_in_days": 7},
-        headers={"X-User-ID": owner_id},
+        headers=auth_headers(owner_id),
     )
     assert res.status_code == 201
     inv_data = res.json()
@@ -161,7 +171,7 @@ def test_stranger_cannot_create_invitations():
     res = client.post(
         f"/trip/{trip_id}/invitations",
         json={"role": "editor"},
-        headers={"X-User-ID": stranger_id},
+        headers=auth_headers(stranger_id),
     )
     assert res.status_code == 403
 
@@ -188,13 +198,13 @@ def test_viewer_role_read_allowed_write_forbidden():
     assert preview_res.json()["valid"] is True
 
     # 3. Viewer accepts invitation
-    accept_res = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": viewer_id})
+    accept_res = client.post(f"/invitations/{token}/accept", headers=auth_headers(viewer_id))
     assert accept_res.status_code == 200
     assert accept_res.json()["status"] == "accepted"
     assert accept_res.json()["role"] == "viewer"
 
     # 4. Viewer can read trip
-    view_res = client.get(f"/trip/{trip_id}", headers={"X-User-ID": viewer_id})
+    view_res = client.get(f"/trip/{trip_id}", headers=auth_headers(viewer_id))
     assert view_res.status_code == 200
     assert view_res.json()["role"] == "viewer"
 
@@ -202,7 +212,7 @@ def test_viewer_role_read_allowed_write_forbidden():
     patch_res = client.patch(
         f"/trip/{trip_id}",
         json={"prompt": "Add a museum stop"},
-        headers={"X-User-ID": viewer_id},
+        headers=auth_headers(viewer_id),
     )
     assert patch_res.status_code == 403
     assert "Permission denied" in patch_res.json().get("detail", "")
@@ -211,7 +221,7 @@ def test_viewer_role_read_allowed_write_forbidden():
     action_res = client.post(
         f"/trip/{trip_id}/attraction-action",
         json={"day": "1", "attraction_name": "Baga Beach", "action": "remove"},
-        headers={"X-User-ID": viewer_id},
+        headers=auth_headers(viewer_id),
     )
     assert action_res.status_code == 403
 
@@ -219,7 +229,7 @@ def test_viewer_role_read_allowed_write_forbidden():
     note_res = client.post(
         f"/trip/{trip_id}/notes",
         json={"note": "Viewer cannot add notes"},
-        headers={"X-User-ID": viewer_id},
+        headers=auth_headers(viewer_id),
     )
     assert note_res.status_code == 403
 
@@ -227,7 +237,7 @@ def test_viewer_role_read_allowed_write_forbidden():
     inv_res = client.post(
         f"/trip/{trip_id}/invitations",
         json={"role": "viewer"},
-        headers={"X-User-ID": viewer_id},
+        headers=auth_headers(viewer_id),
     )
     assert inv_res.status_code == 403
 
@@ -243,12 +253,12 @@ def test_editor_role_read_and_edit_allowed_cannot_invite():
     token = inv["token"]
 
     # 2. Editor accepts invitation
-    accept_res = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": editor_id})
+    accept_res = client.post(f"/invitations/{token}/accept", headers=auth_headers(editor_id))
     assert accept_res.status_code == 200
     assert accept_res.json()["role"] == "editor"
 
     # 3. Editor can read trip
-    view_res = client.get(f"/trip/{trip_id}", headers={"X-User-ID": editor_id})
+    view_res = client.get(f"/trip/{trip_id}", headers=auth_headers(editor_id))
     assert view_res.status_code == 200
     assert view_res.json()["role"] == "editor"
 
@@ -256,7 +266,7 @@ def test_editor_role_read_and_edit_allowed_cannot_invite():
     note_res = client.post(
         f"/trip/{trip_id}/notes",
         json={"note": "Editor verified addition"},
-        headers={"X-User-ID": editor_id},
+        headers=auth_headers(editor_id),
     )
     assert note_res.status_code == 200
 
@@ -264,7 +274,7 @@ def test_editor_role_read_and_edit_allowed_cannot_invite():
     inv_res = client.post(
         f"/trip/{trip_id}/invitations",
         json={"role": "viewer"},
-        headers={"X-User-ID": editor_id},
+        headers=auth_headers(editor_id),
     )
     assert inv_res.status_code == 403
 
@@ -296,7 +306,7 @@ def test_expired_invitation_cannot_be_accepted():
     assert prev["status"] == "expired"
 
     # Attempt accept -> 400 Bad Request
-    res = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": "user_late"})
+    res = client.post(f"/invitations/{token}/accept", headers=auth_headers("user_late"))
     assert res.status_code == 400
     assert "expired" in res.json().get("detail", "").lower()
 
@@ -311,11 +321,11 @@ def test_revoked_invitation_cannot_be_accepted():
     inv_id = inv["invitation_id"]
 
     # Owner revokes invitation
-    del_res = client.delete(f"/trip/{trip_id}/invitations/{inv_id}", headers={"X-User-ID": owner_id})
+    del_res = client.delete(f"/trip/{trip_id}/invitations/{inv_id}", headers=auth_headers(owner_id))
     assert del_res.status_code == 200
 
     # Attempt accept -> 400 Bad Request
-    res = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": "user_hopeful"})
+    res = client.post(f"/invitations/{token}/accept", headers=auth_headers("user_hopeful"))
     assert res.status_code == 400
     assert "revoked" in res.json().get("detail", "").lower()
 
@@ -327,12 +337,12 @@ def test_declined_invitation():
     inv = create_invitation(trip_id=trip_id, owner_user_id=owner_id, role="viewer")
     token = inv["token"]
 
-    dec_res = client.post(f"/invitations/{token}/decline", headers={"X-User-ID": "user_polite"})
+    dec_res = client.post(f"/invitations/{token}/decline", headers=auth_headers("user_polite"))
     assert dec_res.status_code == 200
     assert dec_res.json()["status"] == "declined"
 
     # Trying to accept declined invitation returns 400
-    acc_res = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": "user_polite"})
+    acc_res = client.post(f"/invitations/{token}/accept", headers=auth_headers("user_polite"))
     assert acc_res.status_code == 400
 
 
@@ -349,14 +359,14 @@ def test_trip_history_isolates_private_trips():
     trip_b = save_trip(_sample_trip_payload("Ooty", "Chennai"), owner_id=user_b)
 
     # History for user_a should contain trip_a, not trip_b
-    res_a = client.get("/trip/history", headers={"X-User-ID": user_a})
+    res_a = client.get("/trip/history", headers=auth_headers(user_a))
     assert res_a.status_code == 200
     ids_a = [t["id"] for t in res_a.json().get("trips", [])]
     assert trip_a in ids_a
     assert trip_b not in ids_a
 
     # History for user_b should contain trip_b, not trip_a
-    res_b = client.get("/trip/history", headers={"X-User-ID": user_b})
+    res_b = client.get("/trip/history", headers=auth_headers(user_b))
     assert res_b.status_code == 200
     ids_b = [t["id"] for t in res_b.json().get("trips", [])]
     assert trip_b in ids_b

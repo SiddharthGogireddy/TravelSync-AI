@@ -28,9 +28,11 @@ def create_expense(
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     user_id: Optional[str] = Query(None),
 ):
+    if not request.trip_id or not str(request.trip_id).strip():
+        raise HTTPException(status_code=400, detail="trip_id is required")
+
     uid = extract_user_id(None, x_user_id, user_id)
-    if getattr(request, "trip_id", None):
-        verify_trip_access(request.trip_id, uid, required_role="editor")
+    verify_trip_access(request.trip_id, uid, required_role="editor")
 
     add_expense(
         request.trip_id,

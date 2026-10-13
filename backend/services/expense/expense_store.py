@@ -2,8 +2,11 @@ import json
 import logging
 import os
 from pathlib import Path
+import threading
 
 logger = logging.getLogger(__name__)
+
+_STORE_LOCK = threading.RLock()
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
@@ -11,61 +14,89 @@ FILE = DATA_DIR / "expenses.json"
 
 
 def _ensure_store_file():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    if not FILE.exists():
-        temp_file = FILE.with_suffix(".tmp")
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump({}, f, indent=4)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
+    with _STORE_LOCK:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        if not FILE.exists():
+            temp_file = FILE.with_suffix(".tmp")
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump({}, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
+            try:
+                os.replace(temp_file, FILE)
+            except PermissionError:
+                with open(FILE, "w", encoding="utf-8") as f:
+                    json.dump({}, f, indent=4)
+                    f.flush()
+                    os.fsync(f.fileno())
+                if temp_file.exists():
+                    try:
+                        temp_file.unlink()
+                    except Exception:
+                        pass
 
 
 def load_expenses():
-    _ensure_store_file()
-    try:
-        with open(FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        return data if isinstance(data, dict) else {}
-    except Exception as e:
-        logger.error(f"Failed to load expenses: {e}")
-        return {}
+    with _STORE_LOCK:
+        _ensure_store_file()
+        try:
+            with open(FILE, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return data if isinstance(data, dict) else {}
+        except Exception as e:
+            logger.error(f"Failed to load expenses: {e}")
+            return {}
 
 
 def save_expenses(data):
-    _ensure_store_file()
-    temp_file = FILE.with_suffix(".tmp")
-    try:
-        with open(temp_file, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=4)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(temp_file, FILE)
-    except Exception as e:
-        logger.error(f"Failed to save expenses: {e}")
-        if temp_file.exists():
+    with _STORE_LOCK:
+        _ensure_store_file()
+        temp_file = FILE.with_suffix(".tmp")
+        try:
+            with open(temp_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4)
+                f.flush()
+                os.fsync(f.fileno())
             try:
-                temp_file.unlink()
-            except Exception:
-                pass
+                os.replace(temp_file, FILE)
+            except PermissionError:
+                with open(FILE, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=4)
+                    f.flush()
+                    os.fsync(f.fileno())
+                if temp_file.exists():
+                    try:
+                        temp_file.unlink()
+                    except Exception:
+                        pass
+            return True
+        except Exception as e:
+            logger.error(f"Failed to save expenses: {e}")
+            if temp_file.exists():
+                try:
+                    temp_file.unlink()
+                except Exception:
+                    pass
+            return False
 
 
 def add_expense(trip_id, expense):
-    key = str(trip_id)
-    data = load_expenses()
+    with _STORE_LOCK:
+        key = str(trip_id)
+        data = load_expenses()
 
-    if key not in data:
-        data[key] = []
+        if key not in data:
+            data[key] = []
 
-    data[key].append(expense)
+        data[key].append(expense)
 
-    save_expenses(data)
+        save_expenses(data)
+
 
 def get_expenses(trip_id):
-
-    data = load_expenses()
-
-    return data.get(trip_id, [])
+    with _STORE_LOCK:
+        data = load_expenses()
+        return data.get(str(trip_id), [])
 def get_category_totals(trip_id):
     expenses = get_expenses(trip_id)
 

@@ -945,4 +945,75 @@ export async function declineInvitation(token: string): Promise<{ status: string
   return await res.json();
 }
 
+export async function getLegacyTripsPreview(): Promise<any> {
+  const res = await fetch(`${API}/trip/legacy/preview`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to fetch legacy trips preview");
+  }
+  return await res.json();
+}
+
+export async function createTripsBackup(): Promise<any> {
+  const res = await fetch(`${API}/trip/legacy/backup`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to create trips backup");
+  }
+  return await res.json();
+}
+
+export async function claimLegacyTrip(tripId: string): Promise<any> {
+  const res = await fetch(`${API}/trip/${tripId}/claim-legacy`, {
+    method: "POST",
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to claim legacy trip");
+  }
+  return await res.json();
+}
+
+export async function claimBatchLegacyTrips(tripIds?: string[]): Promise<any> {
+  const res = await fetch(`${API}/trip/legacy/claim-batch`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...getAuthHeaders(),
+    },
+    body: JSON.stringify({ trip_ids: tripIds }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to batch claim legacy trips");
+  }
+  return await res.json();
+}
+
+export async function getAuthUserInfo(): Promise<any> {
+  const res = await fetch(`${API}/auth/me`, {
+    headers: {
+      ...getAuthHeaders(),
+    },
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    throw new Error(errorData?.detail || "Failed to fetch user auth info");
+  }
+  return await res.json();
+}
+
+
 

@@ -9,7 +9,26 @@ from backend.app import app
 from backend.services.storage.trip_store import save_trip, load_trip_record, _STORE_LOCK
 from backend.services.sharing.invitation_service import create_invitation, hash_token
 
-client = TestClient(app)
+from backend.services.auth.jwt_service import create_access_token
+from backend.services.auth.authorization import _sanitize_user_id
+
+
+class HardenedAuditClient(TestClient):
+    def request(self, method: str, url: str, **kwargs):
+        headers = dict(kwargs.get("headers") or {})
+        raw_mode = headers.pop("_raw_unauthenticated", None)
+        if "X-User-ID" in headers and "Authorization" not in headers and not raw_mode:
+            clean_uid = _sanitize_user_id(headers["X-User-ID"])
+            if clean_uid:
+                token = create_access_token(user_id=clean_uid)
+                headers["Authorization"] = f"Bearer {token}"
+            kwargs["headers"] = headers
+        elif raw_mode:
+            kwargs["headers"] = headers
+        return super().request(method, url, **kwargs)
+
+
+client = HardenedAuditClient(app)
 
 SAMPLE_TRIP = {
     "source": "Mumbai",
@@ -41,23 +60,42 @@ def create_test_trip(owner_id: str = "owner_alice"):
 
 
 # ---------------------------------------------------------------------------
-# Check 1: X-User-ID Impersonation Demonstration
+# Check 1: X-User-ID Impersonation Hardening & Credential Verification
 # ---------------------------------------------------------------------------
 def test_check_1_header_spoofing_impersonation_demonstration():
     """
-    Demonstrates that the header-based identity model trusts X-User-ID without cryptographic
-    signature. An attacker knowing the victim's owner_id can impersonate them by setting X-User-ID.
+    Step 75.2 Hardening Verification:
+    Demonstrates that client-declared X-User-ID headers are NEVER trusted as proof of identity.
+    Derives identity exclusively from verified Bearer credentials.
     """
     trip_id = create_test_trip(owner_id="victim_alice")
 
-    # 1. Stranger blocked with 403
+    # 1. Stranger with valid token for attacker_bob is blocked from victim_alice's trip -> 403 Forbidden
     resp_stranger = client.get(f"/trip/{trip_id}", headers={"X-User-ID": "attacker_bob"})
     assert resp_stranger.status_code == 403
 
-    # 2. Attacker spoofing the victim's header gains access
-    resp_spoofed = client.get(f"/trip/{trip_id}", headers={"X-User-ID": "victim_alice"})
-    assert resp_spoofed.status_code == 200
-    assert resp_spoofed.json()["trip_id"] == trip_id
+    # 2. Attacker passing forged X-User-ID without valid Bearer token -> 401 Unauthorized
+    resp_spoofed = client.get(
+        f"/trip/{trip_id}",
+        headers={"X-User-ID": "victim_alice", "_raw_unauthenticated": "true"}
+    )
+    assert resp_spoofed.status_code == 401
+    assert "Authentication required" in resp_spoofed.json().get("detail", "")
+
+    # 3. Attacker with valid bob token spoofing victim_alice in X-User-ID -> 401 Identity Mismatch
+    bob_token = create_access_token(user_id="attacker_bob")
+    resp_mismatch = client.get(
+        f"/trip/{trip_id}",
+        headers={"Authorization": f"Bearer {bob_token}", "X-User-ID": "victim_alice"}
+    )
+    assert resp_mismatch.status_code == 401
+    assert "mismatch" in resp_mismatch.json().get("detail", "").lower()
+
+    # 4. Legitimate owner with valid Bearer token -> 200 OK
+    resp_owner = client.get(f"/trip/{trip_id}", headers={"X-User-ID": "victim_alice"})
+    assert resp_owner.status_code == 200
+    assert resp_owner.json()["trip_id"] == trip_id
+
 
 
 # ---------------------------------------------------------------------------
@@ -378,3 +416,219 @@ def test_check_7_duplication_assigns_new_owner_and_resets_sensitive_meta():
     # Alice cannot access Bob's duplicated trip unless invited
     alice_resp = client.get(f"/trip/{new_trip_id}", headers={"X-User-ID": "alice"})
     assert alice_resp.status_code == 403
+
+
+# ---------------------------------------------------------------------------
+# Check 1 Extended: User ID Sanitization and Rejection of Malformed IDs
+# ---------------------------------------------------------------------------
+def test_check_1_user_id_sanitization_and_rejection():
+    """Verify that control characters, newlines, and overlong user IDs are sanitized or rejected."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    # Empty and whitespace-only user ID is treated as unauthenticated (401 or 403)
+    resp_empty = client.get(f"/trip/{trip_id}", headers={"X-User-ID": "   "})
+    assert resp_empty.status_code in (401, 403)
+
+    # Overlong user ID (>128 chars) is treated as unauthenticated (401 or 403)
+    overlong_id = "a" * 200
+    resp_overlong = client.get(f"/trip/{trip_id}", headers={"X-User-ID": overlong_id})
+    assert resp_overlong.status_code in (401, 403)
+
+    # Control characters / newlines are stripped
+    resp_crlf = client.get(f"/trip/{trip_id}", headers={"X-User-ID": "alice\r\n"})
+    assert resp_crlf.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Check 2 Extended: Expense Route Server-Side Authorization Enforcement
+# ---------------------------------------------------------------------------
+def test_check_2_expense_authorization_enforced():
+    """Verify that expense viewing requires viewer role and adding expense requires editor role."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    # Invite Bob as viewer
+    inv_viewer = create_invitation(trip_id, "alice", role="viewer")
+    client.post(f"/invitations/{inv_viewer['token']}/accept", headers={"X-User-ID": "bob_viewer"})
+
+    # Invite Charlie as editor
+    inv_editor = create_invitation(trip_id, "alice", role="editor")
+    client.post(f"/invitations/{inv_editor['token']}/accept", headers={"X-User-ID": "charlie_editor"})
+
+    # 1. Stranger blocked from viewing expenses
+    resp = client.get(f"/expense/{trip_id}", headers={"X-User-ID": "stranger"})
+    assert resp.status_code == 403
+
+    # 2. Viewer allowed to view expenses
+    resp = client.get(f"/expense/{trip_id}", headers={"X-User-ID": "bob_viewer"})
+    assert resp.status_code == 200
+
+    # 3. Viewer blocked from adding expense
+    resp = client.post(
+        "/expense/",
+        json={"trip_id": trip_id, "expense": {"title": "Dinner", "amount": 1200, "paid_by": "Bob"}},
+        headers={"X-User-ID": "bob_viewer"}
+    )
+    assert resp.status_code == 403
+
+    # 4. Editor allowed to add expense
+    resp = client.post(
+        "/expense/",
+        json={"trip_id": trip_id, "expense": {"title": "Dinner", "amount": 1200, "paid_by": "Charlie"}},
+        headers={"X-User-ID": "charlie_editor"}
+    )
+    assert resp.status_code == 200
+
+    # 5. Missing or empty trip_id is rejected with 400 Bad Request
+    resp = client.post(
+        "/expense/",
+        json={"trip_id": "", "expense": {"title": "Ghost", "amount": 100, "paid_by": "Anyone"}},
+        headers={"X-User-ID": "charlie_editor"}
+    )
+    assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
+# Check 2 Extended: Favorites and Ratings Route Server-Side Authorization
+# ---------------------------------------------------------------------------
+def test_check_2_favorites_and_ratings_authorization_enforced():
+    """Verify that favorites and ratings require viewer access and stranger is blocked."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    # 1. Stranger blocked from favorite endpoints
+    assert client.get(f"/trip/{trip_id}/favorite", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.post(f"/trip/{trip_id}/favorite", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.delete(f"/trip/{trip_id}/favorite", headers={"X-User-ID": "stranger"}).status_code == 403
+
+    # 2. Stranger blocked from rating endpoints
+    assert client.get(f"/trip/{trip_id}/rating", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.post(
+        f"/trip/{trip_id}/rating",
+        json={"rating": 5, "feedback": "Nice"},
+        headers={"X-User-ID": "stranger"}
+    ).status_code == 403
+
+    # 3. Owner/Viewer allowed
+    assert client.post(f"/trip/{trip_id}/favorite", headers={"X-User-ID": "alice"}).status_code == 200
+    assert client.get(f"/trip/{trip_id}/favorite", headers={"X-User-ID": "alice"}).status_code == 200
+    assert client.post(
+        f"/trip/{trip_id}/rating",
+        json={"rating": 5, "feedback": "Great trip"},
+        headers={"X-User-ID": "alice"}
+    ).status_code == 200
+    assert client.get(f"/trip/{trip_id}/rating", headers={"X-User-ID": "alice"}).status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Check 2 Extended: Weather Alerts and Calendar Export Server-Side Authorization
+# ---------------------------------------------------------------------------
+def test_check_2_weather_alerts_and_calendar_export_authorization_enforced():
+    """Verify that weather alerts and calendar ics exports require viewer access."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    # 1. Stranger blocked
+    assert client.get(f"/weather/trip/{trip_id}/alerts", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.get(f"/trip/{trip_id}/export/calendar.ics", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.get(f"/trip/{trip_id}/export/ics", headers={"X-User-ID": "stranger"}).status_code == 403
+
+    # 2. Owner allowed
+    assert client.get(f"/weather/trip/{trip_id}/alerts", headers={"X-User-ID": "alice"}).status_code == 200
+    cal_resp = client.get(f"/trip/{trip_id}/export/calendar.ics", headers={"X-User-ID": "alice"})
+    assert cal_resp.status_code == 200
+    assert "text/calendar" in cal_resp.headers["content-type"]
+
+
+# ---------------------------------------------------------------------------
+# Check 2 Extended: Replanning and Attraction Alternatives/Action Authorization
+# ---------------------------------------------------------------------------
+def test_check_2_replanning_and_attraction_routes_authorization_enforced():
+    """Verify that replanning routes require editor role, while alternatives require viewer role."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    inv = create_invitation(trip_id, "alice", role="viewer")
+    client.post(f"/invitations/{inv['token']}/accept", headers={"X-User-ID": "bob_viewer"})
+
+    # 1. Attraction alternatives: stranger blocked, viewer allowed
+    assert client.get(
+        f"/trip/{trip_id}/attraction-alternatives?day=1&attraction_name=Calangute+Beach",
+        headers={"X-User-ID": "stranger"}
+    ).status_code == 403
+
+    resp_alt = client.get(
+        f"/trip/{trip_id}/attraction-alternatives?day=1&attraction_name=Calangute+Beach",
+        headers={"X-User-ID": "bob_viewer"}
+    )
+    assert resp_alt.status_code == 200
+
+    # 2. Attraction action: viewer blocked (403)
+    resp_act = client.post(
+        f"/trip/{trip_id}/attraction-action",
+        json={"day": "1", "attraction_name": "Calangute Beach", "action": "remove"},
+        headers={"X-User-ID": "bob_viewer"}
+    )
+    assert resp_act.status_code == 403
+
+    # 3. Optimization score: stranger blocked (403), viewer allowed (200)
+    assert client.get(f"/trip/{trip_id}/optimization-score", headers={"X-User-ID": "stranger"}).status_code == 403
+    assert client.get(f"/trip/{trip_id}/optimization-score", headers={"X-User-ID": "bob_viewer"}).status_code == 200
+
+    # 4. Optimize trip: viewer blocked (403), owner allowed (200)
+    assert client.post(f"/trip/{trip_id}/optimize-trip", headers={"X-User-ID": "bob_viewer"}).status_code == 403
+    assert client.post(f"/trip/{trip_id}/optimize-trip", headers={"X-User-ID": "alice"}).status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Check 3 Extended: Repeated Acceptance & Role Escalation Prevention
+# ---------------------------------------------------------------------------
+def test_check_3_repeated_acceptance_and_role_escalation_prevention():
+    """Verify that accepted invitations cannot be re-accepted and invitations cannot grant owner/admin."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    # 1. Disallow creating invitation with non-permitted roles (owner or admin)
+    resp_invalid_role = client.post(
+        f"/trip/{trip_id}/invitations",
+        json={"role": "owner"},
+        headers={"X-User-ID": "alice"}
+    )
+    assert resp_invalid_role.status_code == 400
+
+    resp_admin = client.post(
+        f"/trip/{trip_id}/invitations",
+        json={"role": "admin"},
+        headers={"X-User-ID": "alice"}
+    )
+    assert resp_admin.status_code == 400
+
+    # 2. Valid invitation accepted once
+    inv = create_invitation(trip_id, "alice", role="viewer")
+    token = inv["token"]
+    resp_acc1 = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": "user_first"})
+    assert resp_acc1.status_code == 200
+
+    # 3. Repeated acceptance by same or another user returns 400
+    resp_acc2 = client.post(f"/invitations/{token}/accept", headers={"X-User-ID": "user_second"})
+    assert resp_acc2.status_code == 400
+    assert "already been accepted" in resp_acc2.json()["detail"].lower()
+
+
+# ---------------------------------------------------------------------------
+# Check 6 Extended: Multi-Store Thread Safety
+# ---------------------------------------------------------------------------
+def test_check_6_concurrent_writes_across_all_stores():
+    """Verify concurrent writes across favorites, ratings, and expenses stores remain thread-safe."""
+    trip_id = create_test_trip(owner_id="alice")
+
+    from backend.services.storage.favorite_store import add_favorite
+    from backend.services.storage.rating_store import save_rating
+    from backend.services.expense.expense_store import add_expense
+
+    def worker(idx):
+        t_id = f"trip_worker_{idx}"
+        add_favorite(t_id)
+        save_rating(t_id, 4, f"Feedback {idx}")
+        add_expense(t_id, {"title": f"Exp {idx}", "amount": 100 * idx, "paid_by": "Worker"})
+        return True
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        futures = [executor.submit(worker, i) for i in range(12)]
+        for f in concurrent.futures.as_completed(futures):
+            assert f.result() is True
