@@ -1,0 +1,63 @@
+{
+  "name": "TravelSync AI — Collaborative Trip Planner",
+  "short_name": "TravelSync",
+  "description": "AI-powered collaborative travel planning, trip journaling, and group coordination.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/maskable-icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],
+  "categories": [
+    "travel",
+    "productivity",
+    "social"
+  ],
+  "shortcuts": [
+    {
+      "name": "Plan Trip",
+      "short_name": "Plan",
+      "url": "/",
+      "description": "Generate a new intelligent itinerary"
+    },
+    {
+      "name": "Trip History",
+      "short_name": "History",
+      "url": "/trip-history",
+      "description": "Browse and resume your trips"
+    },
+    {
+      "name": "Templates",
+      "short_name": "Templates",
+      "url": "/templates",
+      "description": "Discover curated travel templates"
+    }
+  ]
+}

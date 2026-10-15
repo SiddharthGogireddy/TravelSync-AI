@@ -10,11 +10,11 @@ def fit_trip_to_budget(
 ):
     trip_data = trip["trip"]
 
-    travelers = trip_data["travelers"]
-    days = trip_data["days"]
-    travel_mode = trip_data["travel_mode"]
-    hotels = trip_data["hotels"]
-    places = trip_data["places"]
+    travelers = trip_data.get("travelers", [])
+    days = trip_data.get("days", 1)
+    travel_mode = trip_data.get("travel_mode", "car")
+    hotels = trip_data.get("hotels", [])
+    places = trip_data.get("places", [])
 
     mandatory_visits = trip_data.get(
         "mandatory_visits",

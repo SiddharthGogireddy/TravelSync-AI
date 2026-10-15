@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0284c7" />
+  <title>Offline Mode — TravelSync AI</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --border: #e2e8f0;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .offline-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      max-width: 520px;
+      width: 100%;
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    }
+    .icon {
+      font-size: 3.2rem;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--text-main);
+      letter-spacing: -0.02em;
+    }
+    p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 24px;
+    }
+    .feature-list {
+      text-align: left;
+      background: #f1f5f9;
+      border-radius: 16px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      font-size: 0.88rem;
+    }
+    .feature-list h3 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #475569;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .feature-list ul {
+      list-style: none;
+    }
+    .feature-list li {
+      margin-bottom: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      color: #334155;
+    }
+    .feature-list li:last-child {
+      margin-bottom: 0;
+    }
+    .retry-btn {
+      background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+      color: #ffffff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .retry-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+    }
+  </style>
+</head>
+<body>
+  <div class="offline-card">
+    <div class="icon">✈️📡</div>
+    <h1>You are Currently Offline</h1>
+    <p>TravelSync AI is running in standalone offline mode. The application shell is loaded, but live travel synchronization requires an active internet connection.</p>
+
+    <div class="feature-list">
+      <h3>Live Features Requiring Connection:</h3>
+      <ul>
+        <li><span>⚠️</span> <span>AI Itinerary Generation & Prompt Updates</span></li>
+        <li><span>⚠️</span> <span>Live Group Chat & Attraction Comments</span></li>
+        <li><span>⚠️</span> <span>Collaborative Voting & Invitation Acceptance</span></li>
+        <li><span>⚠️</span> <span>Activity Feed & In-App Notifications</span></li>
+        <li><span>⚠️</span> <span>Photo Memory Uploads & PDF Journal Export</span></li>
+        <li><span>⚠️</span> <span>Real-time Weather Alerts & Currency Rates</span></li>
+      </ul>
+    </div>
+
+    <button class="retry-btn" onclick="window.location.reload()">
+      <span>🔄</span> Try Reconnecting
+    </button>
+  </div>
+</body>
+</html>

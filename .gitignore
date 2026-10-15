@@ -22,5 +22,14 @@ Thumbs.db
 # Generated PDFs
 backend/pdfs/
 backend/data_backup/
+*.pdf
+
+# Local Databases, Backups, and Uploads
+backend/data/*.db
+backend/data/*.db-wal
+backend/data/*.db-shm
+backend/data/backups/
+backend/data/memories_uploads/
+
 brain/
 scratch/

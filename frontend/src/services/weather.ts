@@ -1,4 +1,4 @@
-import { API } from "./api";
+import { apiFetch } from "./api";
 
 export interface DailyForecast {
   day: number;
@@ -48,17 +48,9 @@ export interface TripWeatherAlertsResponse {
 }
 
 export async function getTripWeatherAlerts(tripId: string): Promise<TripWeatherAlertsResponse> {
-  const res = await fetch(`${API}/weather/trip/${encodeURIComponent(tripId)}/alerts`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch weather alerts for trip (${res.status})`);
-  }
-  return res.json();
+  return apiFetch<TripWeatherAlertsResponse>(`/weather/trip/${encodeURIComponent(tripId)}/alerts`);
 }
 
 export async function getLocationForecast(lat: number, lon: number, days = 7): Promise<any> {
-  const res = await fetch(`${API}/weather/forecast?lat=${lat}&lon=${lon}&days=${days}`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch location forecast (${res.status})`);
-  }
-  return res.json();
+  return apiFetch<any>(`/weather/forecast?lat=${lat}&lon=${lon}&days=${days}`);
 }

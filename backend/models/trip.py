@@ -78,4 +78,19 @@ class TripRequest(BaseModel):
             self.days = date_days
 
         return self
+
+
+class SuggestDatesRequest(BaseModel):
+    destination: str
+    days: int = Field(default=3, ge=1, le=30, description="Desired trip duration in days (1 to 30)")
+    source: Optional[str] = None
+    flexible_window: Optional[str] = Field(default="next_month", description="Window preset: next_2_weeks, next_month, next_6_weeks, or custom")
+    earliest_date: Optional[str] = Field(default=None, description="Earliest travel date (YYYY-MM-DD)")
+    latest_date: Optional[str] = Field(default=None, description="Latest travel date (YYYY-MM-DD)")
+    travelers_count: Optional[int] = Field(default=1, ge=1, le=20)
+    budget: Optional[str] = Field(default="medium", description="Budget tier: low, medium, high")
+    interests: Optional[List[str]] = Field(default_factory=list)
+    weather_preference: Optional[str] = Field(default="avoid_rain", description="Preference: avoid_rain, mild, any")
+    prefer_weekends: Optional[bool] = None
+
 

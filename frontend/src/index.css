@@ -66,13 +66,103 @@ body {
    background: #f5f7fa;
   margin: 0;
 }
-input {
+input, select, textarea {
     display: block;
     width: 100%;
-    padding: 10px;
-    margin-top: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
     border-radius: 6px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border, #cbd5e1);
+    background-color: var(--bg, #ffffff);
+    color: var(--text-h, #0f172a);
+    font-family: inherit;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+select {
+    cursor: pointer;
+    line-height: 1.4;
+    appearance: auto;
+    -webkit-appearance: menulist;
+    -moz-appearance: menulist;
+    background-color: #ffffff;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+select:hover {
+    border-color: #94a3b8;
+}
+
+select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+select:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    background-color: #f1f5f9;
+    color: #64748b;
+}
+
+/* Ensure dropdown options have guaranteed high contrast prior to hover, during hover, and when selected across all OS renderers */
+select option {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 0.95rem;
+    padding: 8px 12px;
+}
+
+select option:checked,
+select option:hover {
+    background-color: #e0e7ff !important;
+    color: #312e81 !important;
+}
+
+select option:disabled {
+    color: #94a3b8 !important;
+    background-color: #f8fafc !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    select {
+        background-color: #1e293b;
+        color: #f8fafc;
+        border-color: #334155;
+    }
+
+    select:hover {
+        border-color: #64748b;
+    }
+
+    select:focus {
+        border-color: #818cf8;
+        box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.25);
+    }
+
+    select:disabled {
+        background-color: #0f172a;
+        color: #64748b;
+    }
+
+    select option {
+        background-color: #1e293b !important;
+        color: #f8fafc !important;
+    }
+
+    select option:checked,
+    select option:hover {
+        background-color: #3730a3 !important;
+        color: #e0e7ff !important;
+    }
+
+    select option:disabled {
+        color: #64748b !important;
+        background-color: #0f172a !important;
+    }
 }
 
 h1 {
@@ -128,5 +218,61 @@ code {
 }
 
 body {
-    background: #f3f4f6;
+  background: #f3f4f6;
+  margin: 0;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Touch targets and mobile ergonomics */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 768px) {
+  /* Prevent iOS zoom on input focus by guaranteeing 16px font size */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Accessible touch targets */
+  button, select, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+
+  nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 12px 14px !important;
+    gap: 14px !important;
+    justify-content: flex-start !important;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  #root {
+    width: 100% !important;
+    border-inline: none !important;
+  }
+}
+
+@media (max-width: 640px) {
+  h1 {
+    font-size: 1.8rem !important;
+  }
+
+  h2 {
+    font-size: 1.4rem !important;
+  }
 }

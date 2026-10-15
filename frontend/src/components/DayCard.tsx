@@ -13,6 +13,7 @@ interface Props {
     onRemoveAttraction?: (day: string, place: Place) => void;
     onReplaceAttraction?: (day: string, place: Place) => void;
     onShowPlaceInfo?: (place: any) => void;
+    onOpenComments?: (place: Place) => void;
 }
 
 
@@ -53,6 +54,7 @@ export default function DayCard({
     onRemoveAttraction,
     onReplaceAttraction,
     onShowPlaceInfo,
+    onOpenComments,
 }: Props) {
 
 
@@ -249,6 +251,34 @@ export default function DayCard({
                                         }}
                                     >
                                         <span>ⓘ</span> Details
+                                    </button>
+                                )}
+                                {onOpenComments && (
+                                    <button
+                                        type="button"
+                                        className="attraction-comments-btn"
+                                        aria-label={`Discuss ${place.name}`}
+                                        title={`Discuss ${place.name} with trip group`}
+                                        style={{
+                                            fontSize: "0.76rem",
+                                            padding: "4px 10px",
+                                            borderRadius: "6px",
+                                            border: "1px solid #bfdbfe",
+                                            background: "#eff6ff",
+                                            color: "#1e40af",
+                                            cursor: "pointer",
+                                            fontWeight: 600,
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            transition: "background 0.15s ease",
+                                        }}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onOpenComments(place);
+                                        }}
+                                    >
+                                        <span>💬</span> Discuss
                                     </button>
                                 )}
                                 {onReplaceAttraction && (

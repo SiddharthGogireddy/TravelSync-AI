@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
+  API,
   previewInvitation,
   acceptInvitation,
   declineInvitation,
 } from "../services/api";
+import { ensureAuthSession } from "../services/identity";
 import type { InvitationPreview } from "../services/api";
 
 export default function InvitationAcceptPage() {
@@ -39,6 +41,7 @@ export default function InvitationAcceptPage() {
     if (!token) return;
     try {
       setActionLoading(true);
+      await ensureAuthSession(API);
       const res = await acceptInvitation(token);
       setActionStatus("Invitation accepted! Redirecting to trip...");
       setTimeout(() => {
@@ -55,6 +58,7 @@ export default function InvitationAcceptPage() {
     if (!window.confirm("Are you sure you want to decline this trip invitation?")) return;
     try {
       setActionLoading(true);
+      await ensureAuthSession(API);
       await declineInvitation(token);
       setActionStatus("Invitation declined.");
       setTimeout(() => {

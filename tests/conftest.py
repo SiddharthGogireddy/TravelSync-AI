@@ -1,9 +1,11 @@
 import os
 import shutil
+import sys
 import pytest
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(BASE_DIR))
 BACKEND_DATA = BASE_DIR / "backend" / "data"
 BACKEND_DATA_BACKUP = BASE_DIR / "backend" / "data_backup"
 
@@ -28,6 +30,15 @@ def preserve_real_data_session():
             shutil.copyfile(src, dst)
 
     yield
+
+
+@pytest.fixture(autouse=True)
+def reset_rate_limiter():
+    """Ensure rate limiter counters are clean between tests."""
+    from backend.services.security.rate_limiter import global_limiter
+    global_limiter.reset()
+    yield
+    global_limiter.reset()
 
 
 @pytest.fixture(autouse=True)
@@ -85,6 +96,7 @@ def isolated_storage(tmp_path, monkeypatch):
     expense_file.write_text("[]", encoding="utf-8")
 
     monkeypatch.setattr(trip_store, "FILE", trip_file)
+    monkeypatch.setenv("TRIP_STORAGE_BACKEND", "json")
     monkeypatch.setattr(favorite_store, "FILE", fav_file)
     monkeypatch.setattr(note_store, "FILE", note_file)
     monkeypatch.setattr(rating_store, "FILE", rating_file)

@@ -8,6 +8,7 @@ from typing import Optional, Tuple, Dict, Any, List
 from backend.services.storage.trip_store import (
     load_trip_record,
     update_trip_sharing,
+    load_all_trips,
     _read_trips,
     _STORE_LOCK,
 )
@@ -180,7 +181,7 @@ def find_invitation_by_token(raw_token: str) -> Tuple[Optional[Dict[str, Any]], 
 
     token_hash = hash_token(raw_token)
     with _STORE_LOCK:
-        all_trips = _read_trips()
+        all_trips = load_all_trips(None)
         for t in all_trips:
             if not isinstance(t, dict):
                 continue
@@ -293,6 +294,24 @@ def accept_invitation(raw_token: str, user_id: str) -> Dict[str, Any]:
         update_trip_sharing(trip_id, members=members, invitations=invitations)
 
     logger.info("User %s accepted invitation to trip %s with role %s", uid, trip_id, role)
+
+    try:
+        from backend.services.storage.activity_store import record_activity
+        record_activity(
+            trip_id=trip_id,
+            actor_id=uid,
+            actor_name=uid,
+            event_type="member_joined",
+            title="New Member Joined",
+            summary=f"{uid} joined the trip as a {role}",
+            target_type="member",
+            target_id=uid,
+            link=f"/trip/{trip_id}",
+            notify_members=True,
+        )
+    except Exception as e:
+        logger.warning("Could not record member_joined activity: %s", e)
+
     return {
         "status": "accepted",
         "trip_id": trip_id,

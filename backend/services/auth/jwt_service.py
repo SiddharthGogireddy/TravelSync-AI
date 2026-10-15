@@ -13,14 +13,68 @@ logger = logging.getLogger(__name__)
 # JWT & OIDC CONFIGURATION
 # ==============================================================================
 DEFAULT_DEV_SECRET = "travelsync-dev-secret-key-32bytes-secure-2026-hardening"
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", DEFAULT_DEV_SECRET)
 JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 JWT_EXPIRATION_SECONDS = int(os.getenv("JWT_EXPIRATION_SECONDS", str(7 * 24 * 3600)))  # 7 days
 
 OIDC_ISSUER = os.getenv("OIDC_ISSUER", "travelsync-ai")
 OIDC_AUDIENCE = os.getenv("OIDC_AUDIENCE", "travelsync-api")
 OIDC_JWKS_URL = os.getenv("OIDC_JWKS_URL", None)
-AUTH_DEV_MODE = os.getenv("AUTH_DEV_MODE", "true").lower() in ("true", "1", "yes")
+
+
+def is_auth_dev_mode() -> bool:
+    """Returns True if local development authentication mode is enabled."""
+    return os.getenv("AUTH_DEV_MODE", "true").lower() in ("true", "1", "yes")
+
+
+# Backward compatible attributes
+AUTH_DEV_MODE = is_auth_dev_mode()
+JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", DEFAULT_DEV_SECRET)
+
+
+def get_jwt_secret_key() -> str:
+    """
+    Returns the active JWT secret key, validating security requirements.
+
+    Security Rules:
+    - When AUTH_DEV_MODE is enabled (true), returns the configured key or DEFAULT_DEV_SECRET.
+    - When AUTH_DEV_MODE is disabled (false, production mode):
+      - Raises RuntimeError if JWT_SECRET_KEY is missing, empty, or equals DEFAULT_DEV_SECRET.
+    - Never prints secret values in error messages or logs.
+    """
+    dev_mode = is_auth_dev_mode()
+    key = os.getenv("JWT_SECRET_KEY")
+
+    if dev_mode:
+        if key and key.strip():
+            return key.strip()
+        return DEFAULT_DEV_SECRET
+
+    if not key or not str(key).strip():
+        raise RuntimeError(
+            "Fatal configuration error: JWT_SECRET_KEY environment variable is required in production mode."
+        )
+
+    cleaned_key = str(key).strip()
+    if cleaned_key == DEFAULT_DEV_SECRET:
+        raise RuntimeError(
+            "Fatal configuration error: JWT_SECRET_KEY in production mode cannot be the committed development default secret."
+        )
+    if len(cleaned_key) < 32:
+        raise RuntimeError(
+            "Fatal configuration error: JWT_SECRET_KEY in production mode must be at least 32 characters long for cryptographic security."
+        )
+
+    return cleaned_key
+
+
+def validate_jwt_secrets_config() -> None:
+    """
+    Validates that JWT secret configuration is secure for the active environment.
+    Fails startup with RuntimeError if production uses missing or default development secrets.
+    Never prints secret values in errors or logs.
+    """
+    get_jwt_secret_key()
+
 
 ALLOWED_ALGORITHMS = [JWT_ALGORITHM]
 if JWT_ALGORITHM != "HS256" and "HS256" not in ALLOWED_ALGORITHMS:
@@ -65,7 +119,8 @@ def create_access_token(
             if k not in payload:
                 payload[k] = v
 
-    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITHM)
+    signing_key = get_jwt_secret_key()
+    token = jwt.encode(payload, signing_key, algorithm=JWT_ALGORITHM)
     return token
 
 
@@ -94,9 +149,10 @@ def verify_access_token(token: str) -> Dict[str, Any]:
             pass  # Fallback to standard HMAC verification
 
     try:
+        verification_key = get_jwt_secret_key()
         payload = jwt.decode(
             clean_token,
-            JWT_SECRET_KEY,
+            verification_key,
             algorithms=ALLOWED_ALGORITHMS,
             options={
                 "verify_signature": True,
@@ -178,6 +234,6 @@ def get_auth_config() -> Dict[str, Any]:
         "algorithm": JWT_ALGORITHM,
         "issuer": OIDC_ISSUER,
         "audience": OIDC_AUDIENCE,
-        "dev_mode": AUTH_DEV_MODE,
+        "dev_mode": is_auth_dev_mode(),
         "oidc_jwks_configured": bool(OIDC_JWKS_URL),
     }

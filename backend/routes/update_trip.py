@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Query, Header
+from fastapi import APIRouter, HTTPException, Query, Header, Request
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel
 
@@ -85,12 +85,14 @@ async def update_trip(
     update: TripUpdateRequest,
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     user_id: Optional[str] = Query(None),
+    authorization: Optional[str] = Header(None, alias="Authorization"),
+    request: Request = None,
 ):
 
     # --------------------------------
     # Load trip & verify editor access
     # --------------------------------
-    uid = extract_user_id(None, x_user_id, user_id)
+    uid = extract_user_id(request, x_user_id, user_id, authorization)
     trip_record, _ = verify_trip_access(trip_id, uid, required_role="editor")
     trip = trip_record.get("data")
 
@@ -690,6 +692,26 @@ async def group_vote_endpoint(
         raw_trip = updated_inner
 
     update_saved_trip(trip_id, raw_trip)
+
+    try:
+        from backend.services.storage.activity_store import record_activity
+        vote_label = "favored" if request.vote == "up" else ("skipped" if request.vote == "down" else "voted neutral on")
+        voter_display = request.traveler_name or uid or "A traveler"
+        record_activity(
+            trip_id=trip_id,
+            actor_id=uid or voter_display,
+            actor_name=voter_display,
+            event_type="vote_submitted",
+            title=f"Vote on {request.attraction_name}",
+            summary=f"{voter_display} {vote_label} {request.attraction_name}",
+            target_type="voting",
+            target_id=request.attraction_name,
+            link=f"/trip/{trip_id}#section-group-decisions",
+            notify_members=True,
+        )
+    except Exception as e:
+        logger.warning("Could not record vote_submitted activity: %s", e)
+
     return {
         "success": True,
         "trip": updated_inner,
@@ -726,6 +748,23 @@ async def resolve_group_conflicts_endpoint(
         raw_trip = updated_inner
 
     update_saved_trip(trip_id, raw_trip)
+
+    try:
+        from backend.services.storage.activity_store import record_activity
+        record_activity(
+            trip_id=trip_id,
+            actor_id=uid or "editor",
+            actor_name=uid or "Trip Editor",
+            event_type="conflicts_resolved",
+            title="Group Consensus Resolved",
+            summary=f"{uid or 'An editor'} resolved itinerary group conflicts based on votes",
+            target_type="voting",
+            link=f"/trip/{trip_id}#section-group-decisions",
+            notify_members=True,
+        )
+    except Exception as e:
+        logger.warning("Could not record conflicts_resolved activity: %s", e)
+
     return {
         "success": True,
         "trip": updated_inner,

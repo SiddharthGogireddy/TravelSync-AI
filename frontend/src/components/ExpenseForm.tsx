@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Expense } from "../types/expense";
-import { API } from "../services/api";
+import { apiFetch } from "../services/api";
 
 interface Props {
     travelers: string[];
@@ -56,14 +56,15 @@ export default function ExpenseForm({ travelers, onAdd }: Props) {
     if (!title) return;
 
     const timer = setTimeout(async () => {
-        const res = await fetch(`${API}/ai/categorize`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title }),
-        });
-
-        const data = await res.json();
-        setCategory(data.category);
+        try {
+            const data = await apiFetch<{ category?: string }>("/ai/categorize", {
+                method: "POST",
+                body: JSON.stringify({ title }),
+            });
+            if (data?.category) {
+                setCategory(data.category);
+            }
+        } catch {}
     }, 500);
 
     return () => clearTimeout(timer);

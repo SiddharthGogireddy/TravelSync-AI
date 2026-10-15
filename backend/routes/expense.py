@@ -39,6 +39,23 @@ def create_expense(
         request.expense.dict(),
     )
 
+    try:
+        from backend.services.storage.activity_store import record_activity
+        exp_title = getattr(request.expense, "title", None) or getattr(request.expense, "description", None) or "an item"
+        record_activity(
+            trip_id=request.trip_id,
+            actor_id=uid,
+            actor_name=uid,
+            event_type="expense_added",
+            title="New Expense Added",
+            summary=f"{uid} recorded an expense for {exp_title}",
+            target_type="expense",
+            link=f"/trip/{request.trip_id}#section-budget",
+            notify_members=True,
+        )
+    except Exception as e:
+        logger.warning("Could not record expense_added activity: %s", e)
+
     return {
         "message": "Expense Added"
     }

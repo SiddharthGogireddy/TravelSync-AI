@@ -1,4 +1,4 @@
-import { API } from "./api";
+import { apiFetch } from "./api";
 
 export interface CurrencyInfo {
   name: string;
@@ -28,11 +28,7 @@ let _cachedRates: ExchangeRatesResponse | null = null;
 let _cachedRatesPromise: Promise<ExchangeRatesResponse> | null = null;
 
 export async function getSupportedCurrencies(): Promise<SupportedCurrenciesResponse> {
-  const res = await fetch(`${API}/currency/supported`);
-  if (!res.ok) {
-    throw new Error(`Failed to load supported currencies (${res.status})`);
-  }
-  return res.json();
+  return apiFetch<SupportedCurrenciesResponse>("/currency/supported");
 }
 
 export async function getExchangeRates(base: string = "USD", forceRefresh = false): Promise<ExchangeRatesResponse> {
@@ -45,11 +41,7 @@ export async function getExchangeRates(base: string = "USD", forceRefresh = fals
 
   _cachedRatesPromise = (async () => {
     try {
-      const res = await fetch(`${API}/currency/rates?base=${encodeURIComponent(base)}`);
-      if (!res.ok) {
-        throw new Error(`Failed to fetch exchange rates (${res.status})`);
-      }
-      const data: ExchangeRatesResponse = await res.json();
+      const data = await apiFetch<ExchangeRatesResponse>(`/currency/rates?base=${encodeURIComponent(base)}`);
       _cachedRates = data;
       return data;
     } finally {

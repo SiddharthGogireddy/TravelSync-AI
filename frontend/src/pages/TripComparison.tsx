@@ -162,6 +162,7 @@ export default function TripComparison() {
                 borderRadius: 8,
                 border: "1px solid #d1d5db",
                 background: "#fff",
+                color: "#0f172a",
                 fontSize: "0.9rem",
               }}
             >
@@ -197,6 +198,7 @@ export default function TripComparison() {
                 borderRadius: 8,
                 border: "1px solid #d1d5db",
                 background: "#fff",
+                color: "#0f172a",
                 fontSize: "0.9rem",
               }}
             >

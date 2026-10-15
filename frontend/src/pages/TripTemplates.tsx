@@ -466,6 +466,7 @@ export default function TripTemplates() {
                   borderRadius: 6,
                   border: "1px solid #cbd5e1",
                   background: "#fff",
+                  color: "#0f172a",
                   boxSizing: "border-box",
                   fontSize: "0.9rem",
                 }}

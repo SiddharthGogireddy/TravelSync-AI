@@ -11,6 +11,9 @@ from backend.routes.pdf import router as pdf_router
 from backend.routes.place import router as place_router
 from backend.routes.currency import router as currency_router
 from backend.routes.weather import router as weather_router
+from backend.routes.chat import router as chat_router
+from backend.routes.activity import router as activity_router
+from backend.routes.memory import router as memory_router
 from backend.routes.invitation import router as invitation_router
 from backend.routes.auth import router as auth_router
 from backend.routes.migration import router as migration_router
@@ -19,8 +22,27 @@ from backend.routes.update_trip import (
 )
 from backend.services.trip_editor.llm_interpreter import interpret_trip_prompt
 load_dotenv()
+from backend.services.auth.jwt_service import validate_jwt_secrets_config, is_auth_dev_mode
+from backend.services.auth.cors_config import parse_cors_origins
 from backend.routes.explanation import router as explanation_router
-app = FastAPI(title="TravelSync AI")
+from backend.services.error.exception_handlers import register_exception_handlers
+from backend.services.security.rate_limiter import RateLimiterMiddleware
+
+from contextlib import asynccontextmanager
+
+# Validate JWT secrets and CORS configuration at startup
+validate_jwt_secrets_config()
+cors_origins = parse_cors_origins()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    validate_jwt_secrets_config()
+    yield
+
+
+app = FastAPI(title="TravelSync AI", lifespan=lifespan)
+register_exception_handlers(app)
 
 @app.middleware("http")
 async def request_context_middleware(request: Request, call_next):
@@ -44,14 +66,18 @@ app.include_router(pdf_router)
 app.include_router(place_router)
 app.include_router(currency_router)
 app.include_router(weather_router)
+app.include_router(chat_router)
+app.include_router(activity_router)
+app.include_router(memory_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(RateLimiterMiddleware)
 app.include_router(
     update_trip_router
 )
@@ -60,8 +86,9 @@ app.include_router(
     prefix="/explanation",
     tags=["Explanation"],
 )
-@app.get("/test-llm")
-async def test_llm():
-    return interpret_trip_prompt(
-        "Regenerate Day 2 and keep the budget under ₹30,000"
-    )
+if is_auth_dev_mode():
+    @app.get("/test-llm", tags=["Diagnostics"])
+    async def test_llm():
+        return interpret_trip_prompt(
+            "Regenerate Day 2 and keep the budget under ₹30,000"
+        )

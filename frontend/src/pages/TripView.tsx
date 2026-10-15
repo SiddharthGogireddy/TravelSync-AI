@@ -16,7 +16,7 @@ import WeatherCard from "../components/WeatherCard";
 import TravelerConflicts from "../components/TravelerConflicts";
 import TripInsightsCard from "../components/TripInsightsCard";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 import {
   addExpense,
@@ -25,6 +25,11 @@ import {
 
 import PlaceDetailModal from "../components/PlaceDetailModal";
 import TripShareModal from "../components/TripShareModal";
+import TripGroupChat from "../components/TripGroupChat";
+import AttractionCommentsModal from "../components/AttractionCommentsModal";
+import TripActivityFeed from "../components/TripActivityFeed";
+import TripJournal from "../components/TripJournal";
+import NotificationCenter from "../components/NotificationCenter";
 import CurrencySelector from "../components/CurrencySelector";
 import WeatherAlertsBanner from "../components/WeatherAlertsBanner";
 import { getTripWeatherAlerts } from "../services/weather";
@@ -37,6 +42,7 @@ import {
 } from "../services/currency";
 import type { CurrencyInfo, ExchangeRatesResponse } from "../services/currency";
 import {
+  API,
   updateTrip,
   getTrip,
   checkFavorite,
@@ -64,7 +70,9 @@ import {
   getAttractionAlternatives,
   executeAttractionAction,
   getPlaceDetails,
+  claimLegacyTrip,
 } from "../services/api";
+import { ensureAuthSession } from "../services/identity";
 import type { AlternativeAttraction, PlaceDetail } from "../services/api";
 
 
@@ -96,6 +104,8 @@ function getTripIdFromUrl(): string | undefined {
 export default function TripView() {
   const [editPrompt, setEditPrompt] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -110,6 +120,12 @@ export default function TripView() {
   const [newNote, setNewNote] = useState("");
   const [data, setData] =
     useState<TripResponse | null>(null);
+  const [loadError, setLoadError] = useState<{
+    message: string;
+    isNetwork?: boolean;
+    status?: number;
+  } | null>(null);
+  const [loadingTrip, setLoadingTrip] = useState(false);
 
   const [expenseData, setExpenseData] =
     useState<ExpenseResponse | null>(null);
@@ -117,9 +133,12 @@ export default function TripView() {
   const [ratingFeedback, setRatingFeedback] = useState("");
   const [ratingSaved, setRatingSaved] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [commentModalPlace, setCommentModalPlace] = useState<Place | null>(null);
   const userRole = data?.role || "owner";
   const isViewer = userRole === "viewer";
   const importFileInputRef = useRef<HTMLInputElement>(null);
+  const [claimingTrip, setClaimingTrip] = useState(false);
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   const handleQuickImportFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -629,7 +648,7 @@ export default function TripView() {
   const [weatherError, setWeatherError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!tripId) return;
+    if (!tripId || !data) return;
     let mounted = true;
     async function loadWeather() {
       setWeatherLoading(true);
@@ -653,7 +672,7 @@ export default function TripView() {
     return () => {
       mounted = false;
     };
-  }, [tripId]);
+  }, [tripId, data]);
 
 
 
@@ -662,12 +681,12 @@ export default function TripView() {
    * Check whether this trip is already a favorite.
    */
   useEffect(() => {
-    if (!tripId) return;
+    if (!tripId || !data) return;
 
     checkFavorite(tripId)
       .then(setIsFavorite)
       .catch(() => {});
-  }, [tripId]);
+  }, [tripId, data]);
 
 
   /*
@@ -679,30 +698,49 @@ export default function TripView() {
     if (!id) return;
 
     async function fetchTrip(tripId: string) {
+      setLoadError(null);
+      setLoadingTrip(true);
       try {
+        await ensureAuthSession(API);
         const json: TripResponse =
           await getTrip(tripId);
 
         setData(json);
 
-        const expenses =
-          await getExpenses(tripId);
+        // Fetch secondary trip data with individual resilience so a secondary error
+        // (e.g. expenses unavailable or not permitted) does not abort rendering the trip.
+        try {
+          const expenses = await getExpenses(tripId);
+          setExpenseData(expenses);
+        } catch (expErr: any) {
+          console.warn("Could not load trip expenses:", expErr?.message);
+        }
 
-        setExpenseData(expenses);
-        const savedNotes =
-  await getTripNotes(tripId);
-  
+        try {
+          const savedNotes = await getTripNotes(tripId);
+          setNotes(savedNotes);
+        } catch (noteErr: any) {
+          console.warn("Could not load trip notes:", noteErr?.message);
+        }
 
-setNotes(savedNotes);
-const savedRating =
-  await getTripRating(tripId);
-
-if (savedRating) {
-  setTripRating(savedRating.rating);
-  setRatingFeedback(savedRating.feedback);
-}
-      } catch (err) {
-        console.error(err);
+        try {
+          const savedRating = await getTripRating(tripId);
+          if (savedRating) {
+            setTripRating(savedRating.rating);
+            setRatingFeedback(savedRating.feedback);
+          }
+        } catch (ratingErr: any) {
+          console.warn("Could not load trip rating:", ratingErr?.message);
+        }
+      } catch (err: any) {
+        console.error("Failed to load trip:", err);
+        setLoadError({
+          message: err?.message || "Failed to load trip details.",
+          isNetwork: err?.isNetworkError,
+          status: err?.status,
+        });
+      } finally {
+        setLoadingTrip(false);
       }
     }
 
@@ -719,27 +757,52 @@ if (savedRating) {
 
 
   const handleTripEdit = async () => {
+    setEditError(null);
+    setEditSuccess(null);
+
+    if (isViewer) {
+      setEditError("Editing is disabled in view-only mode. Editor or owner permission is required.");
+      return;
+    }
+
+    if (!tripId) {
+      setEditError("Trip identifier is missing. Please reload the page.");
+      return;
+    }
+
     if (!editPrompt.trim()) {
+      setEditError("Please enter instructions for what you would like to change in your trip.");
       return;
     }
 
     try {
       setUpdating(true);
+      await ensureAuthSession(API);
 
       const updatedTrip =
         await updateTrip(
           tripId,
-          editPrompt
+          editPrompt.trim()
         );
 
       setData(updatedTrip);
       setEditPrompt("");
+      setEditSuccess("Trip updated successfully.");
 
-    } catch (error) {
+    } catch (error: any) {
       console.error(
         "Trip update failed:",
         error
       );
+      if (error?.status === 401) {
+        setEditError("Your session has expired or authentication is missing. Please refresh and sign in.");
+      } else if (error?.status === 403) {
+        setEditError("Permission denied: You need editor or owner permissions to modify this itinerary.");
+      } else if (error?.isNetworkError) {
+        setEditError("Network error: Unable to connect to the server. Please check your connection.");
+      } else {
+        setEditError(error?.message || "Failed to update trip. Please try again.");
+      }
     } finally {
       setUpdating(false);
     }
@@ -790,7 +853,132 @@ if (savedRating) {
 
 
   if (!data) {
-    return <div>Loading...</div>;
+    if (loadError) {
+      return (
+        <div
+          role="alert"
+          style={{
+            maxWidth: 580,
+            margin: "60px auto",
+            padding: "32px 24px",
+            textAlign: "center",
+            background: "#fff",
+            border: "1px solid #e5e7eb",
+            borderRadius: 12,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+          }}
+        >
+          <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>
+            {loadError.isNetwork
+              ? "📡"
+              : loadError.status === 401 || loadError.status === 403
+              ? "🔒"
+              : loadError.status === 404
+              ? "🔍"
+              : "⚠️"}
+          </div>
+          <h2
+            style={{
+              color: "#1f2937",
+              marginTop: 0,
+              marginBottom: 8,
+              fontSize: "1.3rem",
+            }}
+          >
+            {loadError.isNetwork
+              ? "Unable to Connect to Server"
+              : loadError.status === 401
+              ? "Authentication Required"
+              : loadError.status === 403
+              ? "Access Denied"
+              : loadError.status === 404
+              ? "Trip Not Found"
+              : "Unable to Load Trip"}
+          </h2>
+          <p
+            style={{
+              color: "#4b5563",
+              fontSize: "0.95rem",
+              marginBottom: 24,
+              lineHeight: 1.5,
+            }}
+          >
+            {loadError.message}
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+            {loadError.status === 401 && (
+              <Link
+                to={`/login?redirect=${encodeURIComponent(typeof window !== "undefined" ? window.location.pathname : `/trip/${tripId}`)}`}
+                style={{
+                  padding: "10px 20px",
+                  background: "#4f46e5",
+                  color: "#fff",
+                  textDecoration: "none",
+                  borderRadius: 8,
+                  fontWeight: 600,
+                  display: "inline-block",
+                }}
+              >
+                Sign In to View Trip
+              </Link>
+            )}
+            <button
+              onClick={async () => {
+                const id = getTripIdFromUrl();
+                if (id) {
+                  setLoadError(null);
+                  setLoadingTrip(true);
+                  try {
+                    await ensureAuthSession(API);
+                    const json = await getTrip(id);
+                    setData(json);
+                  } catch (err: any) {
+                    setLoadError({
+                      message: err?.message || "Failed to load trip details.",
+                      isNetwork: err?.isNetworkError,
+                      status: err?.status,
+                    });
+                  } finally {
+                    setLoadingTrip(false);
+                  }
+                }
+              }}
+              disabled={loadingTrip}
+              style={{
+                padding: "10px 20px",
+                background: "#4f46e5",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              {loadingTrip ? "Retrying..." : "Retry Loading Trip"}
+            </button>
+            <Link
+              to="/"
+              style={{
+                padding: "10px 20px",
+                background: "#f3f4f6",
+                color: "#374151",
+                textDecoration: "none",
+                borderRadius: 8,
+                fontWeight: 600,
+                display: "inline-block",
+              }}
+            >
+              Back to Planner
+            </Link>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div style={{ textAlign: "center", padding: 60, color: "#6b7280" }}>
+        Loading trip details...
+      </div>
+    );
   }
 
 
@@ -940,16 +1128,21 @@ if (savedRating) {
       >
         {[
           { label: "Overview", href: "#section-overview" },
+          { label: "Edit Trip", href: "#section-editor" },
           { label: "Itinerary", href: "#section-itinerary" },
           { label: "Route Discovery", href: "#section-route-discovery" },
           { label: "Budget Planner", href: "#section-budget" },
           { label: "Transport", href: "#section-transport" },
           { label: "Group Decisions", href: "#section-group-decisions" },
+          { label: "Group Chat", href: "#section-chat" },
+          { label: "Activity Feed", href: "#section-activity" },
+          { label: "Trip Journal", href: "#section-journal" },
+          { label: "Memory Album", href: "#section-journal" },
           { label: "Insights", href: "#section-insights" },
           { label: "AI Optimization", href: "#section-ai-optimization" },
         ].map((item) => (
           <a
-            key={item.href}
+            key={`${item.href}-${item.label}`}
             href={item.href}
             style={{
               fontSize: "0.82rem",
@@ -974,8 +1167,10 @@ if (savedRating) {
 
 
       {/* Role Badge & Collaboration Share */}
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 10, margin: "8px 0", flexWrap: "wrap" }}>
         <span
+          id="user-role-badge"
+          data-testid="user-role-badge"
           style={{
             padding: "6px 14px",
             borderRadius: "20px",
@@ -989,11 +1184,65 @@ if (savedRating) {
             border: "1px solid rgba(0,0,0,0.06)",
           }}
         >
-          {userRole === "owner" ? "👑 Trip Owner" : userRole === "editor" ? "✏️ Editor" : "👁️ Viewer (Read Only)"}
+          {userRole === "owner" ? "Trip Owner" : userRole === "editor" ? "Editor" : "Viewer (Read Only)"}
         </span>
+
+        {/* Quick-action Editor Button */}
+        {!isViewer ? (
+          <button
+            type="button"
+            id="trip-editor-button"
+            className="edit-trip-btn"
+            onClick={() => {
+              const el = document.getElementById("section-editor");
+              if (el) {
+                el.scrollIntoView({ behavior: "smooth" });
+                const textarea = el.querySelector("textarea");
+                if (textarea) textarea.focus();
+              }
+            }}
+            style={{
+              padding: "7px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#2563eb",
+              color: "#fff",
+              border: "none",
+              fontWeight: 600,
+              cursor: "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            Edit Trip
+          </button>
+        ) : (
+          <button
+            type="button"
+            id="trip-editor-button"
+            className="edit-trip-btn"
+            disabled
+            title="Editing permission is required"
+            style={{
+              padding: "7px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#e2e8f0",
+              color: "#94a3b8",
+              border: "none",
+              fontWeight: 600,
+              cursor: "not-allowed",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            Edit Trip (View Only)
+          </button>
+        )}
 
         {userRole === "owner" && (
           <button
+            type="button"
             onClick={() => setShowShareModal(true)}
             style={{
               padding: "7px 16px",
@@ -1005,13 +1254,73 @@ if (savedRating) {
               cursor: "pointer",
             }}
           >
-            🔗 Share & Invite
+            Share & Invite
           </button>
         )}
+
+        {/* Unowned Legacy Trip: Allow claiming ownership to unlock invitation management */}
+        {tripId && data && !data.owner_id && (
+          <button
+            type="button"
+            id="claim-trip-ownership-btn"
+            disabled={claimingTrip}
+            onClick={async () => {
+              try {
+                setClaimingTrip(true);
+                setClaimError(null);
+                await ensureAuthSession(API);
+                await claimLegacyTrip(tripId);
+                const updated = await getTrip(tripId);
+                setData(updated);
+              } catch (err: any) {
+                console.error("Failed to claim legacy trip:", err);
+                setClaimError(err.message || "Failed to claim ownership of this trip.");
+              } finally {
+                setClaimingTrip(false);
+              }
+            }}
+            title="This legacy trip has no assigned owner. Claim it to unlock sharing and collaborator management."
+            style={{
+              padding: "7px 16px",
+              borderRadius: "8px",
+              backgroundColor: "#059669",
+              color: "#fff",
+              border: "none",
+              fontWeight: 600,
+              cursor: claimingTrip ? "wait" : "pointer",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {claimingTrip ? "Claiming..." : "Claim Trip Ownership"}
+          </button>
+        )}
+
+        {/* Step 78: In-App Notification Center */}
+        <NotificationCenter tripId={tripId} />
       </div>
+
+      {claimError && (
+        <div
+          role="alert"
+          style={{
+            padding: "10px 16px",
+            margin: "8px 0",
+            backgroundColor: "#fef2f2",
+            border: "1px solid #fecaca",
+            borderRadius: "8px",
+            color: "#991b1b",
+            fontSize: "0.85rem",
+          }}
+        >
+          {claimError}
+        </div>
+      )}
 
       {isViewer && (
         <div
+          role="note"
           style={{
             padding: "10px 16px",
             margin: "12px 0",
@@ -1025,7 +1334,7 @@ if (savedRating) {
             gap: 8,
           }}
         >
-          ℹ️ <strong>View-only mode:</strong> You were invited as a viewer. You can explore the full itinerary, weather, and budget, but editing actions are disabled.
+          <strong>View-only mode:</strong> You were invited as a viewer. You can explore the full itinerary, weather, and budget, but editing actions are disabled.
         </div>
       )}
 
@@ -2039,6 +2348,7 @@ if (savedRating) {
                         borderRadius: 6,
                         border: "1px solid #cbd5e1",
                         background: "#fff",
+                        color: "#0f172a",
                       }}
                     >
                       {trip.day_schedule ? (
@@ -2570,6 +2880,7 @@ if (savedRating) {
                     borderRadius: 6,
                     border: "1px solid #cbd5e1",
                     background: "#fff",
+                    color: "#0f172a",
                   }}
                 >
                   {trip.travelers?.map((tr: any, idx: number) => (
@@ -2681,6 +2992,29 @@ if (savedRating) {
         </div>
       )}
 
+      {/* Step 77: Trip-Specific Collaborative Group Chat */}
+      <div id="section-chat" className="section">
+        <TripGroupChat
+          tripId={tripId || ""}
+          userRole={userRole}
+          travelerNames={(trip?.travelers || []).map((t: any) => t.name)}
+        />
+      </div>
+
+      {/* Step 78: Shared Trip Activity Feed */}
+      <div id="section-activity" className="section">
+        <TripActivityFeed tripId={tripId || ""} />
+      </div>
+
+      {/* Step 79: Travel Memories and Trip Journal */}
+      <div id="section-journal" className="section">
+        <TripJournal
+          tripId={tripId || ""}
+          userRole={userRole}
+          tripDays={trip?.days || (trip?.dashboard?.days) || 3}
+          places={trip?.places || []}
+        />
+      </div>
 
       <div id="section-weather" className="section">
 
@@ -3056,20 +3390,43 @@ if (savedRating) {
     </ul>
   )}
 </div>
-      <div className="section card">
+      <div id="section-editor" className="section card">
 
         <h2>Edit Your Trip</h2>
 
-        <p>
-          Tell TravelSync AI what you want to change.
-        </p>
+        {isViewer ? (
+          <div
+            role="alert"
+            style={{
+              padding: "12px 16px",
+              margin: "12px 0",
+              backgroundColor: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "8px",
+              color: "#475569",
+              fontSize: "0.88rem",
+            }}
+          >
+            <strong>Editing permission required:</strong> You have view-only access to this trip. Contact the trip owner to request editor permissions to modify this itinerary.
+          </div>
+        ) : (
+          <p>
+            Tell TravelSync AI what you want to change.
+          </p>
+        )}
 
         <textarea
           value={editPrompt}
-          onChange={(e) =>
-            setEditPrompt(e.target.value)
+          onChange={(e) => {
+            setEditPrompt(e.target.value);
+            if (editError) setEditError(null);
+          }}
+          disabled={isViewer || updating}
+          placeholder={
+            isViewer
+              ? "Editing is disabled in view-only mode"
+              : 'Try: "Add Charminar"'
           }
-          placeholder='Try: "Add Charminar"'
           rows={3}
           style={{
             width: "100%",
@@ -3077,27 +3434,68 @@ if (savedRating) {
             marginTop: "10px",
             marginBottom: "10px",
             resize: "vertical",
+            backgroundColor: isViewer ? "#f1f5f9" : "#ffffff",
+            cursor: isViewer ? "not-allowed" : "text",
           }}
         />
 
         <button
+          id="apply-trip-edit-btn"
           className="regenerate-button"
           onClick={handleTripEdit}
-          disabled={
-            updating ||
-            !editPrompt.trim()
-          }
+          disabled={updating || isViewer}
+          title={isViewer ? "Editing permission is required" : undefined}
+          style={{
+            cursor: isViewer ? "not-allowed" : updating ? "default" : "pointer",
+            opacity: isViewer ? 0.6 : 1,
+          }}
         >
           {updating
             ? "Updating..."
+            : isViewer
+            ? "Editing Disabled (View Only)"
             : "Apply Changes"}
         </button>
 
-        <p style={{ marginTop: "10px" }}>
-          Try: "Add Charminar", "Remove Charminar",
-          "Regenerate Day 2", or
-          "Keep budget under ₹30000"
-        </p>
+        {editError && (
+          <div
+            role="alert"
+            style={{
+              marginTop: "12px",
+              padding: "10px 14px",
+              backgroundColor: "#fef2f2",
+              border: "1px solid #fecaca",
+              borderRadius: "8px",
+              color: "#991b1b",
+              fontSize: "0.88rem",
+            }}
+          >
+            {editError}
+          </div>
+        )}
+
+        {editSuccess && (
+          <div
+            role="status"
+            style={{
+              marginTop: "12px",
+              padding: "10px 14px",
+              backgroundColor: "#f0fdf4",
+              border: "1px solid #bbf7d0",
+              borderRadius: "8px",
+              color: "#166534",
+              fontSize: "0.88rem",
+            }}
+          >
+            {editSuccess}
+          </div>
+        )}
+
+        {!isViewer && (
+          <p style={{ marginTop: "10px", color: "#64748b", fontSize: "0.85rem" }}>
+            Try: "Add Charminar", "Remove Charminar", "Regenerate Day 2", or "Keep budget under 30000"
+          </p>
+        )}
 
       </div>
 
@@ -3158,19 +3556,22 @@ if (savedRating) {
                   setSelectedPlace
                 }
                 onRegenerate={
-                  handleRegenerateDay
+                  !isViewer ? handleRegenerateDay : undefined
                 }
                 onReplanDay={
-                  handleOpenReplan
+                  !isViewer ? handleOpenReplan : undefined
                 }
                 onRemoveAttraction={
-                  handleOpenRemoveAttraction
+                  !isViewer ? handleOpenRemoveAttraction : undefined
                 }
                 onReplaceAttraction={
-                  handleOpenReplaceAttraction
+                  !isViewer ? handleOpenReplaceAttraction : undefined
                 }
                 onShowPlaceInfo={
                   handleShowPlaceInfo
+                }
+                onOpenComments={(place) =>
+                  setCommentModalPlace(place)
                 }
               />
 
@@ -3659,6 +4060,7 @@ if (savedRating) {
                   borderRadius: 6,
                   border: "1px solid #cbd5e1",
                   background: "#fff",
+                  color: "#0f172a",
                   boxSizing: "border-box",
                   fontSize: "0.9rem",
                 }}
@@ -4526,6 +4928,16 @@ if (savedRating) {
         tripId={tripId || ""}
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
+        userRole={userRole}
+      />
+
+      {/* Step 77: Attraction-Specific Discussion Modal */}
+      <AttractionCommentsModal
+        isOpen={!!commentModalPlace}
+        onClose={() => setCommentModalPlace(null)}
+        tripId={tripId || ""}
+        attractionName={commentModalPlace?.name || ""}
+        attractionCategory={commentModalPlace?.category}
         userRole={userRole}
       />
 

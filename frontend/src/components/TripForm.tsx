@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { DestinationStop, TravelerRequest, TripRequest } from "../types/trip";
 import { useLocation } from "react-router-dom";
 import TravelDatePicker from "./TravelDatePicker";
+import { FlexibleDateSuggester } from "./FlexibleDateSuggester";
 import { calculateDaysBetween } from "../utils/dateUtils";
 const locations: Record<string, string[]> = {
     India: [
@@ -83,6 +84,7 @@ const [destination, setDestination] = useState<string>(
         previousTrip?.end_date ?? ""
     );
     const [dateValidationError, setDateValidationError] = useState<string>("");
+    const [dateSelectionMode, setDateSelectionMode] = useState<"exact" | "flexible">("exact");
 
     const handleDatesChange = (newStart: string, newEnd: string, durationDays: number) => {
         setStartDate(newStart);
@@ -633,18 +635,104 @@ const [destinationSearch, setDestinationSearch] = useState(
 
     {/* Month-Specific Travel Date Selection */}
     <div className="form-group" style={{ margin: "20px 0" }}>
-        <label style={{ display: "block", marginBottom: "6px", fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
-            Travel Dates & Calendar
-        </label>
-        <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "0 0 10px 0" }}>
-            Navigate across months to select your departure and return dates. Trips can span single or multiple months (1 to 30 days).
-        </p>
-        <TravelDatePicker
-            startDate={startDate}
-            endDate={endDate}
-            onChange={handleDatesChange}
-            maxTripDurationDays={30}
-        />
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
+            <div>
+                <label style={{ display: "block", fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
+                    Travel Dates & Scheduling
+                </label>
+                <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "2px 0 0 0" }}>
+                    Pick exact calendar dates, or let TravelSync AI rank the best travel window using meteorological forecasts.
+                </p>
+            </div>
+
+            {/* Mode Switcher */}
+            <div style={{ display: "inline-flex", background: "#f1f5f9", padding: "3px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
+                <button
+                    type="button"
+                    onClick={() => setDateSelectionMode("exact")}
+                    style={{
+                        padding: "5px 12px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: dateSelectionMode === "exact" ? "#ffffff" : "transparent",
+                        color: dateSelectionMode === "exact" ? "#4f46e5" : "#64748b",
+                        boxShadow: dateSelectionMode === "exact" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        transition: "all 0.15s ease",
+                    }}
+                >
+                    📅 Exact Dates
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setDateSelectionMode("flexible")}
+                    style={{
+                        padding: "5px 12px",
+                        fontSize: "0.82rem",
+                        fontWeight: 600,
+                        borderRadius: "6px",
+                        border: "none",
+                        cursor: "pointer",
+                        background: dateSelectionMode === "flexible" ? "#ffffff" : "transparent",
+                        color: dateSelectionMode === "flexible" ? "#4f46e5" : "#64748b",
+                        boxShadow: dateSelectionMode === "flexible" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        transition: "all 0.15s ease",
+                    }}
+                >
+                    🌤️ Suggest Best Dates (Flexible)
+                </button>
+            </div>
+        </div>
+
+        {startDate && endDate && (
+            <div
+                style={{
+                    background: "#ecfdf5",
+                    border: "1px solid #a7f3d0",
+                    borderRadius: "8px",
+                    padding: "8px 14px",
+                    marginBottom: "12px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    fontSize: "0.85rem",
+                    color: "#065f46",
+                    flexWrap: "wrap",
+                    gap: "6px",
+                }}
+            >
+                <span>
+                    Selected Window: <strong>{startDate}</strong> &rarr; <strong>{endDate}</strong> ({days} {days === 1 ? "day" : "days"})
+                </span>
+                <span style={{ fontSize: "0.78rem", color: "#059669", fontWeight: 700 }}>
+                    ✓ Ready for Itinerary Generation
+                </span>
+            </div>
+        )}
+
+        {dateSelectionMode === "exact" ? (
+            <TravelDatePicker
+                startDate={startDate}
+                endDate={endDate}
+                onChange={handleDatesChange}
+                maxTripDurationDays={30}
+            />
+        ) : (
+            <FlexibleDateSuggester
+                destination={isMultiDest && multiStops[0]?.name ? multiStops[0].name : destination}
+                source={source}
+                initialDays={days || 3}
+                travelers={travelers}
+                onSelectDates={(newStart, newEnd, duration) => {
+                    handleDatesChange(newStart, newEnd, duration);
+                }}
+                currentStartDate={startDate}
+                currentEndDate={endDate}
+            />
+        )}
+
         {dateValidationError && (
             <div style={{ color: "#dc2626", fontSize: "0.82rem", marginTop: "6px", fontWeight: 600 }}>
                 {dateValidationError}

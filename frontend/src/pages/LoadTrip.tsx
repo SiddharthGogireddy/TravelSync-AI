@@ -26,8 +26,26 @@ export default function LoadTrip() {
       setLoading(true);
       await getTrip(tripId.trim());
       navigate(`/trip/${tripId.trim()}`);
-    } catch {
-      setLoadError("Trip not found");
+    } catch (err: any) {
+      if (err?.isNetworkError) {
+        setLoadError(
+          "Network error: Unable to connect to the server. Please check your connection and try again."
+        );
+      } else if (err?.status === 401) {
+        setLoadError(
+          "Authentication required: Please verify your credentials to view this private trip."
+        );
+      } else if (err?.status === 403) {
+        setLoadError(
+          "Access denied: You do not have permission to view this private trip."
+        );
+      } else if (err?.status === 404) {
+        setLoadError(
+          "Trip not found: Please verify the Trip ID and try again."
+        );
+      } else {
+        setLoadError(err?.message || "Failed to load trip.");
+      }
     } finally {
       setLoading(false);
     }
@@ -181,16 +199,34 @@ export default function LoadTrip() {
         </div>
 
         {loadError && (
-          <p
-            style={{
-              color: "#dc2626",
-              marginTop: 10,
-              fontSize: "0.9rem",
-              fontWeight: 500,
-            }}
-          >
-            {loadError}
-          </p>
+          <div style={{ marginTop: 12 }}>
+            <p
+              style={{
+                color: "#dc2626",
+                margin: "0 0 8px 0",
+                fontSize: "0.9rem",
+                fontWeight: 500,
+              }}
+            >
+              {loadError}
+            </p>
+            <button
+              onClick={handleLoadTrip}
+              disabled={loading}
+              style={{
+                padding: "6px 14px",
+                background: "#fee2e2",
+                color: "#991b1b",
+                border: "1px solid #f87171",
+                borderRadius: 6,
+                fontSize: "0.85rem",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              Retry Loading
+            </button>
+          </div>
         )}
       </div>
 

@@ -2,7 +2,7 @@
 FastAPI Router for Weather Forecasts and Disruption Alerts
 """
 
-from fastapi import APIRouter, HTTPException, Query, Header
+from fastapi import APIRouter, HTTPException, Query, Header, Request
 from typing import Dict, Any, Optional
 from datetime import datetime, timezone
 
@@ -76,6 +76,8 @@ async def get_location_forecast(
 @router.get("/trip/{trip_id}/alerts")
 async def get_trip_weather_alerts(
     trip_id: str,
+    request: Request,
+    authorization: Optional[str] = Header(None, alias="Authorization"),
     x_user_id: Optional[str] = Header(None, alias="X-User-ID"),
     user_id: Optional[str] = Query(None),
 ) -> Dict[str, Any]:
@@ -83,7 +85,7 @@ async def get_trip_weather_alerts(
     Retrieves weather forecasts and disruption alerts tailored to the trip's destination(s) and dates.
     Identifies severe weather, distinguishes TravelSync AI warnings, and suggests indoor alternatives.
     """
-    uid = extract_user_id(None, x_user_id, user_id)
+    uid = extract_user_id(request, x_user_id, user_id, authorization)
     trip_record, _ = verify_trip_access(trip_id, uid, required_role="viewer")
     trip_data = trip_record.get("data")
     if trip_data is None:

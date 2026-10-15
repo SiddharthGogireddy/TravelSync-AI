@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API } from "../services/api";
+import { getExpenses, addExpense } from "../services/expense";
 
 interface Props {
     tripId: string;
@@ -43,23 +43,22 @@ export default function ExpenseTracker({ tripId }: Props) {
         useState<ExpenseResponse | null>(null);
 
     useEffect(() => {
+        let isMounted = true;
         async function fetchExpenses() {
-            const response = await fetch(
-                `${API}/expense/${tripId}`
-            );
-
-            if (!response.ok) {
-                console.error("Failed to load expenses");
-                return;
+            try {
+                const data = await getExpenses(tripId);
+                if (isMounted) {
+                    setExpenseData(data);
+                }
+            } catch (err: any) {
+                console.warn("Failed to load expenses:", err?.message);
             }
-
-            const data: ExpenseResponse =
-                await response.json();
-
-            setExpenseData(data);
         }
 
         fetchExpenses();
+        return () => {
+            isMounted = false;
+        };
     }, [tripId]);
 
     async function handleAddExpense() {
@@ -67,42 +66,21 @@ export default function ExpenseTracker({ tripId }: Props) {
             return;
         }
 
-        const response = await fetch(
-            `${API}/expense/`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    trip_id: tripId,
-                    expense: {
-                        title,
-                        amount: Number(amount),
-                        paid_by: paidBy,
-                        category,
-                    },
-                }),
-            }
-        );
+        try {
+            await addExpense(tripId, {
+                title,
+                amount: Number(amount),
+                paid_by: paidBy,
+                category,
+            });
 
-        if (!response.ok) {
-            console.error("Failed to add expense");
-            return;
-        }
+            setTitle("");
+            setAmount("");
 
-        setTitle("");
-        setAmount("");
-
-        const updatedResponse = await fetch(
-            `${API}/expense/${tripId}`
-        );
-
-        if (updatedResponse.ok) {
-            const data: ExpenseResponse =
-                await updatedResponse.json();
-
+            const data = await getExpenses(tripId);
             setExpenseData(data);
+        } catch (err: any) {
+            console.error("Failed to add expense:", err?.message);
         }
     }
 

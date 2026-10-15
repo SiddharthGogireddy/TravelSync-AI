@@ -190,6 +190,7 @@ export default function TripShareModal({
                       borderRadius: "8px",
                       border: "1px solid #cbd5e1",
                       backgroundColor: "#fff",
+                      color: "#0f172a",
                       fontSize: "0.875rem",
                     }}
                   >
@@ -211,6 +212,7 @@ export default function TripShareModal({
                       borderRadius: "8px",
                       border: "1px solid #cbd5e1",
                       backgroundColor: "#fff",
+                      color: "#0f172a",
                       fontSize: "0.875rem",
                     }}
                   >

@@ -157,3 +157,55 @@ export interface DayMealsAndBreaks {
     rest_breaks: RestBreakItem[];
     total_estimated_meal_cost: number;
 }
+
+export interface SuggestDatesParams {
+    destination: string;
+    days: number;
+    source?: string;
+    flexible_window?: string;
+    earliest_date?: string;
+    latest_date?: string;
+    travelers_count?: number;
+    budget?: string;
+    interests?: string[];
+    weather_preference?: string;
+    prefer_weekends?: boolean;
+}
+
+export interface DateRecommendation {
+    start_date: string;
+    end_date: string;
+    duration_days: number;
+    date_display: string;
+    suitability_score: number;
+    badge: string;
+    rank_title: string;
+    is_weekend_trip: boolean;
+    weather_summary: {
+        condition: string;
+        icon: string;
+        avg_max_temp: number;
+        avg_min_temp: number;
+        rain_probability: number;
+        total_precipitation_mm: number;
+    };
+    confidence: "forecast_verified" | "provisional_seasonal";
+    confidence_label: string;
+    reasons: string[];
+    trade_offs: string[];
+}
+
+export interface SuggestDatesResponse {
+    destination: string;
+    origin: string;
+    trip_days: number;
+    search_window: {
+        earliest_date: string;
+        latest_date: string;
+        flexible_window: string;
+    };
+    forecast_horizon_limit_days: number;
+    recommendations: DateRecommendation[];
+    total_evaluated_windows: number;
+}
+

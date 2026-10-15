@@ -1,15 +1,13 @@
 import type { ExpenseResponse } from "../types/expense";
 import { API } from "./api";
+import { apiFetch } from "./api";
+
+export { API };
 
 export async function getExpenses(
     tripId: string
 ): Promise<ExpenseResponse> {
-
-    const response = await fetch(
-        `${API}/expense/${tripId}`
-    );
-
-    return response.json();
+    return apiFetch<ExpenseResponse>(`/expense/${tripId}`);
 }
 
 export async function addExpense(
@@ -18,14 +16,11 @@ export async function addExpense(
         title: string;
         amount: number;
         paid_by: string;
+        category?: string;
     }
 ) {
-
-    return fetch(`${API}/expense/`, {
+    return apiFetch(`/expense/`, {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
         body: JSON.stringify({
             trip_id: tripId,
             expense,

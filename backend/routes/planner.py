@@ -1,6 +1,6 @@
 from typing import Optional
 from fastapi import APIRouter, Header, Query
-from backend.models.trip import TripRequest
+from backend.models.trip import TripRequest, SuggestDatesRequest
 from backend.services.auth.authorization import extract_user_id
 from backend.services.gemini_service import generate
 from backend.services.planner.itinerary import build_trip
@@ -98,3 +98,31 @@ Format:
             update_saved_trip(trip_id, saved_record)
 
     return result
+
+
+@router.post("/suggest-dates")
+async def suggest_dates_endpoint(
+    request: SuggestDatesRequest,
+):
+    try:
+        from backend.services.planner.date_suggester import suggest_travel_dates
+        suggestions = await suggest_travel_dates(
+            destination=request.destination,
+            days=request.days,
+            source=request.source,
+            flexible_window=request.flexible_window,
+            earliest_date=request.earliest_date,
+            latest_date=request.latest_date,
+            travelers_count=request.travelers_count or 1,
+            budget=request.budget,
+            interests=request.interests,
+            weather_preference=request.weather_preference,
+            prefer_weekends=request.prefer_weekends,
+        )
+        return {"success": True, "data": suggestions}
+    except ValueError as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=500, detail=f"Failed to suggest travel dates: {str(e)}")
