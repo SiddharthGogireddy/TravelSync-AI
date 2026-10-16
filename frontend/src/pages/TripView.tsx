@@ -1,4 +1,16 @@
 import { useEffect, useState, useRef } from "react";
+import {
+  Calendar,
+  MapPin,
+  AlertTriangle,
+  Hotel,
+  Loader2,
+  WifiOff,
+  Lock,
+  Search,
+  X,
+  Star,
+} from "lucide-react";
 
 import BudgetAlerts from "../components/BudgetAlerts";
 import AddExpenseModal from "../components/AddExpenseModal";
@@ -862,24 +874,26 @@ export default function TripView() {
             margin: "60px auto",
             padding: "32px 24px",
             textAlign: "center",
-            background: "#fff",
-            border: "1px solid #e5e7eb",
+            background: "var(--card-bg)",
+            border: "1px solid var(--border)",
             borderRadius: 12,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+            boxShadow: "var(--card-shadow, 0 4px 12px rgba(0,0,0,0.06))",
           }}
         >
-          <div style={{ fontSize: "2.5rem", marginBottom: 12 }}>
-            {loadError.isNetwork
-              ? "📡"
-              : loadError.status === 401 || loadError.status === 403
-              ? "🔒"
-              : loadError.status === 404
-              ? "🔍"
-              : "⚠️"}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
+            {loadError.isNetwork ? (
+              <WifiOff size={40} color="var(--accent)" />
+            ) : loadError.status === 401 || loadError.status === 403 ? (
+              <Lock size={40} color="var(--accent)" />
+            ) : loadError.status === 404 ? (
+              <Search size={40} color="var(--accent)" />
+            ) : (
+              <AlertTriangle size={40} color="#ef4444" />
+            )}
           </div>
           <h2
             style={{
-              color: "#1f2937",
+              color: "var(--text-h)",
               marginTop: 0,
               marginBottom: 8,
               fontSize: "1.3rem",
@@ -1351,9 +1365,15 @@ export default function TripView() {
           }
         }}
       >
-        {isFavorite
-          ? "★ Favorited"
-          : "☆ Favorite"}
+        {isFavorite ? (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Star size={14} fill="#f59e0b" color="#f59e0b" /> Favorited
+          </span>
+        ) : (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            <Star size={14} /> Favorite
+          </span>
+        )}
       </button>
 
 
@@ -1378,8 +1398,9 @@ export default function TripView() {
           }
         }}
         title="Download .ics calendar file for Google Calendar, Apple Calendar, and Outlook"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
       >
-        📅 Export to Calendar
+        <Calendar size={15} /> Export to Calendar
       </button>
 
 
@@ -1736,9 +1757,9 @@ export default function TripView() {
                 <button
                   type="button"
                   onClick={() => setShowOptDiffModal(false)}
-                  style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "#64748b" }}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}
                 >
-                  ✕
+                  <X size={18} />
                 </button>
               </div>
 
@@ -2258,7 +2279,9 @@ export default function TripView() {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            ★ Best Fit: Day {stop.recommended_day}
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px" }}>
+                              <Star size={10} fill="#166534" color="#166534" /> Best Fit: Day {stop.recommended_day}
+                            </span>
                           </span>
                         )}
                         <span
@@ -2317,8 +2340,8 @@ export default function TripView() {
                             </span>
                           </div>
                           {evalData.distance_label && (
-                            <div style={{ fontSize: "0.71rem", color: "#6b21a8", marginTop: 2 }}>
-                              📍 {evalData.distance_label}
+                            <div style={{ fontSize: "0.71rem", color: "#6b21a8", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                              <MapPin size={12} /> {evalData.distance_label}
                             </div>
                           )}
                         </div>
@@ -2704,7 +2727,7 @@ export default function TripView() {
           {groupDecisions.detected_conflicts?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <h4 style={{ margin: "0 0 8px", fontSize: "0.92rem", color: "#991b1b", display: "flex", alignItems: "center", gap: 6 }}>
-                ⚠️ Detected Group Conflicts ({groupDecisions.detected_conflicts.length})
+                <AlertTriangle size={15} /> Detected Group Conflicts ({groupDecisions.detected_conflicts.length})
               </h4>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {groupDecisions.detected_conflicts.map((conf: any, cIdx: number) => (
@@ -3517,25 +3540,28 @@ export default function TripView() {
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
-              background: attractionActionMessage.type === "success" ? "#f0fdf4" : "#fef2f2",
-              color: attractionActionMessage.type === "success" ? "#166534" : "#991b1b",
-              border: `1px solid ${attractionActionMessage.type === "success" ? "#bbf7d0" : "#fecaca"}`,
+              background: attractionActionMessage.type === "success" ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)",
+              color: attractionActionMessage.type === "success" ? "#10b981" : "#ef4444",
+              border: `1px solid ${attractionActionMessage.type === "success" ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
             }}
           >
-            <span>{attractionActionMessage.type === "success" ? "✓" : "⚠️"} {attractionActionMessage.text}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              {attractionActionMessage.type === "success" ? "✓" : <AlertTriangle size={14} />} {attractionActionMessage.text}
+            </span>
             <button
               type="button"
               onClick={() => setAttractionActionMessage(null)}
               style={{
                 background: "transparent",
                 border: "none",
-                fontSize: "1rem",
                 cursor: "pointer",
                 color: "inherit",
                 marginLeft: 12,
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
         )}
@@ -3582,11 +3608,11 @@ export default function TripView() {
 
         {/* Recommended Accommodations Section */}
         {Array.isArray(trip.hotels) && trip.hotels.length > 0 && (
-          <div style={{ marginTop: 24, borderTop: "1px solid #e2e8f0", paddingTop: 20 }}>
+          <div style={{ marginTop: 24, borderTop: "1px solid var(--border)", paddingTop: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1.15rem", color: "#1e293b", display: "flex", alignItems: "center", gap: 8 }}>
-                  🏨 Recommended Accommodations ({trip.hotels.length})
+                <h3 style={{ margin: 0, fontSize: "1.15rem", color: "var(--text-h)", display: "flex", alignItems: "center", gap: 8 }}>
+                  <Hotel size={20} color="var(--accent)" /> Recommended Accommodations ({trip.hotels.length})
                 </h3>
                 <p style={{ margin: "2px 0 0", fontSize: "0.84rem", color: "#64748b" }}>
                   Selected hotel options near your destination itinerary.
@@ -3861,9 +3887,11 @@ export default function TripView() {
             : "gray",
       }}
     >
-      {tripRating !== null && star <= tripRating
-        ? "★"
-        : "☆"}
+      <Star
+        size={28}
+        fill={tripRating !== null && star <= tripRating ? "#eab308" : "none"}
+        color={tripRating !== null && star <= tripRating ? "#eab308" : "var(--text-muted, #9ca3af)"}
+      />
     </button>
   ))}
 </div>
@@ -3972,12 +4000,15 @@ export default function TripView() {
               exportTripCalendar(tripId);
             }
           }}
+          title="Download .ics calendar file for Google Calendar, Apple Calendar, and Outlook"
           style={{
             background: "#059669",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
           }}
-          title="Download .ics calendar file for Google Calendar, Apple Calendar, and Outlook"
         >
-          📅 Export to Calendar
+          <Calendar size={15} /> Export to Calendar
         </button>
 
         <button
@@ -4168,9 +4199,9 @@ export default function TripView() {
               </h3>
               <button
                 onClick={() => setShowReplanModal(false)}
-                style={{ background: "none", border: "none", fontSize: "1.2rem", cursor: "pointer", color: "#64748b" }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", display: "flex", alignItems: "center" }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -4373,7 +4404,7 @@ export default function TripView() {
                 fontWeight: 700,
               }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
 
@@ -4583,9 +4614,11 @@ export default function TripView() {
                   color: "#94a3b8",
                   padding: "4px 8px",
                   borderRadius: 6,
+                  display: "flex",
+                  alignItems: "center",
                 }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
@@ -4718,8 +4751,8 @@ export default function TripView() {
                   </div>
 
                   {alternativesLoading && (
-                    <div style={{ padding: "30px 0", textAlign: "center", color: "#64748b" }}>
-                      <div style={{ fontSize: "1.5rem", marginBottom: 8 }}>🔄</div>
+                    <div style={{ padding: "30px 0", textAlign: "center", color: "var(--text-muted)" }}>
+                      <Loader2 size={28} style={{ animation: "spin 1s linear infinite", margin: "0 auto 8px" }} />
                       <p style={{ margin: 0, fontSize: "0.9rem" }}>Finding suitable alternatives for {trip.destination}...</p>
                     </div>
                   )}
@@ -4729,14 +4762,18 @@ export default function TripView() {
                       style={{
                         padding: 12,
                         borderRadius: 8,
-                        background: "#fef2f2",
-                        border: "1px solid #fecaca",
-                        color: "#991b1b",
+                        background: "rgba(239, 68, 68, 0.1)",
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        color: "#ef4444",
                         fontSize: "0.85rem",
                         marginBottom: 12,
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
                       }}
                     >
-                      ⚠️ {alternativesError}
+                      <AlertTriangle size={15} />
+                      <span>{alternativesError}</span>
                     </div>
                   )}
 
@@ -4811,7 +4848,7 @@ export default function TripView() {
                               </span>
                               {alt.score != null && alt.score > 0 && (
                                 <span style={{ fontSize: "0.75rem", color: "#d97706", fontWeight: 600 }}>
-                                  ★ {alt.score}
+                                  <Star size={11} fill="#d97706" color="#d97706" /> {alt.score}
                                 </span>
                               )}
                             </div>

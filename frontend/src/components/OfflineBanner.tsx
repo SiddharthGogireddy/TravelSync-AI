@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AlertTriangle, Download, CheckCircle, X } from "lucide-react";
 
 const STORAGE_KEY_PWA_DISMISSED = "travelsync_pwa_dismissed_until";
 const STORAGE_KEY_PWA_INSTALLED = "travelsync_pwa_installed";
@@ -174,7 +175,15 @@ export default function OfflineBanner() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span>{!isOnline ? "⚠️" : canInstall ? "📲" : "✅"}</span>
+            <span>
+              {!isOnline ? (
+                <AlertTriangle size={18} />
+              ) : canInstall ? (
+                <Download size={18} />
+              ) : (
+                <CheckCircle size={18} />
+              )}
+            </span>
             <span>
               {!isOnline
                 ? "You are currently offline. Viewing cached trips is enabled, but AI generation, chat, and uploads require an active connection."
@@ -212,14 +221,15 @@ export default function OfflineBanner() {
                 background: "transparent",
                 color: "#ffffff",
                 border: "none",
-                fontSize: "1.1rem",
                 cursor: "pointer",
-                padding: "2px 6px",
-                lineHeight: 1,
+                padding: "4px",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 opacity: 0.9,
               }}
             >
-              ✕
+              <X size={16} />
             </button>
           </div>
         </aside>
@@ -247,35 +257,39 @@ export default function OfflineBanner() {
         >
           <div
             style={{
-              backgroundColor: "#ffffff",
+              backgroundColor: "var(--card-bg)",
               borderRadius: "16px",
               width: "100%",
               maxWidth: "480px",
               padding: "24px",
-              boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-              border: "1px solid #e2e8f0",
+              boxShadow: "var(--shadow-lg)",
+              border: "1px solid var(--border)",
               textAlign: "left",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-              <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "#0f172a" }}>
-                📲 Install TravelSync AI
+              <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "var(--text-h)", display: "flex", alignItems: "center", gap: 8 }}>
+                <Download size={20} style={{ color: "var(--accent)" }} />
+                <span>Install TravelSync AI</span>
               </h3>
               <button
                 onClick={() => setShowInstallGuide(false)}
                 style={{
                   background: "transparent",
                   border: "none",
-                  fontSize: "1.2rem",
-                  color: "#64748b",
+                  color: "var(--text-muted)",
                   cursor: "pointer",
+                  padding: 4,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
-            <p style={{ margin: "0 0 16px 0", color: "#475569", fontSize: "0.92rem", lineHeight: 1.5 }}>
+            <p style={{ margin: "0 0 16px 0", color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: 1.5 }}>
               Install TravelSync AI to launch instantly from your home screen or dock with offline itinerary caching and standalone viewing.
             </p>
 

@@ -1,4 +1,18 @@
 import { useState, useEffect } from "react";
+import {
+  Users,
+  CheckCircle2,
+  MessageSquare,
+  MapPin,
+  Zap,
+  DollarSign,
+  Calendar,
+  Activity,
+  RefreshCw,
+  Loader2,
+  AlertTriangle,
+  ClipboardList,
+} from "lucide-react";
 import { getTripActivity } from "../services/api";
 import type { ActivityEvent } from "../services/api";
 
@@ -30,17 +44,21 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
 
     try {
       const currentOffset = initial ? 0 : offset;
-      const res = await getTripActivity(tripId, PAGE_SIZE, currentOffset);
+      const resp = await getTripActivity(tripId, PAGE_SIZE, currentOffset);
+      const items = resp.activities || (resp as any).events || [];
+
       if (initial) {
-        setActivities(res.activities || []);
+        setActivities(items);
       } else {
-        setActivities((prev) => [...prev, ...(res.activities || [])]);
+        setActivities((prev) => [...prev, ...items]);
       }
-      setTotal(res.total || 0);
-      setHasMore(res.has_more);
-      setOffset(currentOffset + (res.activities?.length || 0));
+
+      setHasMore(resp.has_more);
+      setTotal(resp.total ?? (resp as any).total_count ?? 0);
+      setOffset(currentOffset + items.length);
     } catch (err: any) {
-      setError(err.message || "Failed to load activity feed.");
+      console.error("Failed to load activity feed:", err);
+      setError(err?.message || "Failed to load activity events.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -57,49 +75,51 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
   const getEventIcon = (eventType: string) => {
     switch (eventType) {
       case "member_joined":
-        return "👥";
+        return <Users size={16} />;
       case "vote_submitted":
-        return "🗳️";
+        return <CheckCircle2 size={16} />;
       case "chat_message_posted":
-        return "💬";
+        return <MessageSquare size={16} />;
       case "attraction_comment_posted":
-        return "📍";
+        return <MapPin size={16} />;
       case "conflicts_resolved":
-        return "⚡";
+        return <Zap size={16} />;
       case "expense_added":
-        return "💰";
+        return <DollarSign size={16} />;
       case "itinerary_updated":
-        return "🗺️";
+        return <Calendar size={16} />;
       default:
-        return "📌";
+        return <Activity size={16} />;
     }
   };
 
   const getEventBadgeColor = (eventType: string) => {
     switch (eventType) {
       case "member_joined":
-        return { bg: "#ecfdf5", border: "#a7f3d0", text: "#065f46" };
+        return { bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.25)", text: "#10b981" };
       case "vote_submitted":
-        return { bg: "#f0fdf4", border: "#bbf7d0", text: "#166534" };
+        return { bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.25)", text: "#10b981" };
       case "chat_message_posted":
-        return { bg: "#eef2ff", border: "#c7d2fe", text: "#3730a3" };
+        return { bg: "var(--accent-bg)", border: "var(--accent-border)", text: "var(--accent)" };
       case "attraction_comment_posted":
-        return { bg: "#fdf4ff", border: "#f5d0fe", text: "#86198f" };
+        return { bg: "rgba(168, 85, 247, 0.12)", border: "rgba(168, 85, 247, 0.25)", text: "#a855f7" };
       case "conflicts_resolved":
-        return { bg: "#fffbeb", border: "#fde68a", text: "#92400e" };
+        return { bg: "rgba(245, 158, 11, 0.12)", border: "rgba(245, 158, 11, 0.25)", text: "#f59e0b" };
       case "expense_added":
-        return { bg: "#f0fdfa", border: "#99f6e4", text: "#115e59" };
+        return { bg: "rgba(14, 165, 233, 0.12)", border: "rgba(14, 165, 233, 0.25)", text: "#0ea5e9" };
       default:
-        return { bg: "#f8fafc", border: "#e2e8f0", text: "#334155" };
+        return { bg: "var(--code-bg)", border: "var(--border)", text: "var(--text-secondary)" };
     }
   };
 
   const formatTimestamp = (isoStr: string) => {
     try {
       const d = new Date(isoStr);
-      return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) +
+      return (
+        d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) +
         " · " +
-        d.toLocaleDateString([], { month: "short", day: "numeric" });
+        d.toLocaleDateString([], { month: "short", day: "numeric" })
+      );
     } catch {
       return isoStr;
     }
@@ -108,12 +128,11 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
-        borderRadius: 16,
+        background: "var(--card-bg)",
+        border: "1px solid var(--border)",
+        borderRadius: 14,
         padding: "24px",
-        margin: "24px 0",
-        boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+        boxShadow: "var(--shadow)",
       }}
     >
       {/* Header */}
@@ -122,11 +141,9 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          marginBottom: 20,
           flexWrap: "wrap",
           gap: 12,
-          borderBottom: "1px solid #f1f5f9",
-          paddingBottom: 16,
-          marginBottom: 16,
         }}
       >
         <div>
@@ -135,29 +152,31 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
               style={{
                 margin: 0,
                 fontSize: "1.25rem",
-                color: "#0f172a",
+                color: "var(--text-h)",
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
               }}
             >
-              <span>⚡</span> Activity Feed
+              <Activity size={20} style={{ color: "var(--accent)" }} />
+              <span>Activity Feed</span>
             </h3>
             <span
               style={{
-                background: "#f1f5f9",
-                color: "#475569",
+                background: "var(--code-bg)",
+                color: "var(--text-muted)",
                 padding: "3px 10px",
                 borderRadius: 12,
                 fontSize: "0.78rem",
                 fontWeight: 600,
+                border: "1px solid var(--border)",
               }}
             >
               {total} event{total === 1 ? "" : "s"}
             </span>
           </div>
-          <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.85rem" }}>
+          <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "0.85rem" }}>
             Real-time audit trail of trip votes, discussions, member joins, and itinerary updates.
           </p>
         </div>
@@ -167,9 +186,9 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
           onClick={() => loadFeed(true, true)}
           disabled={refreshing || loading}
           style={{
-            background: "#f8fafc",
-            border: "1px solid #cbd5e1",
-            color: "#334155",
+            background: "var(--code-bg)",
+            border: "1px solid var(--border)",
+            color: "var(--text-secondary)",
             borderRadius: 8,
             padding: "6px 14px",
             fontSize: "0.82rem",
@@ -181,18 +200,16 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
             transition: "all 0.15s ease",
           }}
         >
-          <span style={{ display: "inline-block", transform: refreshing ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}>
-            🔄
-          </span>
-          {refreshing ? "Refreshing..." : "Refresh Feed"}
+          <RefreshCw size={14} style={{ animation: refreshing ? "spin 1s linear infinite" : "none" }} />
+          <span>{refreshing ? "Refreshing..." : "Refresh Feed"}</span>
         </button>
       </div>
 
       {/* Activities Timeline */}
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {loading && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>
-            <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>⏳</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Loader2 size={18} style={{ animation: "spin 1s linear infinite" }} />
             <p style={{ margin: 0, fontSize: "0.9rem" }}>Loading activity history...</p>
           </div>
         )}
@@ -200,21 +217,24 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
         {!loading && error && (
           <div
             style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: 8,
               padding: "14px",
               textAlign: "center",
-              color: "#991b1b",
+              color: "#ef4444",
               fontSize: "0.88rem",
             }}
           >
-            <p style={{ margin: "0 0 8px" }}>⚠️ {error}</p>
+            <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <AlertTriangle size={15} />
+              <span>{error}</span>
+            </p>
             <button
               type="button"
               onClick={() => loadFeed(true)}
               style={{
-                background: "#dc2626",
+                background: "#ef4444",
                 color: "#ffffff",
                 border: "none",
                 padding: "6px 14px",
@@ -230,9 +250,11 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
         )}
 
         {!loading && !error && activities.length === 0 && (
-          <div style={{ textAlign: "center", padding: "50px 20px", color: "#64748b" }}>
-            <div style={{ fontSize: "2rem", marginBottom: 8 }}>📋</div>
-            <div style={{ fontWeight: 600, color: "#334155", fontSize: "0.95rem" }}>
+          <div style={{ textAlign: "center", padding: "50px 20px", color: "var(--text-muted)" }}>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+              <ClipboardList size={32} style={{ color: "var(--text-muted)" }} />
+            </div>
+            <div style={{ fontWeight: 600, color: "var(--text-h)", fontSize: "0.95rem" }}>
               No activity recorded yet
             </div>
             <p style={{ margin: "4px 0 0", fontSize: "0.84rem" }}>
@@ -251,14 +273,14 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
               <div
                 key={event.id}
                 style={{
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
+                  background: "var(--card-bg)",
+                  border: "1px solid var(--border)",
                   borderRadius: 12,
                   padding: "14px 18px",
                   display: "flex",
                   alignItems: "flex-start",
                   gap: 14,
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                  boxShadow: "var(--shadow)",
                   transition: "border 0.15s ease",
                 }}
               >
@@ -273,7 +295,6 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "1.1rem",
                     flexShrink: 0,
                     marginTop: 2,
                   }}
@@ -293,7 +314,7 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <strong style={{ fontSize: "0.92rem", color: "#0f172a" }}>
+                      <strong style={{ fontSize: "0.92rem", color: "var(--text-h)" }}>
                         {event.title}
                       </strong>
                       <span
@@ -312,7 +333,7 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                       </span>
                     </div>
 
-                    <span style={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
                       {formatTimestamp(event.created_at)}
                     </span>
                   </div>
@@ -321,7 +342,7 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                     style={{
                       margin: "2px 0 6px",
                       fontSize: "0.86rem",
-                      color: "#475569",
+                      color: "var(--text-secondary)",
                       lineHeight: 1.45,
                     }}
                   >
@@ -334,19 +355,19 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                       justifyContent: "space-between",
                       alignItems: "center",
                       fontSize: "0.76rem",
-                      color: "#64748b",
+                      color: "var(--text-muted)",
                       marginTop: 4,
                     }}
                   >
                     <span>
-                      Actor: <strong style={{ color: "#334155" }}>{event.actor_name || event.actor_id}</strong>
+                      Actor: <strong style={{ color: "var(--text-h)" }}>{event.actor_name || event.actor_id}</strong>
                     </span>
 
                     {event.link && (
                       <a
                         href={event.link}
                         style={{
-                          color: "#4f46e5",
+                          color: "var(--accent)",
                           fontWeight: 600,
                           textDecoration: "none",
                           display: "inline-flex",
@@ -354,7 +375,7 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
                           gap: 4,
                         }}
                       >
-                        Jump to section →
+                        Jump to section &rarr;
                       </a>
                     )}
                   </div>
@@ -371,9 +392,9 @@ export default function TripActivityFeed({ tripId }: TripActivityFeedProps) {
               onClick={() => loadFeed(false)}
               disabled={loadingMore}
               style={{
-                background: "#f1f5f9",
-                border: "1px solid #cbd5e1",
-                color: "#334155",
+                background: "var(--code-bg)",
+                border: "1px solid var(--border)",
+                color: "var(--text-secondary)",
                 borderRadius: 8,
                 padding: "8px 20px",
                 fontSize: "0.84rem",

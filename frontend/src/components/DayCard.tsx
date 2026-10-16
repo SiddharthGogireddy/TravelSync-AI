@@ -1,5 +1,6 @@
 import type { Place } from "../types/api";
 import type { DayMealsAndBreaks } from "../types/trip";
+import { MessageSquare, RefreshCw, Trash2 } from "lucide-react";
 
 import "../styles/DayCard.css";
 interface Props {
@@ -278,7 +279,8 @@ export default function DayCard({
                                             onOpenComments(place);
                                         }}
                                     >
-                                        <span>💬</span> Discuss
+                                        <MessageSquare size={13} />
+                                        <span>Discuss</span>
                                     </button>
                                 )}
                                 {onReplaceAttraction && (
@@ -289,9 +291,9 @@ export default function DayCard({
                                             fontSize: "0.76rem",
                                             padding: "4px 10px",
                                             borderRadius: "6px",
-                                            border: "1px solid #c7d2fe",
-                                            background: "#eef2ff",
-                                            color: "#4338ca",
+                                            border: "1px solid var(--accent-border)",
+                                            background: "var(--accent-bg)",
+                                            color: "var(--accent)",
                                             cursor: "pointer",
                                             fontWeight: 600,
                                             display: "inline-flex",
@@ -305,7 +307,8 @@ export default function DayCard({
                                         }}
                                         title={`Replace ${place.name} with another attraction`}
                                     >
-                                        <span>🔄</span> Replace
+                                        <RefreshCw size={13} />
+                                        <span>Replace</span>
                                     </button>
                                 )}
                                 {onRemoveAttraction && (
@@ -316,9 +319,9 @@ export default function DayCard({
                                             fontSize: "0.76rem",
                                             padding: "4px 10px",
                                             borderRadius: "6px",
-                                            border: "1px solid #fecaca",
-                                            background: "#fef2f2",
-                                            color: "#b91c1c",
+                                            border: "1px solid rgba(239, 68, 68, 0.3)",
+                                            background: "rgba(239, 68, 68, 0.1)",
+                                            color: "#ef4444",
                                             cursor: "pointer",
                                             fontWeight: 600,
                                             display: "inline-flex",
@@ -332,7 +335,8 @@ export default function DayCard({
                                         }}
                                         title={`Remove ${place.name} from itinerary`}
                                     >
-                                        <span>🗑️</span> Remove
+                                        <Trash2 size={13} />
+                                        <span>Remove</span>
                                     </button>
                                 )}
                             </div>

@@ -1,31 +1,30 @@
 .day-card {
     padding: 20px;
-
     margin-bottom: 20px;
-
-    border: 1px solid #ddd;
-
+    border: 1px solid var(--card-border, #ddd);
     border-radius: 12px;
+    background: var(--card-bg, white);
+    color: var(--text-primary, #0f172a);
+    box-shadow: var(--shadow);
 }
 
 .attraction-card {
     display: flex;
-
     gap: 20px;
-
     padding: 15px;
-
     margin-bottom: 15px;
-
-    border: 1px solid #ddd;
-
+    border: 1px solid var(--card-border, #ddd);
     border-radius: 10px;
+    background: var(--card-bg, white);
+    color: var(--text-primary, #0f172a);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .timeline-time {
     min-width: 90px;
-
     font-weight: bold;
+    color: var(--accent, #4f46e5);
 }
 
 .attraction-content {
@@ -34,14 +33,14 @@
 
 .attraction-content h4 {
     margin: 0 0 8px;
+    color: var(--text-primary, #0f172a);
 }
 
 .attraction-content p {
     margin: 0;
+    color: var(--text-secondary, #475569);
 }
-.attraction-card {
-    cursor: pointer;
-}
+
 .day-travel-summary {
     display: flex;
     gap: 18px;
@@ -49,11 +48,13 @@
     flex-wrap: wrap;
     margin: 10px 0 15px;
     padding: 10px 14px;
-    background: #f8f9fa;
+    background: var(--code-bg, #f8f9fa);
+    border: 1px solid var(--border, transparent);
     border-radius: 8px;
     font-size: 14px;
+    color: var(--text-secondary, #334155);
 }
 
 .day-travel-summary span {
-    color: #666;
+    color: var(--text-muted, #666);
 }

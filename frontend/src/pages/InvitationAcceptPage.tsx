@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Compass, Edit3, Eye, AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
   API,
   previewInvitation,
@@ -84,41 +85,49 @@ export default function InvitationAcceptPage() {
         style={{
           width: "100%",
           maxWidth: "480px",
-          backgroundColor: "#ffffff",
+          backgroundColor: "var(--card-bg)",
           borderRadius: "16px",
           padding: "32px",
-          boxShadow: "0 10px 25px -5px rgba(0,0,0,0.08), 0 8px 10px -6px rgba(0,0,0,0.04)",
-          border: "1px solid #e2e8f0",
+          boxShadow: "var(--card-shadow, 0 10px 25px -5px rgba(0,0,0,0.08))",
+          border: "1px solid var(--border)",
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>✈️</div>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "16px" }}>
+          <Compass size={44} color="var(--accent)" />
+        </div>
 
-        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "#0f172a", margin: "0 0 8px 0" }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--text-h)", margin: "0 0 8px 0" }}>
           Trip Collaboration Invitation
         </h1>
 
         {loading ? (
-          <div style={{ padding: "32px 0", color: "#64748b" }}>Loading invitation details...</div>
+          <div style={{ padding: "32px 0", color: "var(--text-muted)" }}>Loading invitation details...</div>
         ) : error ? (
           <div style={{ marginTop: "20px" }}>
             <div
               style={{
-                backgroundColor: "#fee2e2",
-                color: "#991b1b",
+                backgroundColor: "rgba(239, 68, 68, 0.1)",
+                color: "#ef4444",
+                border: "1px solid rgba(239, 68, 68, 0.3)",
                 padding: "14px",
                 borderRadius: "10px",
                 fontSize: "0.9rem",
                 marginBottom: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
               }}
             >
-              {error}
+              <AlertTriangle size={18} />
+              <span>{error}</span>
             </div>
             <button
               onClick={() => navigate("/")}
               style={{
                 padding: "10px 20px",
-                backgroundColor: "#4f46e5",
+                backgroundColor: "var(--accent)",
                 color: "#fff",
                 border: "none",
                 borderRadius: "8px",
@@ -134,21 +143,27 @@ export default function InvitationAcceptPage() {
             {!preview.valid ? (
               <div
                 style={{
-                  backgroundColor: "#fef3c7",
-                  color: "#92400e",
+                  backgroundColor: "rgba(245, 158, 11, 0.1)",
+                  border: "1px solid rgba(245, 158, 11, 0.3)",
+                  color: "#f59e0b",
                   padding: "14px",
                   borderRadius: "10px",
                   fontSize: "0.9rem",
                   margin: "16px 0",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                This invitation is <strong>{preview.status.toUpperCase()}</strong> and is no longer active.
+                <AlertTriangle size={18} />
+                <span>This invitation is <strong>{preview.status.toUpperCase()}</strong> and is no longer active.</span>
               </div>
             ) : (
               <div
                 style={{
-                  backgroundColor: "#f8fafc",
-                  border: "1px solid #e2e8f0",
+                  backgroundColor: "var(--bg-alt)",
+                  border: "1px solid var(--border)",
                   borderRadius: "12px",
                   padding: "18px",
                   margin: "20px 0",
@@ -156,35 +171,36 @@ export default function InvitationAcceptPage() {
                 }}
               >
                 <div style={{ marginBottom: "10px" }}>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase" }}>
+                  <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
                     Destination
                   </span>
-                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "#0f172a" }}>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text-h)" }}>
                     {preview.destination}
                   </div>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "10px" }}>
                   <div>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Duration
                     </span>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "#334155" }}>
+                    <div style={{ fontSize: "0.95rem", fontWeight: 600, color: "var(--text)" }}>
                       {preview.days} {preview.days === 1 ? "Day" : "Days"}
                     </div>
                   </div>
 
                   <div>
-                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "#64748b", textTransform: "uppercase" }}>
+                    <span style={{ fontSize: "0.75rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase" }}>
                       Your Role
                     </span>
-                    <div style={{ fontSize: "0.95rem", fontWeight: 700, color: preview.role === "editor" ? "#2563eb" : "#059669" }}>
-                      {preview.role === "editor" ? "✏️ Editor (Can edit)" : "👁️ Viewer (Read only)"}
+                    <div style={{ fontSize: "0.95rem", fontWeight: 700, color: preview.role === "editor" ? "var(--accent)" : "#10b981", display: "flex", alignItems: "center", gap: 5 }}>
+                      {preview.role === "editor" ? <Edit3 size={14} /> : <Eye size={14} />}
+                      {preview.role === "editor" ? "Editor (Can edit)" : "Viewer (Read only)"}
                     </div>
                   </div>
                 </div>
 
-                <div style={{ fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #e2e8f0", paddingTop: "8px" }}>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", borderTop: "1px solid var(--border)", paddingTop: "8px" }}>
                   Expires: {new Date(preview.expires_at).toLocaleDateString()}
                 </div>
               </div>
@@ -194,15 +210,21 @@ export default function InvitationAcceptPage() {
               <div
                 style={{
                   padding: "12px",
-                  backgroundColor: "#ecfdf5",
-                  color: "#065f46",
+                  backgroundColor: "rgba(16, 185, 129, 0.1)",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                  color: "#10b981",
                   borderRadius: "8px",
                   fontWeight: 600,
                   fontSize: "0.9rem",
                   marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
                 }}
               >
-                {actionStatus}
+                <CheckCircle2 size={18} />
+                <span>{actionStatus}</span>
               </div>
             )}
 
@@ -231,9 +253,9 @@ export default function InvitationAcceptPage() {
                   disabled={actionLoading}
                   style={{
                     padding: "12px 18px",
-                    backgroundColor: "#f1f5f9",
-                    color: "#64748b",
-                    border: "1px solid #cbd5e1",
+                    backgroundColor: "var(--bg-alt)",
+                    color: "var(--text)",
+                    border: "1px solid var(--border)",
                     borderRadius: "8px",
                     fontWeight: 600,
                     fontSize: "0.95rem",
@@ -250,7 +272,7 @@ export default function InvitationAcceptPage() {
                 onClick={() => navigate("/")}
                 style={{
                   padding: "10px 20px",
-                  backgroundColor: "#4f46e5",
+                  backgroundColor: "var(--accent)",
                   color: "#fff",
                   border: "none",
                   borderRadius: "8px",

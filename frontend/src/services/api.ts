@@ -1,4 +1,4 @@
-import type { TripRequest, SuggestDatesParams, SuggestDatesResponse } from "../types/trip";
+import type { TripRequest, SuggestDatesParams, SuggestDatesResponse, LocationSuggestion } from "../types/trip";
 import type { TripResponse } from "../types/api";
 import { getAuthHeaders, ensureAuthSession, getAuthToken } from "./identity";
 
@@ -1340,6 +1340,25 @@ export async function exportJournalPdf(
 
   return await res.blob();
 }
+
+export async function searchLocations(
+  query: string,
+  limit: number = 6,
+  signal?: AbortSignal
+): Promise<LocationSuggestion[]> {
+  const trimmed = query.trim();
+  if (!trimmed || trimmed.length < 2) {
+    return [];
+  }
+  const params = new URLSearchParams({
+    q: trimmed,
+    limit: String(limit),
+  });
+  return apiFetch<LocationSuggestion[]>(`/locations/search?${params.toString()}`, {
+    signal,
+  });
+}
+
 
 
 

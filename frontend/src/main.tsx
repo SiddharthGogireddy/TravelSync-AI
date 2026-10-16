@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import "./App.css";
+import { ThemeProvider } from './context/ThemeContext'
 
 // Register Service Worker for Step 81 PWA installation & safe static caching
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
@@ -20,6 +21,9 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </StrictMode>,
 )
+

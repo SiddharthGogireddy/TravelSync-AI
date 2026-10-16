@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
+  Compass,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  CheckCircle,
+  ArrowLeft,
+} from "lucide-react";
+import {
   apiRegister,
   apiClaimSession,
   getOrCreateUserId,
@@ -96,17 +104,17 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
         alignItems: "center",
         justifyContent: "center",
         padding: "32px 16px",
-        background: "linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)",
+        background: "radial-gradient(ellipse at 50% 0%, var(--accent-bg) 0%, var(--bg) 100%)",
       }}
     >
       <div
         style={{
           width: "100%",
           maxWidth: "480px",
-          background: "#ffffff",
+          background: "var(--card-bg)",
           borderRadius: "16px",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
-          border: "1px solid #e2e8f0",
+          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--border)",
           padding: "36px 32px",
           boxSizing: "border-box",
         }}
@@ -120,25 +128,26 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
               alignItems: "center",
               gap: 8,
               textDecoration: "none",
-              color: "#4f46e5",
+              color: "var(--accent)",
               fontWeight: 800,
               fontSize: "1.35rem",
               letterSpacing: "-0.02em",
             }}
           >
-            <span style={{ fontSize: "1.6rem" }}>✈️</span> TravelSync AI
+            <Compass size={24} style={{ color: "var(--accent)" }} />
+            <span>TravelSync AI</span>
           </Link>
           <h1
             style={{
               margin: "16px 0 6px 0",
               fontSize: "1.6rem",
               fontWeight: 700,
-              color: "#0f172a",
+              color: "var(--text-h)",
             }}
           >
             Create Your Account
           </h1>
-          <p style={{ margin: 0, fontSize: "0.92rem", color: "#64748b" }}>
+          <p style={{ margin: 0, fontSize: "0.92rem", color: "var(--text-muted)" }}>
             Start planning smart AI itineraries and collaborate with your travel group
           </p>
         </div>
@@ -148,10 +157,10 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#ecfdf5",
-              border: "1px solid #a7f3d0",
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
               borderRadius: "10px",
-              color: "#065f46",
+              color: "#10b981",
               fontSize: "0.88rem",
             }}
           >
@@ -166,17 +175,17 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: "10px",
-              color: "#b91c1c",
+              color: "#ef4444",
               fontSize: "0.88rem",
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}
           >
-            <span>⚠️</span>
+            <AlertTriangle size={16} style={{ flexShrink: 0 }} />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -188,17 +197,17 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
               borderRadius: "10px",
-              color: "#166534",
+              color: "#10b981",
               fontSize: "0.88rem",
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}
           >
-            <span>✅</span>
+            <CheckCircle size={16} style={{ flexShrink: 0 }} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -209,8 +218,8 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
             style={{
               marginBottom: "22px",
               padding: "14px",
-              background: "#f8fafc",
-              border: "1px solid #cbd5e1",
+              background: "var(--code-bg)",
+              border: "1px solid var(--border)",
               borderRadius: "12px",
             }}
           >
@@ -231,16 +240,16 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                   marginTop: 3,
                   width: 17,
                   height: 17,
-                  accentColor: "#4f46e5",
+                  accentColor: "var(--accent)",
                   cursor: "pointer",
                 }}
               />
               <div>
-                <strong style={{ display: "block", color: "#1e293b", fontSize: "0.9rem" }}>
+                <strong style={{ display: "block", color: "var(--text-h)", fontSize: "0.9rem" }}>
                   Preserve and link my existing guest trips
                 </strong>
-                <span style={{ fontSize: "0.82rem", color: "#64748b", lineHeight: 1.4 }}>
-                  Active guest session: <code style={{ color: "#334155" }}>{currentGuestId.slice(0, 18)}...</code>.
+                <span style={{ fontSize: "0.82rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
+                  Active guest session: <code style={{ color: "var(--text-secondary)" }}>{currentGuestId.slice(0, 18)}...</code>.
                   Keep checked so any trips you planned as a guest transfer ownership directly to your new account.
                 </span>
               </div>
@@ -258,10 +267,10 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 marginBottom: "6px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: "var(--input-label)",
               }}
             >
-              Full Name <span style={{ color: "#94a3b8", fontWeight: 400 }}>(Optional)</span>
+              Full Name <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(Optional)</span>
             </label>
             <input
               id="signup-name"
@@ -276,14 +285,13 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 boxSizing: "border-box",
                 padding: "11px 14px",
                 borderRadius: "10px",
-                border: "1px solid #cbd5e1",
+                border: "1px solid var(--input-border)",
+                background: "var(--input-bg)",
+                color: "var(--input-text)",
                 fontSize: "0.95rem",
-                color: "#0f172a",
                 outline: "none",
                 transition: "border-color 0.2s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-              onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
             />
           </div>
 
@@ -295,7 +303,7 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 marginBottom: "6px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: "var(--input-label)",
               }}
             >
               Email Address <span style={{ color: "#ef4444" }}>*</span>
@@ -314,14 +322,13 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 boxSizing: "border-box",
                 padding: "11px 14px",
                 borderRadius: "10px",
-                border: "1px solid #cbd5e1",
+                border: "1px solid var(--input-border)",
+                background: "var(--input-bg)",
+                color: "var(--input-text)",
                 fontSize: "0.95rem",
-                color: "#0f172a",
                 outline: "none",
                 transition: "border-color 0.2s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-              onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
             />
           </div>
 
@@ -333,11 +340,11 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 marginBottom: "6px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: "var(--input-label)",
               }}
             >
               Password <span style={{ color: "#ef4444" }}>*</span>{" "}
-              <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 400 }}>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 400 }}>
                 (Minimum 8 characters)
               </span>
             </label>
@@ -357,14 +364,13 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                   boxSizing: "border-box",
                   padding: "11px 44px 11px 14px",
                   borderRadius: "10px",
-                  border: "1px solid #cbd5e1",
+                  border: "1px solid var(--input-border)",
+                  background: "var(--input-bg)",
+                  color: "var(--input-text)",
                   fontSize: "0.95rem",
-                  color: "#0f172a",
                   outline: "none",
                   transition: "border-color 0.2s",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
               />
               <button
                 type="button"
@@ -379,12 +385,14 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  fontSize: "0.95rem",
-                  color: "#64748b",
+                  color: "var(--text-muted)",
                   padding: "4px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {showPassword ? "👁️" : "🙈"}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -397,7 +405,7 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 marginBottom: "6px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: "var(--input-label)",
               }}
             >
               Confirm Password <span style={{ color: "#ef4444" }}>*</span>
@@ -416,14 +424,13 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
                 boxSizing: "border-box",
                 padding: "11px 14px",
                 borderRadius: "10px",
-                border: "1px solid #cbd5e1",
+                border: "1px solid var(--input-border)",
+                background: "var(--input-bg)",
+                color: "var(--input-text)",
                 fontSize: "0.95rem",
-                color: "#0f172a",
                 outline: "none",
                 transition: "border-color 0.2s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-              onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
             />
           </div>
 
@@ -454,17 +461,17 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
           style={{
             marginTop: "24px",
             paddingTop: "20px",
-            borderTop: "1px solid #f1f5f9",
+            borderTop: "1px solid var(--border)",
             textAlign: "center",
             fontSize: "0.9rem",
-            color: "#64748b",
+            color: "var(--text-muted)",
           }}
         >
           Already have an account?{" "}
           <Link
             to={`/login?redirect=${encodeURIComponent(redirectTarget)}`}
             style={{
-              color: "#4f46e5",
+              color: "var(--accent)",
               fontWeight: 700,
               textDecoration: "none",
             }}
@@ -475,12 +482,17 @@ export default function SignupPage({ onAuthSuccess }: SignupPageProps) {
             <Link
               to="/"
               style={{
-                color: "#64748b",
+                color: "var(--text-muted)",
                 fontSize: "0.85rem",
                 textDecoration: "underline",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                justifyContent: "center",
               }}
             >
-              ← Back to TravelSync Home / Plan as Guest
+              <ArrowLeft size={14} />
+              <span>Back to TravelSync Home / Plan as Guest</span>
             </Link>
           </div>
         </div>

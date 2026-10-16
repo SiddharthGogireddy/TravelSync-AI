@@ -73,9 +73,24 @@ export interface Transport {
     legs: TransportLeg[];
 }
 
+export interface LocationSuggestion {
+    place_id: string;
+    display_name: string;
+    name: string;
+    latitude: number;
+    longitude: number;
+    city?: string;
+    region?: string;
+    country?: string;
+    country_code?: string;
+    category?: string;
+    type?: string;
+}
+
 export interface DestinationStop {
     name: string;
     days: number;
+    location?: { lat: number; lon: number };
 }
 
 export interface InterDestinationTravelLeg {

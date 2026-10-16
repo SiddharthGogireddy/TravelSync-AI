@@ -34,11 +34,17 @@ def preserve_real_data_session():
 
 @pytest.fixture(autouse=True)
 def reset_rate_limiter():
-    """Ensure rate limiter counters are clean between tests."""
+    """Ensure rate limiter counters and location cache are clean between tests."""
     from backend.services.security.rate_limiter import global_limiter
+    from backend.services.external.location_service import clear_location_cache, reset_rate_limiter as reset_loc_limiter
+
     global_limiter.reset()
+    clear_location_cache()
+    reset_loc_limiter()
     yield
     global_limiter.reset()
+    clear_location_cache()
+    reset_loc_limiter()
 
 
 @pytest.fixture(autouse=True)

@@ -1,9 +1,37 @@
 import type { TripWeatherAlertsResponse, WeatherDisruptionAlert, DailyForecast } from "../services/weather";
+import {
+  CloudSun,
+  CloudRain,
+  CloudLightning,
+  AlertTriangle,
+  Lightbulb,
+  Wind,
+  Globe,
+  Sun,
+  Cloud,
+} from "lucide-react";
 
 interface Props {
   weatherData: TripWeatherAlertsResponse | null;
   loading?: boolean;
   error?: string | null;
+}
+
+function getWeatherIcon(condition?: string) {
+  const cond = (condition || "").toLowerCase();
+  if (cond.includes("thunder") || cond.includes("storm") || cond.includes("lightning")) {
+    return <CloudLightning size={24} style={{ color: "#ef4444" }} />;
+  }
+  if (cond.includes("rain") || cond.includes("shower") || cond.includes("drizzle")) {
+    return <CloudRain size={24} style={{ color: "#38bdf8" }} />;
+  }
+  if (cond.includes("cloud") || cond.includes("overcast")) {
+    return <Cloud size={24} style={{ color: "#94a3b8" }} />;
+  }
+  if (cond.includes("clear") || cond.includes("sun")) {
+    return <Sun size={24} style={{ color: "#f59e0b" }} />;
+  }
+  return <CloudSun size={24} style={{ color: "var(--accent)" }} />;
 }
 
 export default function WeatherAlertsBanner({ weatherData, loading, error }: Props) {
@@ -12,17 +40,17 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
       <div
         style={{
           padding: 16,
-          background: "#f8fafc",
+          background: "var(--code-bg)",
           borderRadius: 12,
-          border: "1px solid #e2e8f0",
-          color: "#64748b",
+          border: "1px solid var(--border)",
+          color: "var(--text-muted)",
           fontSize: "0.9rem",
           display: "flex",
           alignItems: "center",
           gap: 10,
         }}
       >
-        <span style={{ fontSize: "1.2rem" }}>🌤️</span>
+        <CloudSun size={20} style={{ color: "var(--accent)" }} />
         <span>Fetching live meteorological forecasts and itinerary safety alerts...</span>
       </div>
     );
@@ -33,14 +61,18 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
       <div
         style={{
           padding: 14,
-          background: "#fef2f2",
+          background: "rgba(239, 68, 68, 0.1)",
           borderRadius: 10,
-          border: "1px solid #fecaca",
-          color: "#991b1b",
+          border: "1px solid rgba(239, 68, 68, 0.25)",
+          color: "#ef4444",
           fontSize: "0.88rem",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
         }}
       >
-        ⚠️ Live weather service is temporarily unavailable. Displaying trip default estimates.
+        <AlertTriangle size={16} />
+        <span>Live weather service is temporarily unavailable. Displaying trip default estimates.</span>
       </div>
     );
   }
@@ -56,11 +88,11 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {disruption_alerts.map((alert: WeatherDisruptionAlert, idx: number) => {
             const isSevere = alert.severity === "high" || alert.alert_type === "severe";
-            const bg = isSevere ? "#fef2f2" : "#fffbeb";
-            const border = isSevere ? "#fca5a5" : "#fcd34d";
-            const titleColor = isSevere ? "#991b1b" : "#92400e";
-            const badgeBg = isSevere ? "#fee2e2" : "#fef3c7";
-            const badgeColor = isSevere ? "#b91c1c" : "#b45309";
+            const bg = isSevere ? "rgba(239, 68, 68, 0.1)" : "rgba(245, 158, 11, 0.1)";
+            const border = isSevere ? "rgba(239, 68, 68, 0.3)" : "rgba(245, 158, 11, 0.3)";
+            const titleColor = isSevere ? "#ef4444" : "#f59e0b";
+            const badgeBg = isSevere ? "rgba(239, 68, 68, 0.15)" : "rgba(245, 158, 11, 0.15)";
+            const badgeColor = isSevere ? "#ef4444" : "#f59e0b";
 
             return (
               <div
@@ -71,12 +103,16 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
                   border: `1px solid ${border}`,
                   borderRadius: 12,
                   padding: "16px 20px",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                  boxShadow: "var(--shadow)",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <span style={{ fontSize: "1.3rem" }}>{isSevere ? "⛈️" : "⚠️"}</span>
+                    {isSevere ? (
+                      <CloudLightning size={20} style={{ color: "#ef4444" }} />
+                    ) : (
+                      <AlertTriangle size={20} style={{ color: "#f59e0b" }} />
+                    )}
                     <strong style={{ fontSize: "1rem", color: titleColor }}>{alert.title}</strong>
                   </div>
                   <div style={{ display: "flex", gap: 6 }}>
@@ -84,55 +120,60 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
                       style={{
                         fontSize: "0.72rem",
                         padding: "2px 8px",
-                        borderRadius: 12,
+                        borderRadius: 6,
                         background: badgeBg,
                         color: badgeColor,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {alert.severity} priority
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "0.72rem",
+                        padding: "2px 8px",
+                        borderRadius: 6,
+                        background: "var(--code-bg)",
+                        color: "var(--text-secondary)",
                         fontWeight: 600,
                       }}
                     >
                       Day {alert.day} • {alert.date}
                     </span>
-                    {is_multi_destination && (
-                      <span
-                        style={{
-                          fontSize: "0.72rem",
-                          padding: "2px 8px",
-                          borderRadius: 12,
-                          background: "#e2e8f0",
-                          color: "#334155",
-                          fontWeight: 600,
-                        }}
-                      >
-                        {alert.destination}
-                      </span>
-                    )}
                   </div>
                 </div>
 
-                <p style={{ margin: "0 0 10px", fontSize: "0.9rem", color: "#334155", lineHeight: 1.5 }}>
+                <p style={{ margin: "0 0 10px 0", fontSize: "0.88rem", color: "var(--text-secondary)", lineHeight: 1.45 }}>
                   {alert.message}
                 </p>
 
                 {alert.affected_outdoor_activities && alert.affected_outdoor_activities.length > 0 && (
-                  <div style={{ margin: "6px 0 10px", fontSize: "0.84rem", color: "#475569" }}>
-                    <strong>Outdoor Sights on this Day:</strong>{" "}
+                  <div style={{ marginBottom: 10, fontSize: "0.8rem", color: "var(--text-muted)" }}>
+                    <span style={{ fontWeight: 600 }}>Potentially Impacted:</span>{" "}
                     {alert.affected_outdoor_activities.join(", ")}
                   </div>
                 )}
 
                 <div
                   style={{
-                    background: "rgba(255,255,255,0.7)",
+                    background: "var(--card-bg)",
                     borderRadius: 8,
                     padding: "8px 12px",
                     borderLeft: `4px solid ${border}`,
                     fontSize: "0.82rem",
-                    color: "#475569",
+                    color: "var(--text-secondary)",
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 8,
                   }}
                 >
-                  <strong>💡 Recommendation:</strong> {alert.recommendation}
-                  <div style={{ marginTop: 4, fontStyle: "italic", fontSize: "0.76rem", color: "#64748b" }}>
-                    Notice: TravelSync AI never modifies your confirmed saved itinerary automatically.
+                  <Lightbulb size={16} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+                  <div>
+                    <strong>Recommendation:</strong> {alert.recommendation}
+                    <div style={{ marginTop: 4, fontStyle: "italic", fontSize: "0.76rem", color: "var(--text-muted)" }}>
+                      Notice: TravelSync AI never modifies your confirmed saved itinerary automatically.
+                    </div>
                   </div>
                 </div>
               </div>
@@ -158,36 +199,36 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
                 key={idx}
                 className="daily-forecast-card"
                 style={{
-                  background: isAvailable ? "#ffffff" : "#f8fafc",
-                  border: isAvailable ? "1px solid #e2e8f0" : "1px dashed #cbd5e1",
+                  background: isAvailable ? "var(--card-bg)" : "var(--code-bg)",
+                  border: isAvailable ? "1px solid var(--border)" : "1px dashed var(--border)",
                   borderRadius: 12,
                   padding: "14px 16px",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
-                  boxShadow: isAvailable ? "0 1px 3px rgba(0,0,0,0.05)" : "none",
+                  boxShadow: isAvailable ? "var(--shadow)" : "none",
                 }}
               >
                 <div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "#475569" }}>
+                    <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text-secondary)" }}>
                       Day {f.day} • {f.date.slice(5)}
                     </span>
                     {is_multi_destination && (
-                      <span style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 500 }}>
+                      <span style={{ fontSize: "0.72rem", color: "var(--text-muted)", fontWeight: 500 }}>
                         {f.destination}
                       </span>
                     )}
                   </div>
 
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0" }}>
-                    <span style={{ fontSize: "1.8rem" }}>{f.icon || "🌤️"}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "8px 0" }}>
+                    {getWeatherIcon(f.condition)}
                     <div>
-                      <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "#0f172a" }}>
+                      <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "var(--text-h)" }}>
                         {f.condition}
                       </div>
                       {isAvailable && f.min_temp != null && f.max_temp != null && (
-                        <div style={{ fontSize: "0.82rem", color: "#475569" }}>
+                        <div style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
                           {Math.round(f.min_temp)}°C – {Math.round(f.max_temp)}°C
                         </div>
                       )}
@@ -198,25 +239,30 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
                 {isAvailable ? (
                   <div
                     style={{
-                      borderTop: "1px solid #f1f5f9",
+                      borderTop: "1px solid var(--border)",
                       paddingTop: 8,
                       marginTop: 6,
                       fontSize: "0.74rem",
-                      color: "#64748b",
+                      color: "var(--text-muted)",
                       display: "flex",
                       justifyContent: "space-between",
+                      alignItems: "center",
                     }}
                   >
-                    <span>
-                      🌧️ {f.precipitation_probability != null ? `${f.precipitation_probability}%` : "0%"}
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                      <CloudRain size={12} />
+                      {f.precipitation_probability != null ? `${f.precipitation_probability}%` : "0%"}
                       {f.precipitation_sum ? ` (${f.precipitation_sum}mm)` : ""}
                     </span>
                     {f.wind_speed_max != null && (
-                      <span>💨 {Math.round(f.wind_speed_max)} km/h</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        <Wind size={12} />
+                        {Math.round(f.wind_speed_max)} km/h
+                      </span>
                     )}
                   </div>
                 ) : (
-                  <div style={{ fontSize: "0.74rem", color: "#94a3b8", fontStyle: "italic", marginTop: 4 }}>
+                  <div style={{ fontSize: "0.74rem", color: "var(--text-muted)", fontStyle: "italic", marginTop: 4 }}>
                     {f.message || "Forecast unavailable beyond 16 days"}
                   </div>
                 )}
@@ -235,12 +281,13 @@ export default function WeatherAlertsBanner({ weatherData, loading, error }: Pro
           flexWrap: "wrap",
           gap: 8,
           fontSize: "0.74rem",
-          color: "#94a3b8",
+          color: "var(--text-muted)",
           marginTop: 4,
         }}
       >
-        <span>
-          🌐 Meteorological data sourced from Open-Meteo • 16-day live window • Disruption thresholds analyzed by TravelSync AI
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+          <Globe size={13} />
+          <span>Meteorological data sourced from Open-Meteo • 16-day live window • Disruption thresholds analyzed by TravelSync AI</span>
         </span>
         {update_time && (
           <span>Updated: {new Date(update_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>

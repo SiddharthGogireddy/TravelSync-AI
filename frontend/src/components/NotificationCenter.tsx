@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { Bell, Loader2, AlertTriangle, Inbox, Check } from "lucide-react";
 import {
   getUserNotifications,
   getUnreadNotificationCount,
@@ -120,8 +121,8 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
         title="View in-app notifications"
         style={{
           position: "relative",
-          background: isOpen ? "#ede9fe" : "#ffffff",
-          border: isOpen ? "1px solid #818cf8" : "1px solid #cbd5e1",
+          background: isOpen ? "var(--accent-bg)" : "var(--card-bg)",
+          border: isOpen ? "1px solid var(--accent)" : "1px solid var(--border)",
           borderRadius: "50%",
           width: 38,
           height: 38,
@@ -129,11 +130,12 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
           alignItems: "center",
           justifyContent: "center",
           cursor: "pointer",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+          boxShadow: "var(--shadow)",
           transition: "all 0.15s ease",
+          color: "var(--text-secondary)",
         }}
       >
-        <span style={{ fontSize: "1.1rem" }}>🔔</span>
+        <Bell size={18} />
         {unreadCount > 0 && (
           <span
             style={{
@@ -146,7 +148,7 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
               padding: "1px 6px",
               fontSize: "0.68rem",
               fontWeight: 800,
-              border: "2px solid #ffffff",
+              border: "2px solid var(--card-bg)",
               boxShadow: "0 1px 3px rgba(239, 68, 68, 0.4)",
             }}
           >
@@ -166,10 +168,10 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
             right: 0,
             width: 360,
             maxWidth: "90vw",
-            background: "#ffffff",
+            background: "var(--dropdown-bg)",
             borderRadius: 14,
-            boxShadow: "0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1)",
-            border: "1px solid #e2e8f0",
+            boxShadow: "var(--shadow-lg)",
+            border: "1px solid var(--dropdown-border)",
             zIndex: 1000,
             overflow: "hidden",
             display: "flex",
@@ -181,22 +183,22 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
           <div
             style={{
               padding: "14px 16px",
-              borderBottom: "1px solid #f1f5f9",
-              background: "#f8fafc",
+              borderBottom: "1px solid var(--border)",
+              background: "var(--code-bg)",
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <strong style={{ fontSize: "0.95rem", color: "#0f172a" }}>
+              <strong style={{ fontSize: "0.95rem", color: "var(--text-h)" }}>
                 Notifications
               </strong>
               {unreadCount > 0 && (
                 <span
                   style={{
-                    background: "#fee2e2",
-                    color: "#991b1b",
+                    background: "rgba(239, 68, 68, 0.15)",
+                    color: "#ef4444",
                     padding: "2px 8px",
                     borderRadius: 12,
                     fontSize: "0.72rem",
@@ -215,7 +217,7 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                 style={{
                   background: "transparent",
                   border: "none",
-                  color: "#4f46e5",
+                  color: "var(--accent)",
                   fontSize: "0.76rem",
                   fontWeight: 600,
                   cursor: "pointer",
@@ -231,9 +233,9 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
           <div
             style={{
               display: "flex",
-              borderBottom: "1px solid #f1f5f9",
+              borderBottom: "1px solid var(--border)",
               padding: "4px 8px",
-              background: "#ffffff",
+              background: "var(--code-bg)",
               gap: 4,
             }}
           >
@@ -245,8 +247,8 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                 padding: "6px",
                 border: "none",
                 borderRadius: 6,
-                background: !filterUnread ? "#f1f5f9" : "transparent",
-                color: !filterUnread ? "#0f172a" : "#64748b",
+                background: !filterUnread ? "var(--card-bg)" : "transparent",
+                color: !filterUnread ? "var(--text-h)" : "var(--text-muted)",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -262,8 +264,8 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                 padding: "6px",
                 border: "none",
                 borderRadius: 6,
-                background: filterUnread ? "#f1f5f9" : "transparent",
-                color: filterUnread ? "#0f172a" : "#64748b",
+                background: filterUnread ? "var(--card-bg)" : "transparent",
+                color: filterUnread ? "var(--text-h)" : "var(--text-muted)",
                 fontSize: "0.78rem",
                 fontWeight: 600,
                 cursor: "pointer",
@@ -283,21 +285,25 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
             }}
           >
             {loading && (
-              <div style={{ textAlign: "center", padding: "30px 16px", color: "#64748b", fontSize: "0.86rem" }}>
-                ⏳ Loading notifications...
+              <div style={{ textAlign: "center", padding: "30px 16px", color: "var(--text-muted)", fontSize: "0.86rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+                <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                <span>Loading notifications...</span>
               </div>
             )}
 
             {!loading && error && (
-              <div style={{ padding: "16px", textAlign: "center", color: "#dc2626", fontSize: "0.82rem" }}>
-                ⚠️ {error}
+              <div style={{ padding: "16px", textAlign: "center", color: "#ef4444", fontSize: "0.82rem", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <AlertTriangle size={15} />
+                <span>{error}</span>
               </div>
             )}
 
             {!loading && !error && notifications.length === 0 && (
-              <div style={{ padding: "40px 16px", textAlign: "center", color: "#64748b" }}>
-                <div style={{ fontSize: "1.6rem", marginBottom: 4 }}>📭</div>
-                <div style={{ fontWeight: 600, color: "#334155", fontSize: "0.88rem" }}>
+              <div style={{ padding: "40px 16px", textAlign: "center", color: "var(--text-muted)" }}>
+                <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                  <Inbox size={32} style={{ color: "var(--text-muted)" }} />
+                </div>
+                <div style={{ fontWeight: 600, color: "var(--text-h)", fontSize: "0.88rem" }}>
                   {filterUnread ? "No unread notifications" : "No notifications yet"}
                 </div>
                 <p style={{ margin: "2px 0 0", fontSize: "0.76rem" }}>
@@ -313,8 +319,8 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                   key={notif.id}
                   style={{
                     padding: "12px 16px",
-                    borderBottom: "1px solid #f1f5f9",
-                    background: notif.is_read ? "#ffffff" : "#f0fdf4",
+                    borderBottom: "1px solid var(--border)",
+                    background: notif.is_read ? "var(--card-bg)" : "var(--accent-bg)",
                     display: "flex",
                     gap: 10,
                     alignItems: "flex-start",
@@ -335,15 +341,15 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
 
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                      <strong style={{ fontSize: "0.84rem", color: notif.is_read ? "#334155" : "#0f172a" }}>
+                      <strong style={{ fontSize: "0.84rem", color: notif.is_read ? "var(--text-secondary)" : "var(--text-h)" }}>
                         {notif.title}
                       </strong>
-                      <span style={{ fontSize: "0.7rem", color: "#94a3b8", whiteSpace: "nowrap" }}>
+                      <span style={{ fontSize: "0.7rem", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         {formatTimestamp(notif.created_at)}
                       </span>
                     </div>
 
-                    <p style={{ margin: "3px 0 6px", fontSize: "0.78rem", color: "#475569", lineHeight: 1.4 }}>
+                    <p style={{ margin: "3px 0 6px", fontSize: "0.78rem", color: "var(--text-muted)", lineHeight: 1.4 }}>
                       {notif.message}
                     </p>
 
@@ -353,13 +359,13 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                           href={notif.link}
                           onClick={() => setIsOpen(false)}
                           style={{
-                            color: "#4f46e5",
+                            color: "var(--accent)",
                             fontSize: "0.74rem",
                             fontWeight: 600,
                             textDecoration: "none",
                           }}
                         >
-                          View details →
+                          View details &rarr;
                         </a>
                       ) : (
                         <span />
@@ -373,14 +379,18 @@ export default function NotificationCenter({ tripId }: NotificationCenterProps) 
                           style={{
                             background: "transparent",
                             border: "none",
-                            color: "#16a34a",
+                            color: "#10b981",
                             fontSize: "0.74rem",
                             fontWeight: 600,
                             cursor: "pointer",
                             padding: "2px 6px",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
                           }}
                         >
-                          ✓ Mark read
+                          <Check size={12} />
+                          <span>Mark read</span>
                         </button>
                       )}
                     </div>

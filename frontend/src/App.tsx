@@ -12,6 +12,8 @@ import TripTemplates from "./pages/TripTemplates";
 import InvitationAcceptPage from "./pages/InvitationAcceptPage";
 import OfflineBanner from "./components/OfflineBanner";
 import AuthModal from "./components/AuthModal";
+import ThemeToggle from "./components/ThemeToggle";
+import { Compass, Download } from "lucide-react";
 import { generateTrip } from "./services/api";
 import { getOrCreateUserId, isAuthenticated, clearAuthToken } from "./services/identity";
 
@@ -87,31 +89,33 @@ export default function App() {
                         alignItems: "center",
                         justifyContent: "space-between",
                         padding: "12px 24px",
-                        background: "#fff",
-                        borderBottom: "1px solid #e5e7eb",
+                        background: "var(--nav-bg)",
+                        borderBottom: "1px solid var(--nav-border)",
                         flexWrap: "wrap",
                         gap: 16,
+                        transition: "background 0.2s ease, border-color 0.2s ease",
                     }}
                 >
                     <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
                         <Link
                             to="/"
                             style={{
-                                color: "#4f46e5",
+                                color: "var(--accent)",
                                 textDecoration: "none",
                                 fontWeight: 800,
                                 fontSize: "1.15rem",
                                 display: "inline-flex",
                                 alignItems: "center",
-                                gap: 6,
+                                gap: 8,
                             }}
                         >
-                            <span>✈️</span> TravelSync AI
+                            <Compass size={22} style={{ color: "var(--accent)" }} />
+                            <span>TravelSync AI</span>
                         </Link>
                         <Link
                             to="/"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -122,7 +126,7 @@ export default function App() {
                         <Link
                             to="/plan"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -133,7 +137,7 @@ export default function App() {
                         <Link
                             to="/trip-history"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -144,7 +148,7 @@ export default function App() {
                         <Link
                             to="/templates"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -155,7 +159,7 @@ export default function App() {
                         <Link
                             to="/compare"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -166,7 +170,7 @@ export default function App() {
                         <Link
                             to="/load-trip"
                             style={{
-                                color: "#4b5563",
+                                color: "var(--text-secondary)",
                                 textDecoration: "none",
                                 fontWeight: 600,
                                 fontSize: "0.95rem",
@@ -177,6 +181,8 @@ export default function App() {
                     </div>
 
                     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                        <ThemeToggle />
+
                         <button
                             type="button"
                             onClick={() => window.dispatchEvent(new CustomEvent("open-pwa-install-guide"))}
@@ -184,9 +190,9 @@ export default function App() {
                             style={{
                                 padding: "6px 12px",
                                 borderRadius: "8px",
-                                border: "1px solid #e2e8f0",
-                                background: "#f8fafc",
-                                color: "#475569",
+                                border: "1px solid var(--border)",
+                                background: "var(--card-bg)",
+                                color: "var(--text-secondary)",
                                 fontWeight: 600,
                                 fontSize: "0.82rem",
                                 cursor: "pointer",
@@ -195,20 +201,22 @@ export default function App() {
                                 gap: 6,
                             }}
                         >
-                            <span>📲</span> Install App
+                            <Download size={14} />
+                            <span>Install App</span>
                         </button>
 
                         <span
                             style={{
                                 fontSize: "0.85rem",
-                                color: "#64748b",
-                                background: "#f1f5f9",
+                                color: "var(--text-muted)",
+                                background: "var(--code-bg)",
+                                border: "1px solid var(--border)",
                                 padding: "5px 12px",
                                 borderRadius: "9999px",
                             }}
                         >
                             {authStatus.loggedIn ? "Account" : "Guest"}:{" "}
-                            <strong style={{ color: "#334155" }}>
+                            <strong style={{ color: "var(--text-h)" }}>
                                 {authStatus.userId.slice(0, 16)}...
                             </strong>
                         </span>
@@ -220,9 +228,9 @@ export default function App() {
                                 style={{
                                     padding: "6px 14px",
                                     borderRadius: "8px",
-                                    border: "1px solid #e2e8f0",
-                                    background: "#ffffff",
-                                    color: "#64748b",
+                                    border: "1px solid var(--border)",
+                                    background: "var(--card-bg)",
+                                    color: "var(--text-secondary)",
                                     fontWeight: 600,
                                     fontSize: "0.875rem",
                                     cursor: "pointer",
@@ -237,9 +245,9 @@ export default function App() {
                                     style={{
                                         padding: "6px 14px",
                                         borderRadius: "8px",
-                                        border: "1px solid #cbd5e1",
-                                        background: "#ffffff",
-                                        color: "#334155",
+                                        border: "1px solid var(--border)",
+                                        background: "var(--card-bg)",
+                                        color: "var(--text-secondary)",
                                         fontWeight: 600,
                                         fontSize: "0.875rem",
                                         textDecoration: "none",
@@ -253,7 +261,7 @@ export default function App() {
                                         padding: "6px 14px",
                                         borderRadius: "8px",
                                         border: "none",
-                                        background: "#4f46e5",
+                                        background: "var(--accent)",
                                         color: "#ffffff",
                                         fontWeight: 600,
                                         fontSize: "0.875rem",

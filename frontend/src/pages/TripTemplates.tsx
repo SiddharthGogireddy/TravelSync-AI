@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { X } from "lucide-react";
 import { getTemplates, createTripFromTemplate, deleteTemplate, getTemplate } from "../services/api";
 import type { TripTemplate } from "../types/template";
 
@@ -118,14 +119,14 @@ export default function TripTemplates() {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.85rem", color: "#1e293b", fontWeight: 700 }}>
+          <h1 style={{ margin: 0, fontSize: "1.85rem", color: "var(--text-h)", fontWeight: 700 }}>
             Reusable Trip Templates
           </h1>
-          <p style={{ margin: "6px 0 0", color: "#64748b", fontSize: "0.95rem" }}>
+          <p style={{ margin: "6px 0 0", color: "var(--text-muted)", fontSize: "0.95rem" }}>
             Start a new vacation instantly from proven itineraries without starting from scratch.
           </p>
         </div>
-        <div style={{ background: "#eef2ff", color: "#4f46e5", padding: "8px 16px", borderRadius: 20, fontWeight: 600, fontSize: "0.88rem" }}>
+        <div style={{ background: "rgba(79, 70, 229, 0.15)", color: "var(--accent)", border: "1px solid var(--border)", padding: "8px 16px", borderRadius: 20, fontWeight: 600, fontSize: "0.88rem" }}>
           {templates.length} {templates.length === 1 ? "Template" : "Templates"} Available
         </div>
       </div>
@@ -141,9 +142,11 @@ export default function TripTemplates() {
             flex: 1,
             minWidth: 260,
             padding: "10px 14px",
-            border: "1px solid #cbd5e1",
+            border: "1px solid var(--input-border)",
             borderRadius: 8,
             fontSize: "0.92rem",
+            background: "var(--input-bg)",
+            color: "var(--input-text)",
             outline: "none",
           }}
         />
@@ -153,11 +156,11 @@ export default function TripTemplates() {
           onChange={(e) => setSelectedCategory(e.target.value)}
           style={{
             padding: "10px 14px",
-            border: "1px solid #cbd5e1",
+            border: "1px solid var(--input-border)",
             borderRadius: 8,
-            background: "#fff",
+            background: "var(--input-bg)",
             fontSize: "0.92rem",
-            color: "#334155",
+            color: "var(--input-text)",
             outline: "none",
           }}
         >
@@ -224,13 +227,13 @@ export default function TripTemplates() {
             <div
               key={tpl.id}
               style={{
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
                 borderRadius: 12,
                 padding: "20px",
                 display: "flex",
                 flexDirection: "column",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
+                boxShadow: "var(--card-shadow, 0 2px 4px rgba(0,0,0,0.03))",
                 transition: "transform 0.15s, box-shadow 0.15s",
               }}
             >
@@ -242,8 +245,9 @@ export default function TripTemplates() {
                     fontWeight: 700,
                     textTransform: "uppercase",
                     letterSpacing: "0.05em",
-                    background: "#f1f5f9",
-                    color: "#475569",
+                    background: "var(--bg-alt)",
+                    color: "var(--text-muted)",
+                    border: "1px solid var(--border)",
                     padding: "3px 8px",
                     borderRadius: 6,
                   }}
@@ -252,8 +256,8 @@ export default function TripTemplates() {
                 </span>
                 <span
                   style={{
-                    background: "#ecfdf5",
-                    color: "#059669",
+                    background: "rgba(16, 185, 129, 0.15)",
+                    color: "#10b981",
                     fontWeight: 700,
                     fontSize: "0.8rem",
                     padding: "3px 10px",
@@ -265,16 +269,16 @@ export default function TripTemplates() {
               </div>
 
               {/* Title & Destination */}
-              <h3 style={{ margin: "0 0 6px", fontSize: "1.2rem", color: "#0f172a", fontWeight: 700 }}>
+              <h3 style={{ margin: "0 0 6px", fontSize: "1.2rem", color: "var(--text-h)", fontWeight: 700 }}>
                 {tpl.name}
               </h3>
-              <div style={{ fontSize: "0.88rem", color: "#64748b", marginBottom: 8, display: "flex", gap: 6, alignItems: "center" }}>
+              <div style={{ fontSize: "0.88rem", color: "var(--text-muted)", marginBottom: 8, display: "flex", gap: 6, alignItems: "center" }}>
                 <span>{tpl.destination}</span>
                 {tpl.source && <span>• from {tpl.source}</span>}
               </div>
 
               {tpl.description && (
-                <p style={{ margin: "0 0 12px", color: "#475569", fontSize: "0.86rem", lineHeight: 1.4, flex: 1 }}>
+                <p style={{ margin: "0 0 12px", color: "var(--text)", fontSize: "0.86rem", lineHeight: 1.4, flex: 1 }}>
                   {tpl.description}
                 </p>
               )}
@@ -286,8 +290,8 @@ export default function TripTemplates() {
                     <span
                       key={i}
                       style={{
-                        background: "#ede9fe",
-                        color: "#6d28d9",
+                        background: "rgba(124, 58, 237, 0.12)",
+                        color: "#a78bfa",
                         fontSize: "0.75rem",
                         padding: "2px 8px",
                         borderRadius: 12,
@@ -298,7 +302,7 @@ export default function TripTemplates() {
                     </span>
                   ))}
                   {tpl.preferences.length > 4 && (
-                    <span style={{ fontSize: "0.75rem", color: "#94a3b8", alignSelf: "center" }}>
+                    <span style={{ fontSize: "0.75rem", color: "var(--text-muted)", alignSelf: "center" }}>
                       +{tpl.preferences.length - 4} more
                     </span>
                   )}
@@ -308,35 +312,35 @@ export default function TripTemplates() {
               {/* Structure Stats */}
               <div
                 style={{
-                  background: "#f8fafc",
+                  background: "var(--bg-alt)",
                   borderRadius: 8,
                   padding: "10px 12px",
                   display: "flex",
                   justifyContent: "space-around",
                   marginBottom: 16,
                   fontSize: "0.82rem",
-                  color: "#334155",
-                  border: "1px solid #f1f5f9",
+                  color: "var(--text)",
+                  border: "1px solid var(--border)",
                 }}
               >
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                  <div style={{ fontWeight: 700, color: "var(--text-h)" }}>
                     {tpl.itinerary_structure?.places_count ?? 0}
                   </div>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Places</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Places</div>
                 </div>
                 <div style={{ textAlign: "center" }}>
-                  <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                  <div style={{ fontWeight: 700, color: "var(--text-h)" }}>
                     {tpl.travel_mode ? tpl.travel_mode.toUpperCase() : "CAR"}
                   </div>
-                  <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Transport</div>
+                  <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Transport</div>
                 </div>
                 {tpl.budget_summary?.estimated_cost ? (
                   <div style={{ textAlign: "center" }}>
-                    <div style={{ fontWeight: 700, color: "#0f172a" }}>
+                    <div style={{ fontWeight: 700, color: "var(--text-h)" }}>
                       ₹{tpl.budget_summary.estimated_cost.toLocaleString()}
                     </div>
-                    <div style={{ fontSize: "0.72rem", color: "#64748b" }}>Est. Cost</div>
+                    <div style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>Est. Cost</div>
                   </div>
                 ) : null}
               </div>
@@ -348,7 +352,7 @@ export default function TripTemplates() {
                   style={{
                     flex: 1,
                     padding: "9px 12px",
-                    background: "#4f46e5",
+                    background: "var(--accent)",
                     color: "#ffffff",
                     border: "none",
                     borderRadius: 6,
@@ -364,9 +368,9 @@ export default function TripTemplates() {
                   onClick={() => handleOpenPreview(tpl)}
                   style={{
                     padding: "9px 12px",
-                    background: "#f1f5f9",
-                    color: "#334155",
-                    border: "1px solid #cbd5e1",
+                    background: "var(--bg-alt)",
+                    border: "1px solid var(--border)",
+                    color: "var(--text)",
                     borderRadius: 6,
                     fontWeight: 600,
                     fontSize: "0.86rem",
@@ -418,23 +422,38 @@ export default function TripTemplates() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--card-bg)",
               borderRadius: 14,
               padding: 24,
               maxWidth: 500,
               width: "100%",
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.3)",
+              border: "1px solid var(--border)",
             }}
           >
-            <h2 style={{ margin: "0 0 6px", fontSize: "1.35rem", color: "#1e293b" }}>
-              Create Trip from Template
-            </h2>
-            <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: "0.88rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
+              <h2 style={{ margin: 0, fontSize: "1.35rem", color: "var(--text-h)" }}>
+                Create Trip from Template
+              </h2>
+              <button
+                onClick={() => setActiveTemplate(null)}
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "var(--text-muted)",
+                  padding: 4,
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p style={{ margin: "0 0 16px", color: "var(--text-muted)", fontSize: "0.88rem" }}>
               Template: <strong>{activeTemplate.name}</strong> ({activeTemplate.duration_days} days to {activeTemplate.destination})
             </p>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "var(--input-label)", marginBottom: 4 }}>
                 Origin City / Departure Point
               </label>
               <input
@@ -446,7 +465,9 @@ export default function TripTemplates() {
                   width: "100%",
                   padding: "8px 12px",
                   borderRadius: 6,
-                  border: "1px solid #cbd5e1",
+                  border: "1px solid var(--input-border)",
+                  background: "var(--input-bg)",
+                  color: "var(--input-text)",
                   boxSizing: "border-box",
                   fontSize: "0.9rem",
                 }}
@@ -454,7 +475,7 @@ export default function TripTemplates() {
             </div>
 
             <div style={{ marginBottom: 14 }}>
-              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "var(--input-label)", marginBottom: 4 }}>
                 Travel Mode
               </label>
               <select
@@ -464,9 +485,9 @@ export default function TripTemplates() {
                   width: "100%",
                   padding: "8px 12px",
                   borderRadius: 6,
-                  border: "1px solid #cbd5e1",
-                  background: "#fff",
-                  color: "#0f172a",
+                  border: "1px solid var(--input-border)",
+                  background: "var(--input-bg)",
+                  color: "var(--input-text)",
                   boxSizing: "border-box",
                   fontSize: "0.9rem",
                 }}
@@ -479,7 +500,7 @@ export default function TripTemplates() {
             </div>
 
             <div style={{ marginBottom: 20 }}>
-              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+              <label style={{ display: "block", fontSize: "0.84rem", fontWeight: 600, color: "var(--input-label)", marginBottom: 4 }}>
                 Budget (₹ INR, optional override)
               </label>
               <input
@@ -491,7 +512,9 @@ export default function TripTemplates() {
                   width: "100%",
                   padding: "8px 12px",
                   borderRadius: 6,
-                  border: "1px solid #cbd5e1",
+                  border: "1px solid var(--input-border)",
+                  background: "var(--input-bg)",
+                  color: "var(--input-text)",
                   boxSizing: "border-box",
                   fontSize: "0.9rem",
                 }}
@@ -505,12 +528,12 @@ export default function TripTemplates() {
                 style={{
                   padding: "8px 16px",
                   borderRadius: 6,
-                  border: "1px solid #cbd5e1",
-                  background: "#fff",
+                  border: "1px solid var(--border)",
+                  background: "var(--bg-alt)",
                   cursor: "pointer",
                   fontWeight: 600,
                   fontSize: "0.88rem",
-                  color: "#475569",
+                  color: "var(--text)",
                 }}
               >
                 Cancel
@@ -522,7 +545,7 @@ export default function TripTemplates() {
                   padding: "8px 18px",
                   borderRadius: 6,
                   border: "none",
-                  background: "#4f46e5",
+                  background: "var(--accent)",
                   color: "#fff",
                   cursor: "pointer",
                   fontWeight: 600,
@@ -545,7 +568,7 @@ export default function TripTemplates() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
+            backgroundColor: "rgba(0,0,0,0.6)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -555,22 +578,23 @@ export default function TripTemplates() {
         >
           <div
             style={{
-              background: "#fff",
+              background: "var(--card-bg)",
               borderRadius: 14,
               padding: 24,
               maxWidth: 600,
               width: "100%",
               maxHeight: "85vh",
               overflowY: "auto",
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.2)",
+              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.3)",
+              border: "1px solid var(--border)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
               <div>
-                <h2 style={{ margin: "0 0 4px", fontSize: "1.3rem", color: "#0f172a" }}>
+                <h2 style={{ margin: "0 0 4px", fontSize: "1.3rem", color: "var(--text-h)" }}>
                   {previewTemplate.name}
                 </h2>
-                <div style={{ color: "#64748b", fontSize: "0.86rem" }}>
+                <div style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>
                   {previewTemplate.destination} • {previewTemplate.duration_days} Days
                 </div>
               </div>
@@ -579,20 +603,20 @@ export default function TripTemplates() {
                 style={{
                   background: "transparent",
                   border: "none",
-                  fontSize: "1.2rem",
                   cursor: "pointer",
-                  color: "#64748b",
+                  color: "var(--text-muted)",
+                  padding: 4,
                 }}
               >
-                ✕
+                <X size={18} />
               </button>
             </div>
 
             {previewLoading ? (
-              <p>Loading full structure...</p>
+              <p style={{ color: "var(--text-muted)" }}>Loading full structure...</p>
             ) : (
               <div>
-                <h4 style={{ margin: "14px 0 8px", color: "#334155", fontSize: "0.95rem" }}>
+                <h4 style={{ margin: "14px 0 8px", color: "var(--text-h)", fontSize: "0.95rem" }}>
                   Key Attractions & Activities
                 </h4>
                 {previewTemplate.itinerary_structure?.places_summary?.length ? (
@@ -601,28 +625,28 @@ export default function TripTemplates() {
                       <div
                         key={idx}
                         style={{
-                          background: "#f8fafc",
+                          background: "var(--bg-alt)",
                           padding: "8px 12px",
                           borderRadius: 6,
-                          border: "1px solid #e2e8f0",
+                          border: "1px solid var(--border)",
                           display: "flex",
                           justifyContent: "space-between",
                           alignItems: "center",
                           fontSize: "0.86rem",
                         }}
                       >
-                        <span style={{ fontWeight: 600, color: "#1e293b" }}>{p.name}</span>
-                        <span style={{ color: "#64748b", fontSize: "0.78rem" }}>
+                        <span style={{ fontWeight: 600, color: "var(--text)" }}>{p.name}</span>
+                        <span style={{ color: "var(--text-muted)", fontSize: "0.78rem" }}>
                           {p.category} ({p.duration_hours}h)
                         </span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p style={{ color: "#94a3b8", fontSize: "0.86rem" }}>No specific places registered.</p>
+                  <p style={{ color: "var(--text-muted)", fontSize: "0.86rem" }}>No specific places registered.</p>
                 )}
 
-                <h4 style={{ margin: "14px 0 8px", color: "#334155", fontSize: "0.95rem" }}>
+                <h4 style={{ margin: "14px 0 8px", color: "var(--text-h)", fontSize: "0.95rem" }}>
                   Day-by-Day Activity Count
                 </h4>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 20 }}>
@@ -630,8 +654,8 @@ export default function TripTemplates() {
                     <div
                       key={day}
                       style={{
-                        background: "#ede9fe",
-                        color: "#5b21b6",
+                        background: "rgba(124, 58, 237, 0.15)",
+                        color: "#a78bfa",
                         padding: "6px 14px",
                         borderRadius: 8,
                         fontSize: "0.84rem",
@@ -652,7 +676,7 @@ export default function TripTemplates() {
                     }}
                     style={{
                       padding: "8px 16px",
-                      background: "#4f46e5",
+                      background: "var(--accent)",
                       color: "#fff",
                       border: "none",
                       borderRadius: 6,

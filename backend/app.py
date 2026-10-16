@@ -9,6 +9,7 @@ from backend.routes.trip import router as trip_router
 from backend.routes.template import router as template_router
 from backend.routes.pdf import router as pdf_router
 from backend.routes.place import router as place_router
+from backend.routes.location import router as location_router
 from backend.routes.currency import router as currency_router
 from backend.routes.weather import router as weather_router
 from backend.routes.chat import router as chat_router
@@ -69,6 +70,7 @@ app.include_router(weather_router)
 app.include_router(chat_router)
 app.include_router(activity_router)
 app.include_router(memory_router)
+app.include_router(location_router)
 
 app.add_middleware(
     CORSMiddleware,

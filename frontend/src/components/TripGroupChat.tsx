@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
 import {
+  MessageSquare,
+  RefreshCw,
+  AlertTriangle,
+  Loader2,
+  Send,
+  X,
+  Info,
+  Edit3,
+  Trash2,
+} from "lucide-react";
+import {
   getTripChatMessages,
   sendTripChatMessage,
   editTripChatMessage,
@@ -177,12 +188,12 @@ export default function TripGroupChat({
   return (
     <div
       style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
+        background: "var(--card-bg)",
+        border: "1px solid var(--border)",
         borderRadius: 16,
         padding: "24px",
         margin: "24px 0",
-        boxShadow: "0 4px 14px rgba(15, 23, 42, 0.05)",
+        boxShadow: "var(--card-shadow, 0 4px 14px rgba(0, 0, 0, 0.05))",
       }}
     >
       {/* Header */}
@@ -193,7 +204,7 @@ export default function TripGroupChat({
           alignItems: "center",
           flexWrap: "wrap",
           gap: 12,
-          borderBottom: "1px solid #f1f5f9",
+          borderBottom: "1px solid var(--border)",
           paddingBottom: 16,
           marginBottom: 16,
         }}
@@ -204,29 +215,30 @@ export default function TripGroupChat({
               style={{
                 margin: 0,
                 fontSize: "1.25rem",
-                color: "#0f172a",
+                color: "var(--text-h)",
                 fontWeight: 700,
                 display: "flex",
                 alignItems: "center",
                 gap: 8,
               }}
             >
-              <span>💬</span> Trip Group Chat
+              <MessageSquare size={20} color="var(--accent)" /> Trip Group Chat
             </h3>
             <span
               style={{
-                background: "#f1f5f9",
-                color: "#475569",
+                background: "var(--bg-alt)",
+                color: "var(--text-muted)",
                 padding: "3px 10px",
                 borderRadius: 12,
                 fontSize: "0.78rem",
                 fontWeight: 600,
+                border: "1px solid var(--border)",
               }}
             >
               {messages.length} message{messages.length === 1 ? "" : "s"}
             </span>
           </div>
-          <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "0.85rem" }}>
+          <p style={{ margin: "4px 0 0", color: "var(--text-muted)", fontSize: "0.85rem" }}>
             Collaborate, plan meetups, and share trip notes with your fellow travelers.
           </p>
         </div>
@@ -237,9 +249,9 @@ export default function TripGroupChat({
             onClick={() => loadMessages(true)}
             disabled={refreshing || loading}
             style={{
-              background: "#f8fafc",
-              border: "1px solid #cbd5e1",
-              color: "#334155",
+              background: "var(--bg-alt)",
+              border: "1px solid var(--border)",
+              color: "var(--text)",
               borderRadius: 8,
               padding: "6px 14px",
               fontSize: "0.82rem",
@@ -251,9 +263,12 @@ export default function TripGroupChat({
               transition: "all 0.15s ease",
             }}
           >
-            <span style={{ display: "inline-block", transform: refreshing ? "rotate(180deg)" : "none", transition: "transform 0.3s" }}>
-              🔄
-            </span>
+            <RefreshCw
+              size={14}
+              style={{
+                animation: refreshing ? "spin 1s linear infinite" : "none",
+              }}
+            />
             {refreshing ? "Refreshing..." : "Refresh Chat"}
           </button>
         </div>
@@ -262,13 +277,13 @@ export default function TripGroupChat({
       {/* Info Notice regarding message synchronization */}
       <div
         style={{
-          background: "#f8fafc",
-          border: "1px dashed #cbd5e1",
+          background: "var(--bg-alt)",
+          border: "1px dashed var(--border)",
           borderRadius: 8,
           padding: "8px 14px",
           marginBottom: 16,
           fontSize: "0.78rem",
-          color: "#64748b",
+          color: "var(--text-muted)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -276,11 +291,14 @@ export default function TripGroupChat({
           gap: 6,
         }}
       >
-        <span>
-          ℹ️ <strong>Sync mode:</strong> Messages update when sending or clicking "Refresh Chat".
+        <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <Info size={14} color="var(--accent)" />
+          <span>
+            <strong>Sync mode:</strong> Messages update when sending or clicking "Refresh Chat".
+          </span>
         </span>
-        <span style={{ color: "#94a3b8" }}>
-          Signed in as: <strong style={{ color: "#334155" }}>{currentUserId}</strong>
+        <span style={{ color: "var(--text-muted)" }}>
+          Signed in as: <strong style={{ color: "var(--text)" }}>{currentUserId}</strong>
         </span>
       </div>
 
@@ -290,8 +308,8 @@ export default function TripGroupChat({
           minHeight: 220,
           maxHeight: 460,
           overflowY: "auto",
-          background: "#fcfdfe",
-          border: "1px solid #e2e8f0",
+          background: "var(--bg)",
+          border: "1px solid var(--border)",
           borderRadius: 12,
           padding: "16px",
           display: "flex",
@@ -300,8 +318,8 @@ export default function TripGroupChat({
         }}
       >
         {loading && (
-          <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>
-            <div style={{ fontSize: "1.4rem", marginBottom: 8 }}>⏳</div>
+          <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)" }}>
+            <Loader2 size={24} style={{ animation: "spin 1s linear infinite", marginBottom: 8 }} />
             <p style={{ margin: 0, fontSize: "0.9rem" }}>Loading group discussion...</p>
           </div>
         )}
@@ -309,16 +327,18 @@ export default function TripGroupChat({
         {!loading && error && (
           <div
             style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
               borderRadius: 8,
               padding: "14px",
               textAlign: "center",
-              color: "#991b1b",
+              color: "#ef4444",
               fontSize: "0.88rem",
             }}
           >
-            <p style={{ margin: "0 0 8px" }}>⚠️ {error}</p>
+            <p style={{ margin: "0 0 8px", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+              <AlertTriangle size={16} /> {error}
+            </p>
             <button
               type="button"
               onClick={() => loadMessages()}
@@ -343,11 +363,11 @@ export default function TripGroupChat({
             style={{
               textAlign: "center",
               padding: "50px 20px",
-              color: "#64748b",
+              color: "var(--text-muted)",
             }}
           >
-            <div style={{ fontSize: "2rem", marginBottom: 8 }}>💬</div>
-            <div style={{ fontWeight: 600, color: "#334155", fontSize: "0.95rem" }}>
+            <MessageSquare size={36} style={{ marginBottom: 8, opacity: 0.5 }} />
+            <div style={{ fontWeight: 600, color: "var(--text-h)", fontSize: "0.95rem" }}>
               No messages in this trip yet
             </div>
             <p style={{ margin: "4px 0 0", fontSize: "0.84rem" }}>
@@ -400,11 +420,11 @@ export default function TripGroupChat({
 
                 <div
                   style={{
-                    background: isMe ? "#f0f4ff" : "#ffffff",
-                    border: isMe ? "1px solid #c7d2fe" : "1px solid #e2e8f0",
+                    background: isMe ? "var(--bg-alt)" : "var(--card-bg)",
+                    border: isMe ? "1px solid var(--accent)" : "1px solid var(--border)",
                     borderRadius: 12,
                     padding: "12px 16px",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.03)",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
                     minWidth: 180,
                   }}
                 >
@@ -423,7 +443,7 @@ export default function TripGroupChat({
                         style={{
                           fontWeight: 700,
                           fontSize: "0.82rem",
-                          color: isMe ? "#3730a3" : "#1e293b",
+                          color: isMe ? "var(--accent)" : "var(--text-h)",
                         }}
                       >
                         {isMe ? "You" : msg.sender_name || msg.sender_id}
@@ -431,8 +451,8 @@ export default function TripGroupChat({
                       {isMe && (
                         <span
                           style={{
-                            background: "#e0e7ff",
-                            color: "#4338ca",
+                            background: "rgba(79, 70, 229, 0.15)",
+                            color: "var(--accent)",
                             fontSize: "0.68rem",
                             padding: "1px 6px",
                             borderRadius: 8,
@@ -443,7 +463,7 @@ export default function TripGroupChat({
                         </span>
                       )}
                     </div>
-                    <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
+                    <span style={{ fontSize: "0.72rem", color: "var(--text-muted)" }}>
                       {formatTimestamp(msg.created_at)}
                     </span>
                   </div>
@@ -459,15 +479,17 @@ export default function TripGroupChat({
                           width: "100%",
                           padding: "8px 10px",
                           borderRadius: 8,
-                          border: "1px solid #818cf8",
+                          border: "1px solid var(--accent)",
+                          background: "var(--input-bg)",
+                          color: "var(--input-text)",
                           fontSize: "0.88rem",
                           fontFamily: "inherit",
                           resize: "vertical",
                         }}
                       />
                       {editError && (
-                        <div style={{ color: "#dc2626", fontSize: "0.76rem", marginTop: 4 }}>
-                          ⚠️ {editError}
+                        <div style={{ color: "#ef4444", fontSize: "0.76rem", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                          <AlertTriangle size={12} /> {editError}
                         </div>
                       )}
                       <div style={{ display: "flex", gap: 8, marginTop: 8, justifyContent: "flex-end" }}>
@@ -476,14 +498,14 @@ export default function TripGroupChat({
                           onClick={handleCancelEdit}
                           disabled={savingEdit}
                           style={{
-                            background: "#f1f5f9",
-                            border: "none",
+                            background: "var(--bg-alt)",
+                            border: "1px solid var(--border)",
                             padding: "4px 10px",
                             borderRadius: 6,
                             fontSize: "0.78rem",
                             fontWeight: 600,
                             cursor: "pointer",
-                            color: "#475569",
+                            color: "var(--text)",
                           }}
                         >
                           Cancel
@@ -493,7 +515,7 @@ export default function TripGroupChat({
                           onClick={() => handleSaveEdit(msg.id)}
                           disabled={savingEdit}
                           style={{
-                            background: "#4f46e5",
+                            background: "var(--accent)",
                             color: "#ffffff",
                             border: "none",
                             padding: "4px 12px",
@@ -512,7 +534,7 @@ export default function TripGroupChat({
                       <div
                         style={{
                           fontSize: "0.9rem",
-                          color: "#1e293b",
+                          color: "var(--text)",
                           lineHeight: 1.5,
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
@@ -525,7 +547,7 @@ export default function TripGroupChat({
                         <span
                           style={{
                             fontSize: "0.7rem",
-                            color: "#94a3b8",
+                            color: "var(--text-muted)",
                             fontStyle: "italic",
                             display: "inline-block",
                             marginTop: 4,
@@ -543,7 +565,7 @@ export default function TripGroupChat({
                             gap: 10,
                             marginTop: 8,
                             paddingTop: 6,
-                            borderTop: "1px dashed #e2e8f0",
+                            borderTop: "1px dashed var(--border)",
                             justifyContent: "flex-end",
                           }}
                         >
@@ -554,14 +576,17 @@ export default function TripGroupChat({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#4f46e5",
+                                color: "var(--accent)",
                                 fontSize: "0.74rem",
                                 fontWeight: 600,
                                 cursor: "pointer",
                                 padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 3,
                               }}
                             >
-                              Edit
+                              <Edit3 size={11} /> Edit
                             </button>
                           )}
                           {canDelete && (
@@ -572,13 +597,17 @@ export default function TripGroupChat({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#dc2626",
+                                color: "#ef4444",
                                 fontSize: "0.74rem",
                                 fontWeight: 600,
                                 cursor: deletingId === msg.id ? "not-allowed" : "pointer",
                                 padding: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 3,
                               }}
                             >
+                              <Trash2 size={11} />
                               {deletingId === msg.id
                                 ? "Deleting..."
                                 : isOwner && !isMe
@@ -598,7 +627,7 @@ export default function TripGroupChat({
                       width: 34,
                       height: 34,
                       borderRadius: "50%",
-                      background: "#4f46e5",
+                      background: "var(--accent)",
                       color: "#ffffff",
                       display: "flex",
                       alignItems: "center",
@@ -624,11 +653,11 @@ export default function TripGroupChat({
         {sendError && (
           <div
             style={{
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
               borderRadius: 8,
               padding: "10px 14px",
-              color: "#991b1b",
+              color: "#ef4444",
               fontSize: "0.84rem",
               marginBottom: 10,
               display: "flex",
@@ -636,19 +665,21 @@ export default function TripGroupChat({
               alignItems: "center",
             }}
           >
-            <span>⚠️ {sendError}</span>
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <AlertTriangle size={14} /> {sendError}
+            </span>
             <button
               type="button"
               onClick={() => setSendError(null)}
               style={{
                 background: "transparent",
                 border: "none",
-                color: "#991b1b",
+                color: "#ef4444",
                 cursor: "pointer",
-                fontWeight: 700,
+                padding: 0,
               }}
             >
-              ✕
+              <X size={14} />
             </button>
           </div>
         )}
@@ -670,7 +701,9 @@ export default function TripGroupChat({
               width: "100%",
               padding: "12px 14px",
               borderRadius: 10,
-              border: "1px solid #cbd5e1",
+              border: "1px solid var(--input-border)",
+              background: "var(--input-bg)",
+              color: "var(--input-text)",
               fontSize: "0.92rem",
               fontFamily: "inherit",
               resize: "vertical",
@@ -693,7 +726,7 @@ export default function TripGroupChat({
             <span
               style={{
                 fontSize: "0.76rem",
-                color: draftContent.length > 2000 ? "#dc2626" : "#94a3b8",
+                color: draftContent.length > 2000 ? "#ef4444" : "var(--text-muted)",
               }}
             >
               {draftContent.length} / 2000 characters
@@ -705,8 +738,8 @@ export default function TripGroupChat({
               style={{
                 background:
                   sending || !draftContent.trim()
-                    ? "#94a3b8"
-                    : "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                    ? "var(--text-muted)"
+                    : "linear-gradient(135deg, var(--accent) 0%, #6366f1 100%)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 8,
@@ -727,11 +760,11 @@ export default function TripGroupChat({
             >
               {sending ? (
                 <>
-                  <span>⏳</span> Sending...
+                  <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Sending...
                 </>
               ) : (
                 <>
-                  <span>📨</span> Send Message
+                  <Send size={16} /> Send Message
                 </>
               )}
             </button>

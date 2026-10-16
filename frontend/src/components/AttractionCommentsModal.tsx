@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { MessageSquare, X, Loader2, AlertTriangle, MapPin } from "lucide-react";
 import {
   getAttractionComments,
   addAttractionComment,
@@ -159,14 +160,15 @@ export default function AttractionCommentsModal({
     >
       <div
         style={{
-          background: "#ffffff",
+          background: "var(--card-bg)",
           borderRadius: 16,
           width: "100%",
           maxWidth: 580,
           maxHeight: "90vh",
           display: "flex",
           flexDirection: "column",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.2)",
+          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--border)",
           overflow: "hidden",
         }}
         onClick={(e) => e.stopPropagation()}
@@ -175,22 +177,22 @@ export default function AttractionCommentsModal({
         <div
           style={{
             padding: "18px 24px",
-            borderBottom: "1px solid #e2e8f0",
+            borderBottom: "1px solid var(--border)",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            background: "#f8fafc",
+            background: "var(--code-bg)",
           }}
         >
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: "1.2rem" }}>💬</span>
-              <h3 style={{ margin: 0, fontSize: "1.15rem", color: "#0f172a" }}>
+              <MessageSquare size={18} style={{ color: "var(--accent)" }} />
+              <h3 style={{ margin: 0, fontSize: "1.15rem", color: "var(--text-h)" }}>
                 {attractionName}
               </h3>
             </div>
             {attractionCategory && (
-              <p style={{ margin: "2px 0 0", fontSize: "0.82rem", color: "#64748b" }}>
+              <p style={{ margin: "2px 0 0", fontSize: "0.82rem", color: "var(--text-muted)" }}>
                 {attractionCategory} • Itinerary Attraction Discussion
               </p>
             )}
@@ -203,14 +205,15 @@ export default function AttractionCommentsModal({
             style={{
               background: "transparent",
               border: "none",
-              fontSize: "1.4rem",
-              color: "#64748b",
+              color: "var(--text-muted)",
               cursor: "pointer",
               padding: "4px 8px",
-              lineHeight: 1,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            ✕
+            <X size={18} />
           </button>
         </div>
 
@@ -224,34 +227,38 @@ export default function AttractionCommentsModal({
             flexDirection: "column",
             gap: 12,
             minHeight: 180,
-            background: "#ffffff",
+            background: "var(--card-bg)",
           }}
         >
           {loading && (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#64748b" }}>
-              ⏳ Loading discussion...
+            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--text-muted)", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+              <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+              <span>Loading discussion...</span>
             </div>
           )}
 
           {!loading && error && (
             <div
               style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
                 borderRadius: 8,
                 padding: "12px",
-                color: "#991b1b",
+                color: "#ef4444",
                 fontSize: "0.85rem",
                 textAlign: "center",
               }}
             >
-              ⚠️ {error}
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                <AlertTriangle size={15} />
+                <span>{error}</span>
+              </div>
               <div style={{ marginTop: 6 }}>
                 <button
                   type="button"
                   onClick={loadComments}
                   style={{
-                    background: "#dc2626",
+                    background: "#ef4444",
                     color: "#fff",
                     border: "none",
                     borderRadius: 6,
@@ -271,11 +278,13 @@ export default function AttractionCommentsModal({
               style={{
                 textAlign: "center",
                 padding: "40px 20px",
-                color: "#64748b",
+                color: "var(--text-muted)",
               }}
             >
-              <div style={{ fontSize: "1.8rem", marginBottom: 6 }}>📍</div>
-              <div style={{ fontWeight: 600, color: "#334155" }}>
+              <div style={{ display: "flex", justifyContent: "center", marginBottom: 6 }}>
+                <MapPin size={24} style={{ color: "var(--text-muted)" }} />
+              </div>
+              <div style={{ fontWeight: 600, color: "var(--text-h)" }}>
                 No comments on {attractionName} yet
               </div>
               <p style={{ margin: "4px 0 0", fontSize: "0.82rem" }}>
@@ -339,8 +348,9 @@ export default function AttractionCommentsModal({
                         }}
                       />
                       {editError && (
-                        <div style={{ color: "#dc2626", fontSize: "0.74rem", marginTop: 2 }}>
-                          ⚠️ {editError}
+                        <div style={{ color: "#ef4444", fontSize: "0.74rem", marginTop: 2, display: "flex", alignItems: "center", gap: 4 }}>
+                          <AlertTriangle size={12} />
+                          <span>{editError}</span>
                         </div>
                       )}
                       <div style={{ display: "flex", gap: 6, marginTop: 6, justifyContent: "flex-end" }}>
@@ -351,8 +361,9 @@ export default function AttractionCommentsModal({
                             padding: "3px 8px",
                             fontSize: "0.75rem",
                             borderRadius: 4,
-                            background: "#e2e8f0",
-                            border: "none",
+                            background: "var(--code-bg)",
+                            color: "var(--text-secondary)",
+                            border: "1px solid var(--border)",
                             cursor: "pointer",
                           }}
                         >
@@ -366,7 +377,7 @@ export default function AttractionCommentsModal({
                             padding: "3px 10px",
                             fontSize: "0.75rem",
                             borderRadius: 4,
-                            background: "#4f46e5",
+                            background: "var(--accent)",
                             color: "#fff",
                             border: "none",
                             cursor: savingEdit ? "not-allowed" : "pointer",
@@ -381,7 +392,7 @@ export default function AttractionCommentsModal({
                       <div
                         style={{
                           fontSize: "0.88rem",
-                          color: "#1e293b",
+                          color: "var(--text-h)",
                           lineHeight: 1.45,
                           whiteSpace: "pre-wrap",
                           wordBreak: "break-word",
@@ -391,7 +402,7 @@ export default function AttractionCommentsModal({
                       </div>
 
                       {msg.is_edited && (
-                        <span style={{ fontSize: "0.68rem", color: "#94a3b8", fontStyle: "italic" }}>
+                        <span style={{ fontSize: "0.68rem", color: "var(--text-muted)", fontStyle: "italic" }}>
                           (edited)
                         </span>
                       )}
@@ -412,7 +423,7 @@ export default function AttractionCommentsModal({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#4f46e5",
+                                color: "var(--accent)",
                                 fontSize: "0.72rem",
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -428,7 +439,7 @@ export default function AttractionCommentsModal({
                               style={{
                                 background: "transparent",
                                 border: "none",
-                                color: "#dc2626",
+                                color: "#ef4444",
                                 fontSize: "0.72rem",
                                 fontWeight: 600,
                                 cursor: "pointer",
@@ -451,23 +462,27 @@ export default function AttractionCommentsModal({
           onSubmit={handleAddComment}
           style={{
             padding: "16px 24px",
-            borderTop: "1px solid #e2e8f0",
-            background: "#f8fafc",
+            borderTop: "1px solid var(--border)",
+            background: "var(--code-bg)",
           }}
         >
           {sendError && (
             <div
               style={{
-                background: "#fef2f2",
-                border: "1px solid #fecaca",
+                background: "rgba(239, 68, 68, 0.1)",
+                border: "1px solid rgba(239, 68, 68, 0.25)",
                 borderRadius: 6,
                 padding: "8px 12px",
-                color: "#991b1b",
+                color: "#ef4444",
                 fontSize: "0.8rem",
                 marginBottom: 8,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
               }}
             >
-              ⚠️ {sendError}
+              <AlertTriangle size={13} />
+              <span>{sendError}</span>
             </div>
           )}
 
@@ -482,7 +497,9 @@ export default function AttractionCommentsModal({
                 flex: 1,
                 padding: "10px 14px",
                 borderRadius: 8,
-                border: "1px solid #cbd5e1",
+                border: "1px solid var(--input-border)",
+                background: "var(--input-bg)",
+                color: "var(--input-text)",
                 fontSize: "0.88rem",
                 outline: "none",
               }}
@@ -493,8 +510,8 @@ export default function AttractionCommentsModal({
               style={{
                 background:
                   sending || !draftContent.trim()
-                    ? "#94a3b8"
-                    : "#4f46e5",
+                    ? "var(--border)"
+                    : "var(--accent)",
                 color: "#ffffff",
                 border: "none",
                 borderRadius: 8,

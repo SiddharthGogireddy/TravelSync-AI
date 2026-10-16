@@ -1,58 +1,20 @@
 import { useState } from "react";
-import type { DestinationStop, TravelerRequest, TripRequest } from "../types/trip";
+import type { DestinationStop, TravelerRequest, TripRequest, LocationSuggestion } from "../types/trip";
 import { useLocation } from "react-router-dom";
 import TravelDatePicker from "./TravelDatePicker";
 import { FlexibleDateSuggester } from "./FlexibleDateSuggester";
 import { calculateDaysBetween } from "../utils/dateUtils";
-const locations: Record<string, string[]> = {
-    India: [
-        "Bengaluru, Karnataka, India",
-        "Hyderabad, Telangana, India",
-        "Chennai, Tamil Nadu, India",
-        "Mumbai, Maharashtra, India",
-        "Delhi, India",
-        "Kolkata, West Bengal, India",
-        "Pune, Maharashtra, India",
-        "Goa, India",
-        "Mysuru, Karnataka, India",
-        "Jaipur, Rajasthan, India",
-    ],
+import { LocationAutocomplete } from "./LocationAutocomplete";
+import { Calendar, Sparkles, Check, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 
-    Japan: [
-        "Tokyo, Japan",
-        "Kyoto, Japan",
-        "Osaka, Japan",
-        "Hiroshima, Japan",
-    ],
+const DEFAULT_ORIGIN = "Hyderabad, Telangana, India";
+const DEFAULT_DESTINATION = "Bengaluru, Karnataka, India";
+const DEFAULT_MULTI_STOPS: DestinationStop[] = [
+    { name: "Bengaluru, Karnataka, India", days: 2 },
+    { name: "Mysuru, Karnataka, India", days: 1 },
+    { name: "Goa, India", days: 2 },
+];
 
-    "United States": [
-        "New York, New York, USA",
-        "Los Angeles, California, USA",
-        "San Francisco, California, USA",
-        "Las Vegas, Nevada, USA",
-    ],
-
-    "United Kingdom": [
-        "London, England, UK",
-        "Edinburgh, Scotland, UK",
-        "Manchester, England, UK",
-    ],
-
-    France: [
-        "Paris, France",
-        "Nice, France",
-        "Lyon, France",
-    ],
-
-    Australia: [
-        "Sydney, New South Wales, Australia",
-        "Melbourne, Victoria, Australia",
-        "Brisbane, Queensland, Australia",
-    ],
-};
-
-const allLocations: string[] =
-    Object.values(locations).flat();
 export default function TripForm({
     onSubmit,
 }: {
@@ -61,22 +23,45 @@ export default function TripForm({
     const location = useLocation();
     const previousTrip = location.state?.trip;
     const [isMultiDest, setIsMultiDest] = useState(false);
-    const [multiStops, setMultiStops] = useState<DestinationStop[]>([
-        { name: locations.India[0], days: 2 },
-        { name: locations.India[8], days: 1 },
-        { name: locations.India[7], days: 2 },
-    ]);
+    const [multiStops, setMultiStops] = useState<DestinationStop[]>(
+        previousTrip?.destinations?.length
+            ? previousTrip.destinations
+            : DEFAULT_MULTI_STOPS
+    );
     const [source, setSource] = useState<string>(
-    previousTrip?.source ?? locations.India[1]
-);
+        previousTrip?.source ?? DEFAULT_ORIGIN
+    );
+    const [sourceLocation, setSourceLocation] = useState<LocationSuggestion | null>(null);
     const [sourceSelected, setSourceSelected] = useState(true);
-const [destinationSelected, setDestinationSelected] = useState(true);
-const [destination, setDestination] = useState<string>(
-    previousTrip?.destination ?? locations.India[0]
-);
+
+    const [destination, setDestination] = useState<string>(
+        previousTrip?.destination ?? DEFAULT_DESTINATION
+    );
+    const [destinationLocation, setDestinationLocation] = useState<LocationSuggestion | null>(null);
+    const [destinationSelected, setDestinationSelected] = useState(true);
+
+    const isSameLocation = (loc1: string, loc2: string) => {
+        if (!loc1 || !loc2) return false;
+        return loc1.trim().toLowerCase() === loc2.trim().toLowerCase();
+    };
+
+    const handleSwapLocations = () => {
+        const prevSource = source;
+        const prevSourceLoc = sourceLocation;
+        const prevSourceSelected = sourceSelected;
+
+        setSource(destination);
+        setSourceLocation(destinationLocation);
+        setSourceSelected(destinationSelected);
+
+        setDestination(prevSource);
+        setDestinationLocation(prevSourceLoc);
+        setDestinationSelected(prevSourceSelected);
+    };
+
     const [days, setDays] = useState(
-    previousTrip?.days ?? 3
-);
+        previousTrip?.days ?? 3
+    );
     const [startDate, setStartDate] = useState<string>(
         previousTrip?.start_date ?? ""
     );
@@ -171,13 +156,30 @@ const [destination, setDestination] = useState<string>(
     }
 
     if (isMultiDest) {
+        if (!source.trim()) {
+            alert("Please specify a departure origin city.");
+            return;
+        }
+        if (!sourceSelected) {
+            alert("Please select a verified departure origin city from the suggestions.");
+            return;
+        }
         if (multiStops.length < 2) {
             alert("Please add at least 2 destination stops for a multi-destination trip.");
             return;
         }
-        for (const s of multiStops) {
+        for (let i = 0; i < multiStops.length; i++) {
+            const s = multiStops[i];
             if (!s.name.trim()) {
-                alert("Please ensure all destination stops have a selected city.");
+                alert(`Please ensure Stop ${i + 1} has a selected city.`);
+                return;
+            }
+            if (isSameLocation(source, s.name)) {
+                alert(`Stop ${i + 1} (${s.name}) cannot be the same as your departure origin.`);
+                return;
+            }
+            if (i > 0 && isSameLocation(s.name, multiStops[i - 1].name)) {
+                alert(`Stop ${i + 1} cannot be identical to the consecutive preceding stop (${s.name}).`);
                 return;
             }
         }
@@ -202,9 +204,19 @@ const [destination, setDestination] = useState<string>(
         return;
     }
 
+    if (!source.trim() || !destination.trim()) {
+        alert("Please provide both an origin and destination.");
+        return;
+    }
+
+    if (isSameLocation(source, destination)) {
+        alert("Origin and destination cannot be the same location. Please choose distinct places.");
+        return;
+    }
+
     if (!sourceSelected || !destinationSelected) {
         alert(
-            "Please select a source and destination from the suggestions."
+            "Please select a verified source and destination from the suggestions."
         );
         return;
     }
@@ -221,31 +233,6 @@ const [destination, setDestination] = useState<string>(
         travel_mode: travelMode,
     });
 };
-
-    const [sourceSearch, setSourceSearch] = useState(
-    previousTrip?.source ?? ""
-);
-
-const [destinationSearch, setDestinationSearch] = useState(
-    previousTrip?.destination ?? ""
-);
-
-    const [showSourceResults, setShowSourceResults] = useState(false);
-    const [showDestinationResults, setShowDestinationResults] =
-    useState(false);
-    const filteredSourceLocations = allLocations.filter(
-        (location) =>
-            location
-                .toLowerCase()
-                .includes(sourceSearch.toLowerCase())
-        );
-
-    const filteredDestinationLocations = allLocations.filter(
-        (location) =>
-            location
-                .toLowerCase()
-                .includes(destinationSearch.toLowerCase())
-);
 
     
     return (
@@ -460,51 +447,71 @@ const [destinationSearch, setDestinationSearch] = useState(
         </button>
     </div>
 
-    <div className="form-group location-field">
-        <label>Origin / Departure City</label>
-        <input
-            placeholder="Search source city..."
-            value={sourceSearch}
-            onChange={(e) => {
-                setSourceSearch(e.target.value);
-                setSourceSelected(false);
-                setShowSourceResults(true);
+    {/* Origin / Departure City */}
+    <div className="form-group location-field" style={{ marginBottom: "16px" }}>
+        <LocationAutocomplete
+            id="trip-origin"
+            label="Origin / Departure City"
+            placeholder="Search departure city (e.g. London, New York, Mumbai)..."
+            value={source}
+            isValid={sourceSelected}
+            required
+            onChange={(val, suggestion) => {
+                setSource(val);
+                setSourceLocation(suggestion || null);
+                setSourceSelected(Boolean(suggestion));
             }}
-            onFocus={() => setShowSourceResults(true)}
+            error={
+                !isMultiDest && source && destination && isSameLocation(source, destination)
+                    ? "Origin and destination cannot be the same place."
+                    : undefined
+            }
         />
-
-        {showSourceResults && (
-            <div className="location-results">
-                {filteredSourceLocations.length > 0 ? (
-                    filteredSourceLocations.map((loc) => (
-                        <button
-                            type="button"
-                            key={loc}
-                            className="location-option"
-                            onClick={() => {
-                                setSource(loc);
-                                setSourceSearch(loc);
-                                setSourceSelected(true);
-                                setShowSourceResults(false);
-                            }}
-                        >
-                            {loc}
-                        </button>
-                    ))
-                ) : (
-                    <div className="no-results">
-                        No locations found
-                    </div>
-                )}
-            </div>
-        )}
     </div>
+
+    {/* Swap Origin & Destination Button for Single Destination Mode */}
+    {!isMultiDest && (
+        <div style={{ display: "flex", justifyContent: "center", margin: "-6px 0 10px 0" }}>
+            <button
+                type="button"
+                onClick={handleSwapLocations}
+                aria-label="Swap origin and destination"
+                title="Swap origin and destination"
+                style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 14px",
+                    borderRadius: "20px",
+                    border: "1px solid #cbd5e1",
+                    background: "#f8fafc",
+                    color: "#4f46e5",
+                    fontWeight: 600,
+                    fontSize: "0.82rem",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.background = "#eef2ff";
+                    e.currentTarget.style.borderColor = "#818cf8";
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.background = "#f8fafc";
+                    e.currentTarget.style.borderColor = "#cbd5e1";
+                }}
+            >
+                <span style={{ fontSize: "1rem" }}>⇄</span>
+                <span>Swap Origin &amp; Destination</span>
+            </button>
+        </div>
+    )}
 
     {isMultiDest ? (
         <div style={{ background: "#f8fafc", padding: 16, borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
                 <span style={{ fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
-                    Destinations & Days per City
+                    Destinations &amp; Days per City
                 </span>
                 <span style={{ fontSize: "0.82rem", color: "#64748b" }}>
                     Total: {multiStops.reduce((sum, s) => sum + (Number(s.days) || 1), 0)} Days
@@ -512,24 +519,50 @@ const [destinationSearch, setDestinationSearch] = useState(
             </div>
 
             {multiStops.map((stop, idx) => (
-                <div key={idx} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 10, flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#4f46e5", minWidth: 60 }}>
+                <div
+                    key={idx}
+                    style={{
+                        display: "flex",
+                        gap: 10,
+                        alignItems: "flex-start",
+                        marginBottom: 12,
+                        flexWrap: "wrap",
+                        background: "#ffffff",
+                        padding: "10px",
+                        borderRadius: "8px",
+                        border: "1px solid #e2e8f0",
+                    }}
+                >
+                    <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#4f46e5", minWidth: 60, marginTop: "8px" }}>
                         Stop {idx + 1}:
                     </span>
-                    <select
-                        value={stop.name}
-                        onChange={(e) => {
-                            const updated = [...multiStops];
-                            updated[idx].name = e.target.value;
-                            setMultiStops(updated);
-                        }}
-                        style={{ flex: 1, minWidth: 200, padding: "8px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff" }}
-                    >
-                        {allLocations.map((loc) => (
-                            <option key={loc} value={loc}>{loc}</option>
-                        ))}
-                    </select>
-                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ flex: 1, minWidth: 220 }}>
+                        <LocationAutocomplete
+                            id={`multi-stop-${idx}`}
+                            placeholder="Search destination city or landmark..."
+                            value={stop.name}
+                            isValid={Boolean(stop.name && stop.name.trim())}
+                            onChange={(val, suggestion) => {
+                                const updated = [...multiStops];
+                                updated[idx] = {
+                                    ...updated[idx],
+                                    name: val,
+                                    location: suggestion
+                                        ? { lat: suggestion.latitude, lon: suggestion.longitude }
+                                        : updated[idx].location,
+                                };
+                                setMultiStops(updated);
+                            }}
+                            error={
+                                isSameLocation(source, stop.name)
+                                    ? "Stop cannot be same as departure origin"
+                                    : idx > 0 && isSameLocation(stop.name, multiStops[idx - 1].name)
+                                    ? "Stop cannot match previous consecutive stop"
+                                    : undefined
+                            }
+                        />
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4, marginTop: "4px" }}>
                         <input
                             type="number"
                             min="1"
@@ -541,6 +574,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 setMultiStops(updated);
                             }}
                             style={{ width: 55, padding: "8px", borderRadius: 6, border: "1px solid #cbd5e1", textAlign: "center" }}
+                            title="Days at this destination stop"
                         />
                         <span style={{ fontSize: "0.82rem", color: "#64748b" }}>days</span>
                     </div>
@@ -548,10 +582,22 @@ const [destinationSearch, setDestinationSearch] = useState(
                         <button
                             type="button"
                             onClick={() => setMultiStops(multiStops.filter((_, i) => i !== idx))}
-                            style={{ background: "#fee2e2", color: "#dc2626", border: "none", borderRadius: 6, padding: "8px 10px", cursor: "pointer", fontWeight: 700 }}
+                            style={{
+                                background: "rgba(239, 68, 68, 0.1)",
+                                color: "#ef4444",
+                                border: "1px solid rgba(239, 68, 68, 0.25)",
+                                borderRadius: 6,
+                                padding: "8px 10px",
+                                cursor: "pointer",
+                                fontWeight: 700,
+                                marginTop: "4px",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                            }}
                             title="Remove destination stop"
                         >
-                            ✕
+                            <Trash2 size={14} />
                         </button>
                     )}
                 </div>
@@ -560,56 +606,46 @@ const [destinationSearch, setDestinationSearch] = useState(
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
                 <button
                     type="button"
-                    onClick={() => setMultiStops([...multiStops, { name: locations.India[3], days: 2 }])}
-                    style={{ background: "#eef2ff", color: "#4f46e5", border: "1px dashed #4f46e5", borderRadius: 6, padding: "7px 14px", fontWeight: 600, fontSize: "0.84rem", cursor: "pointer" }}
+                    onClick={() => setMultiStops([...multiStops, { name: "", days: 2 }])}
+                    style={{
+                        background: "var(--accent-bg)",
+                        color: "var(--accent)",
+                        border: "1px dashed var(--accent-border)",
+                        borderRadius: 6,
+                        padding: "7px 14px",
+                        fontWeight: 600,
+                        fontSize: "0.84rem",
+                        cursor: "pointer",
+                    }}
                 >
                     + Add Another City
                 </button>
-                <div style={{ fontSize: "0.85rem", color: "#475569" }}>
-                    Route: {source.split(",")[0]} -&gt; {multiStops.map(s => s.name.split(",")[0]).join(" -&gt; ")}
+                <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                    Route: {source.split(",")[0] || "Origin"} &rarr; {multiStops.map(s => s.name.split(",")[0] || "Stop").join(" &rarr; ")}
                 </div>
             </div>
         </div>
     ) : (
         <>
-            <div className="form-group location-field">
-                <label>Destination</label>
-                <input
-                    placeholder="Search destination city..."
-                    value={destinationSearch}
-                    onChange={(e) => {
-                        setDestinationSearch(e.target.value);
-                        setDestinationSelected(false);
-                        setShowDestinationResults(true);
+            <div className="form-group location-field" style={{ marginBottom: "16px" }}>
+                <LocationAutocomplete
+                    id="trip-destination"
+                    label="Destination"
+                    placeholder="Search destination city, region, or landmark..."
+                    value={destination}
+                    isValid={destinationSelected}
+                    required
+                    onChange={(val, suggestion) => {
+                        setDestination(val);
+                        setDestinationLocation(suggestion || null);
+                        setDestinationSelected(Boolean(suggestion));
                     }}
-                    onFocus={() => setShowDestinationResults(true)}
+                    error={
+                        source && destination && isSameLocation(source, destination)
+                            ? "Origin and destination cannot be the same place."
+                            : undefined
+                    }
                 />
-
-                {showDestinationResults && (
-                    <div className="location-results">
-                        {filteredDestinationLocations.length > 0 ? (
-                            filteredDestinationLocations.map((loc) => (
-                                <button
-                                    type="button"
-                                    key={loc}
-                                    className="location-option"
-                                    onClick={() => {
-                                        setDestination(loc);
-                                        setDestinationSearch(loc);
-                                        setDestinationSelected(true);
-                                        setShowDestinationResults(false);
-                                    }}
-                                >
-                                    {loc}
-                                </button>
-                            ))
-                        ) : (
-                            <div className="no-results">
-                                No locations found
-                            </div>
-                        )}
-                    </div>
-                )}
             </div>
 
             <div className="form-group">
@@ -621,11 +657,11 @@ const [destinationSearch, setDestinationSearch] = useState(
                     value={days}
                     readOnly={Boolean(startDate && endDate)}
                     onChange={(e) => setDays(Number(e.target.value))}
-                    style={startDate && endDate ? { background: "#f8fafc", color: "#64748b" } : {}}
+                    style={startDate && endDate ? { background: "var(--code-bg)", color: "var(--text-muted)" } : {}}
                     title={startDate && endDate ? "Auto-calculated from selected travel dates" : ""}
                 />
                 {startDate && endDate && (
-                    <small style={{ color: "#4f46e5", display: "block", marginTop: "4px", fontWeight: 600 }}>
+                    <small style={{ color: "var(--accent)", display: "block", marginTop: "4px", fontWeight: 600 }}>
                         Auto-calculated from selected travel dates ({days} {days === 1 ? "day" : "days"})
                     </small>
                 )}
@@ -637,16 +673,16 @@ const [destinationSearch, setDestinationSearch] = useState(
     <div className="form-group" style={{ margin: "20px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", flexWrap: "wrap", gap: "8px" }}>
             <div>
-                <label style={{ display: "block", fontWeight: 700, color: "#1e293b", fontSize: "0.95rem" }}>
+                <label style={{ display: "block", fontWeight: 700, color: "var(--input-label)", fontSize: "0.95rem" }}>
                     Travel Dates & Scheduling
                 </label>
-                <p style={{ fontSize: "0.82rem", color: "#64748b", margin: "2px 0 0 0" }}>
+                <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", margin: "2px 0 0 0" }}>
                     Pick exact calendar dates, or let TravelSync AI rank the best travel window using meteorological forecasts.
                 </p>
             </div>
 
             {/* Mode Switcher */}
-            <div style={{ display: "inline-flex", background: "#f1f5f9", padding: "3px", borderRadius: "8px", border: "1px solid #cbd5e1" }}>
+            <div style={{ display: "inline-flex", background: "var(--toggle-bg)", padding: "3px", borderRadius: "8px", border: "1px solid var(--border)" }}>
                 <button
                     type="button"
                     onClick={() => setDateSelectionMode("exact")}
@@ -657,13 +693,17 @@ const [destinationSearch, setDestinationSearch] = useState(
                         borderRadius: "6px",
                         border: "none",
                         cursor: "pointer",
-                        background: dateSelectionMode === "exact" ? "#ffffff" : "transparent",
-                        color: dateSelectionMode === "exact" ? "#4f46e5" : "#64748b",
-                        boxShadow: dateSelectionMode === "exact" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        background: dateSelectionMode === "exact" ? "var(--card-bg)" : "transparent",
+                        color: dateSelectionMode === "exact" ? "var(--accent)" : "var(--text-muted)",
+                        boxShadow: dateSelectionMode === "exact" ? "var(--shadow)" : "none",
                         transition: "all 0.15s ease",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
                     }}
                 >
-                    📅 Exact Dates
+                    <Calendar size={14} />
+                    <span>Exact Dates</span>
                 </button>
                 <button
                     type="button"
@@ -675,13 +715,17 @@ const [destinationSearch, setDestinationSearch] = useState(
                         borderRadius: "6px",
                         border: "none",
                         cursor: "pointer",
-                        background: dateSelectionMode === "flexible" ? "#ffffff" : "transparent",
-                        color: dateSelectionMode === "flexible" ? "#4f46e5" : "#64748b",
-                        boxShadow: dateSelectionMode === "flexible" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                        background: dateSelectionMode === "flexible" ? "var(--card-bg)" : "transparent",
+                        color: dateSelectionMode === "flexible" ? "var(--accent)" : "var(--text-muted)",
+                        boxShadow: dateSelectionMode === "flexible" ? "var(--shadow)" : "none",
                         transition: "all 0.15s ease",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px",
                     }}
                 >
-                    🌤️ Suggest Best Dates (Flexible)
+                    <Sparkles size={14} />
+                    <span>Suggest Best Dates (Flexible)</span>
                 </button>
             </div>
         </div>
@@ -689,8 +733,8 @@ const [destinationSearch, setDestinationSearch] = useState(
         {startDate && endDate && (
             <div
                 style={{
-                    background: "#ecfdf5",
-                    border: "1px solid #a7f3d0",
+                    background: "rgba(16, 185, 129, 0.1)",
+                    border: "1px solid rgba(16, 185, 129, 0.3)",
                     borderRadius: "8px",
                     padding: "8px 14px",
                     marginBottom: "12px",
@@ -698,7 +742,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                     justifyContent: "space-between",
                     alignItems: "center",
                     fontSize: "0.85rem",
-                    color: "#065f46",
+                    color: "var(--text-h)",
                     flexWrap: "wrap",
                     gap: "6px",
                 }}
@@ -706,8 +750,9 @@ const [destinationSearch, setDestinationSearch] = useState(
                 <span>
                     Selected Window: <strong>{startDate}</strong> &rarr; <strong>{endDate}</strong> ({days} {days === 1 ? "day" : "days"})
                 </span>
-                <span style={{ fontSize: "0.78rem", color: "#059669", fontWeight: 700 }}>
-                    ✓ Ready for Itinerary Generation
+                <span style={{ fontSize: "0.78rem", color: "#10b981", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                    <Check size={14} />
+                    Ready for Itinerary Generation
                 </span>
             </div>
         )}
@@ -774,19 +819,31 @@ const [destinationSearch, setDestinationSearch] = useState(
             </div>
 
             {/* Planning Constraints Collapsible Section */}
-            <div style={{ margin: "20px 0", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, background: "#f8fafc" }}>
+            <div style={{ margin: "20px 0", border: "1px solid var(--border)", borderRadius: 8, padding: 14, background: "var(--code-bg)" }}>
                 <div
                     onClick={() => setShowConstraints(!showConstraints)}
-                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontWeight: 600, color: "#1e293b" }}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer", fontWeight: 600, color: "var(--text-h)" }}
                 >
                     <span style={{ fontSize: "0.92rem" }}>Custom Planning Constraints (Optional)</span>
-                    <span style={{ fontSize: "0.82rem", color: "#4f46e5" }}>{showConstraints ? "▲ Hide" : "▼ Show"}</span>
+                    <span style={{ fontSize: "0.82rem", color: "var(--accent)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                        {showConstraints ? (
+                            <>
+                                <ChevronUp size={14} />
+                                <span>Hide</span>
+                            </>
+                        ) : (
+                            <>
+                                <ChevronDown size={14} />
+                                <span>Show</span>
+                            </>
+                        )}
+                    </span>
                 </div>
 
                 {showConstraints && (
                     <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                         <div>
-                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--input-label)", display: "block", marginBottom: 4 }}>
                                 Max Daily Travel Distance (km)
                             </label>
                             <input
@@ -794,11 +851,11 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 placeholder="e.g. 25"
                                 value={maxDailyDistance}
                                 onChange={(e) => setMaxDailyDistance(e.target.value)}
-                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--input-text)", boxSizing: "border-box" }}
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--input-label)", display: "block", marginBottom: 4 }}>
                                 Max Budget Cap (₹ INR)
                             </label>
                             <input
@@ -806,11 +863,11 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 placeholder="e.g. 50000"
                                 value={maxBudgetCap}
                                 onChange={(e) => setMaxBudgetCap(e.target.value)}
-                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--input-text)", boxSizing: "border-box" }}
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--input-label)", display: "block", marginBottom: 4 }}>
                                 Min Attractions Per Day
                             </label>
                             <input
@@ -820,11 +877,11 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 max="6"
                                 value={minAttractionsPerDay}
                                 onChange={(e) => setMinAttractionsPerDay(e.target.value)}
-                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--input-text)", boxSizing: "border-box" }}
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--input-label)", display: "block", marginBottom: 4 }}>
                                 Must-Visit Attractions
                             </label>
                             <input
@@ -832,11 +889,11 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 placeholder="Comma separated, e.g. Fort, Church"
                                 value={mustVisitInput}
                                 onChange={(e) => setMustVisitInput(e.target.value)}
-                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--input-text)", boxSizing: "border-box" }}
                             />
                         </div>
                         <div style={{ gridColumn: "1 / -1" }}>
-                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "#475569", display: "block", marginBottom: 4 }}>
+                            <label style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--input-label)", display: "block", marginBottom: 4 }}>
                                 Locations / Keywords to Avoid
                             </label>
                             <input
@@ -844,7 +901,7 @@ const [destinationSearch, setDestinationSearch] = useState(
                                 placeholder="e.g. Crowded Pubs, Extreme Adventure"
                                 value={avoidLocationsInput}
                                 onChange={(e) => setAvoidLocationsInput(e.target.value)}
-                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid #cbd5e1", boxSizing: "border-box" }}
+                                style={{ width: "100%", padding: "7px 10px", borderRadius: 6, border: "1px solid var(--input-border)", background: "var(--input-bg)", color: "var(--input-text)", boxSizing: "border-box" }}
                             />
                         </div>
                     </div>
@@ -855,12 +912,15 @@ const [destinationSearch, setDestinationSearch] = useState(
                 type="submit"
                 style={{
                     marginTop: 10,
-                    padding: 10,
-                    background: "#4caf50",
-                    color: "white",
+                    padding: "12px 20px",
+                    background: "var(--accent)",
+                    color: "#ffffff",
                     border: "none",
-                    borderRadius: 6,
+                    borderRadius: 8,
                     cursor: "pointer",
+                    fontWeight: 700,
+                    fontSize: "1rem",
+                    transition: "background 0.2s ease",
                 }}
             >
                 Plan Trip

@@ -1,5 +1,14 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import {
+  Compass,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  CheckCircle,
+  Info,
+  ArrowLeft,
+} from "lucide-react";
 import { apiLogin, getOrCreateUserId, isAuthenticated } from "../services/identity";
 
 interface LoginPageProps {
@@ -70,17 +79,17 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
         alignItems: "center",
         justifyContent: "center",
         padding: "24px 16px",
-        background: "linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)",
+        background: "radial-gradient(ellipse at 50% 0%, var(--accent-bg) 0%, var(--bg) 100%)",
       }}
     >
       <div
         style={{
           width: "100%",
           maxWidth: "460px",
-          background: "#ffffff",
+          background: "var(--card-bg)",
           borderRadius: "16px",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04)",
-          border: "1px solid #e2e8f0",
+          boxShadow: "var(--shadow-lg)",
+          border: "1px solid var(--border)",
           padding: "36px 32px",
           boxSizing: "border-box",
         }}
@@ -94,25 +103,26 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
               alignItems: "center",
               gap: 8,
               textDecoration: "none",
-              color: "#4f46e5",
+              color: "var(--accent)",
               fontWeight: 800,
               fontSize: "1.35rem",
               letterSpacing: "-0.02em",
             }}
           >
-            <span style={{ fontSize: "1.6rem" }}>✈️</span> TravelSync AI
+            <Compass size={24} style={{ color: "var(--accent)" }} />
+            <span>TravelSync AI</span>
           </Link>
           <h1
             style={{
               margin: "16px 0 6px 0",
               fontSize: "1.6rem",
               fontWeight: 700,
-              color: "#0f172a",
+              color: "var(--text-h)",
             }}
           >
             Sign In to Your Account
           </h1>
-          <p style={{ margin: 0, fontSize: "0.92rem", color: "#64748b" }}>
+          <p style={{ margin: 0, fontSize: "0.92rem", color: "var(--text-muted)" }}>
             Access your itineraries, shared trips, and collaborator workspaces
           </p>
         </div>
@@ -122,10 +132,10 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#ecfdf5",
-              border: "1px solid #a7f3d0",
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
               borderRadius: "10px",
-              color: "#065f46",
+              color: "#10b981",
               fontSize: "0.88rem",
             }}
           >
@@ -139,22 +149,28 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#f0f9ff",
-              border: "1px solid #bae6fd",
+              background: "var(--code-bg)",
+              border: "1px solid var(--border)",
               borderRadius: "10px",
-              color: "#0369a1",
+              color: "var(--text-secondary)",
               fontSize: "0.85rem",
               lineHeight: 1.5,
+              display: "flex",
+              alignItems: "flex-start",
+              gap: 10,
             }}
           >
-            💡 <strong>Guest Session Active:</strong> If you planned trips as a guest,{" "}
-            <Link
-              to={`/signup?claim=true&redirect=${encodeURIComponent(redirectTarget)}`}
-              style={{ color: "#0284c7", fontWeight: 700, textDecoration: "underline" }}
-            >
-              Sign up here
-            </Link>{" "}
-            to attach your trips to a new permanent account so they are preserved.
+            <Info size={16} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <strong>Guest Session Active:</strong> If you planned trips as a guest,{" "}
+              <Link
+                to={`/signup?claim=true&redirect=${encodeURIComponent(redirectTarget)}`}
+                style={{ color: "var(--accent)", fontWeight: 700, textDecoration: "underline" }}
+              >
+                Sign up here
+              </Link>{" "}
+              to attach your trips to a new permanent account so they are preserved.
+            </div>
           </div>
         )}
 
@@ -165,17 +181,17 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#fef2f2",
-              border: "1px solid #fecaca",
+              background: "rgba(239, 68, 68, 0.1)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
               borderRadius: "10px",
-              color: "#b91c1c",
+              color: "#ef4444",
               fontSize: "0.88rem",
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}
           >
-            <span>⚠️</span>
+            <AlertTriangle size={16} style={{ flexShrink: 0 }} />
             <span>{errorMessage}</span>
           </div>
         )}
@@ -187,17 +203,17 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
             style={{
               marginBottom: "20px",
               padding: "12px 14px",
-              background: "#f0fdf4",
-              border: "1px solid #bbf7d0",
+              background: "rgba(16, 185, 129, 0.12)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
               borderRadius: "10px",
-              color: "#166534",
+              color: "#10b981",
               fontSize: "0.88rem",
               display: "flex",
               alignItems: "center",
               gap: 8,
             }}
           >
-            <span>✅</span>
+            <CheckCircle size={16} style={{ flexShrink: 0 }} />
             <span>{successMessage}</span>
           </div>
         )}
@@ -212,7 +228,7 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
                 marginBottom: "6px",
                 fontSize: "0.88rem",
                 fontWeight: 600,
-                color: "#334155",
+                color: "var(--input-label)",
               }}
             >
               Email Address
@@ -222,34 +238,39 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
               type="email"
               autoComplete="email"
               required
+              placeholder="name@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              disabled={loading}
               style={{
                 width: "100%",
-                boxSizing: "border-box",
                 padding: "11px 14px",
-                borderRadius: "10px",
-                border: "1px solid #cbd5e1",
+                borderRadius: "8px",
+                border: "1px solid var(--input-border)",
+                background: "var(--input-bg)",
+                color: "var(--input-text)",
                 fontSize: "0.95rem",
-                color: "#0f172a",
+                boxSizing: "border-box",
                 outline: "none",
-                transition: "border-color 0.2s, box-shadow 0.2s",
+                transition: "border-color 0.15s, box-shadow 0.15s",
               }}
-              onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-              onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
             />
           </div>
 
-          <div style={{ marginBottom: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <div style={{ marginBottom: "22px" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "6px",
+              }}
+            >
               <label
                 htmlFor="login-password"
                 style={{
                   fontSize: "0.88rem",
                   fontWeight: 600,
-                  color: "#334155",
+                  color: "var(--input-label)",
                 }}
               >
                 Password
@@ -261,29 +282,26 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 required
+                placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                disabled={loading}
                 style={{
                   width: "100%",
-                  boxSizing: "border-box",
-                  padding: "11px 44px 11px 14px",
-                  borderRadius: "10px",
-                  border: "1px solid #cbd5e1",
+                  padding: "11px 40px 11px 14px",
+                  borderRadius: "8px",
+                  border: "1px solid var(--input-border)",
+                  background: "var(--input-bg)",
+                  color: "var(--input-text)",
                   fontSize: "0.95rem",
-                  color: "#0f172a",
+                  boxSizing: "border-box",
                   outline: "none",
-                  transition: "border-color 0.2s",
+                  transition: "border-color 0.15s, box-shadow 0.15s",
                 }}
-                onFocus={(e) => (e.target.style.borderColor = "#4f46e5")}
-                onBlur={(e) => (e.target.style.borderColor = "#cbd5e1")}
               />
               <button
                 type="button"
-                aria-label={showPassword ? "Hide password" : "Show password"}
                 onClick={() => setShowPassword(!showPassword)}
-                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 style={{
                   position: "absolute",
                   right: 12,
@@ -292,12 +310,14 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
                   background: "transparent",
                   border: "none",
                   cursor: "pointer",
-                  fontSize: "0.95rem",
-                  color: "#64748b",
+                  color: "var(--text-muted)",
                   padding: "4px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
               >
-                {showPassword ? "👁️" : "🙈"}
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
               </button>
             </div>
           </div>
@@ -329,17 +349,17 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
           style={{
             marginTop: "24px",
             paddingTop: "20px",
-            borderTop: "1px solid #f1f5f9",
+            borderTop: "1px solid var(--border)",
             textAlign: "center",
             fontSize: "0.9rem",
-            color: "#64748b",
+            color: "var(--text-muted)",
           }}
         >
           Don't have an account?{" "}
           <Link
             to={`/signup?redirect=${encodeURIComponent(redirectTarget)}`}
             style={{
-              color: "#4f46e5",
+              color: "var(--accent)",
               fontWeight: 700,
               textDecoration: "none",
             }}
@@ -350,12 +370,17 @@ export default function LoginPage({ onAuthSuccess }: LoginPageProps) {
             <Link
               to="/"
               style={{
-                color: "#64748b",
+                color: "var(--text-muted)",
                 fontSize: "0.85rem",
                 textDecoration: "underline",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                justifyContent: "center",
               }}
             >
-              ← Back to TravelSync Home / Plan as Guest
+              <ArrowLeft size={14} />
+              <span>Back to TravelSync Home / Plan as Guest</span>
             </Link>
           </div>
         </div>

@@ -254,9 +254,12 @@ h1 {
 
 .card {
     padding: 24px;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
+    border: 1px solid var(--card-border, #e5e7eb);
     border-radius: 16px;
-    border: 1px solid #e5e7eb;
+    background: var(--card-bg, white);
+    color: var(--text-primary, #0f172a);
+    box-shadow: var(--shadow);
 }
 .dashboard {
     display: flex;
@@ -275,57 +278,30 @@ h1 {
 
 .section-title {
     font-size: 2.2rem;
-
     font-weight: 800;
-
-    color: #111827;
-
+    color: var(--text-primary, #111827);
     margin-bottom: 24px;
-
     padding-bottom: 14px;
-
-    border-bottom: 3px solid #d1d5db;
-
+    border-bottom: 3px solid var(--border, #d1d5db);
     letter-spacing: -0.5px;
-}
-
-.card {
-    padding: 24px;
-
-    margin-bottom: 20px;
-
-    border: 1px solid #e5e7eb;
-
-    border-radius: 16px;
-
-    background: white;
-
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .download-button {
     padding: 12px 20px;
-
     border: none;
-
     border-radius: 10px;
-
     cursor: pointer;
 }
 h3 {
     font-size: 1.5rem;
-
     font-weight: 700;
-
-    color: #1f2937;
+    color: var(--text-primary, #1f2937);
 }
 
 h4 {
     font-size: 1.1rem;
-
     font-weight: 600;
-
-    color: #374151;
+    color: var(--text-secondary, #374151);
 }
 .location-field {
     position: relative;
@@ -336,33 +312,34 @@ h4 {
     top: 100%;
     left: 0;
     right: 0;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 6px;
+    background: var(--dropdown-bg, white);
+    border: 1px solid var(--dropdown-border, #cbd5e1);
+    border-radius: 8px;
     max-height: 220px;
     overflow-y: auto;
     z-index: 1000;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg);
 }
 
 .location-option {
     display: block;
     width: 100%;
-    padding: 10px;
+    padding: 10px 14px;
     border: none;
-    background: white;
+    background: transparent;
     text-align: left;
     cursor: pointer;
-    color: #222;
+    color: var(--text-primary, #0f172a);
+    transition: background-color 0.1s ease;
 }
 
 .location-option:hover {
-    background: #f0f0f0;
+    background: var(--dropdown-hover, #f1f5f9);
 }
 
 .no-results {
-    padding: 10px;
-    color: #777;
+    padding: 12px;
+    color: var(--text-muted, #777);
 }
 .plan-another-button {
     margin-bottom: 20px;
