@@ -72,7 +72,10 @@ def get_trip_history(
     user_id: Optional[str] = Query(None),
 ):
     uid = extract_user_id(None, x_user_id, user_id)
-    raw_trips = load_all_trips(user_id=uid)
+    if uid:
+        raw_trips = load_all_trips(user_id=uid)
+    else:
+        raw_trips = [t for t in load_all_trips(user_id=None) if not t.get("owner_id")]
     indexed_trips = list(enumerate(raw_trips))
 
     # Sort newest-created first (descending by creation timestamp, breaking ties by index descending)

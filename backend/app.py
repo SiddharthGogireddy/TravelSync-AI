@@ -72,6 +72,21 @@ app.include_router(activity_router)
 app.include_router(memory_router)
 app.include_router(location_router)
 
+@app.middleware("http")
+async def security_headers_middleware(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "ok", "app": "TravelSync AI"}
+
+
+app.add_middleware(RateLimiterMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
@@ -79,7 +94,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-app.add_middleware(RateLimiterMiddleware)
 app.include_router(
     update_trip_router
 )

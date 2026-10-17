@@ -287,11 +287,13 @@ async def build_trip(request, owner_id=None):
         pace=traveler_profiles[0]["pace"],
         constraints=constraints_dict,
     )
+    mandatory_names = {visit.name.strip().lower() for visit in mandatory_visits if hasattr(visit, "name")}
     from backend.services.planner.weather_planner import replan_trip_for_weather
     day_schedule, weather_replanning = replan_trip_for_weather(
         day_schedule,
         weather_summary,
         available_places=matched_places,
+        mandatory_names=mandatory_names,
     )
 
     from backend.services.planner.opening_hours_scheduler import apply_opening_hours_to_schedule

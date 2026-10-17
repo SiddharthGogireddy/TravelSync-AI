@@ -84,30 +84,76 @@ def test_different_clients_have_isolated_buckets():
 
 
 def test_authenticated_user_id_partitions_limits():
-    """Authenticated users are throttled by X-User-ID rather than shared IP."""
+    """Authenticated users with valid Bearer tokens are throttled by user ID rather than shared IP."""
+    from backend.services.auth.jwt_service import create_access_token
+
+    token_a = create_access_token("user_nat_alpha")
+    token_b = create_access_token("user_nat_beta")
+
     # User 1 exhausts their 10 requests from a shared NAT IP
     for _ in range(10):
         client.post(
             "/auth/login",
             json={"email": "u1@example.com", "password": "p"},
-            headers={"X-User-ID": "user_nat_alpha", "X-Forwarded-For": "192.0.2.1"},
+            headers={
+                "Authorization": f"Bearer {token_a}",
+                "X-User-ID": "user_nat_alpha",
+                "X-Forwarded-For": "192.0.2.1",
+            },
         )
 
     # User 1 is throttled
     resp1 = client.post(
         "/auth/login",
         json={"email": "u1@example.com", "password": "p"},
-        headers={"X-User-ID": "user_nat_alpha", "X-Forwarded-For": "192.0.2.1"},
+        headers={
+            "Authorization": f"Bearer {token_a}",
+            "X-User-ID": "user_nat_alpha",
+            "X-Forwarded-For": "192.0.2.1",
+        },
     )
     assert resp1.status_code == 429
 
-    # User 2 on the same IP still has their full quota
+    # User 2 on the same IP still has their full quota because their verified token establishes their identity
     resp2 = client.post(
         "/auth/login",
         json={"email": "u2@example.com", "password": "p"},
-        headers={"X-User-ID": "user_nat_beta", "X-Forwarded-For": "192.0.2.1"},
+        headers={
+            "Authorization": f"Bearer {token_b}",
+            "X-User-ID": "user_nat_beta",
+            "X-Forwarded-For": "192.0.2.1",
+        },
     )
     assert resp2.status_code == 401  # Not rate limited
+
+
+def test_untrusted_x_user_id_header_cannot_evade_ip_rate_limits():
+    """
+    Untrusted X-User-ID headers without valid Bearer tokens MUST NOT be trusted to
+    partition limits. Attackers rotating X-User-ID from the same IP are throttled by IP.
+    """
+    # Attacker attempts to evade rate limiting by rotating X-User-ID on every request
+    for i in range(10):
+        resp = client.post(
+            "/auth/login",
+            json={"email": f"attacker_{i}@example.com", "password": "p"},
+            headers={
+                "X-User-ID": f"spoofed_user_{i}",
+                "X-Forwarded-For": "198.51.100.99",
+            },
+        )
+        assert resp.status_code == 401, f"Request {i+1} should pass credential check"
+
+    # 11th request with yet another fresh X-User-ID MUST BE BLOCKED with 429
+    blocked_resp = client.post(
+        "/auth/login",
+        json={"email": "attacker_11@example.com", "password": "p"},
+        headers={
+            "X-User-ID": "spoofed_user_11",
+            "X-Forwarded-For": "198.51.100.99",
+        },
+    )
+    assert blocked_resp.status_code == 429, "Untrusted X-User-ID header bypassed IP rate limit!"
 
 
 def test_cors_options_preflight_bypasses_rate_limit():

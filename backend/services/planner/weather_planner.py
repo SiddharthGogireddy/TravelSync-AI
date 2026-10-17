@@ -89,6 +89,7 @@ def replan_trip_for_weather(
     day_schedule: Dict[str, List[Dict[str, Any]]],
     weather_summary: Optional[List[Dict[str, Any]]],
     available_places: Optional[List[Dict[str, Any]]] = None,
+    mandatory_names: Optional[Any] = None,
 ) -> Tuple[Dict[str, List[Dict[str, Any]]], Dict[str, Any]]:
     """
     Adapts itinerary for severe weather:
@@ -179,8 +180,25 @@ def replan_trip_for_weather(
             if swapped:
                 continue
 
-            # Strategy 2: If cannot swap, replace with an indoor alternative from pool
-            if indoor_pool:
+            is_mandatory = bool(
+                place.get("is_mandatory")
+                or place.get("mandatory")
+                or place.get("is_must_visit")
+                or (mandatory_names and place.get("name", "").strip().lower() in mandatory_names)
+            )
+
+            if is_mandatory:
+                place["weather_advisory"] = f"Caution: Mandatory outdoor attraction scheduled during {cond}."
+                new_day_places.append(place)
+                decisions.append({
+                    "day": day_number,
+                    "date": day_weather.get("date"),
+                    "condition": cond,
+                    "action": "retained_mandatory_with_advisory",
+                    "original_attraction": place.get("name"),
+                    "explanation": f"Retained mandatory attraction '{place.get('name')}' with weather advisory despite {reason.lower()} on Day {day_number}."
+                })
+            elif indoor_pool:
                 replacement = indoor_pool.pop(0)
                 new_day_places.append(replacement)
                 used_names.add(replacement.get("name", "").lower())

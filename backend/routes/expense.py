@@ -1,5 +1,8 @@
+import logging
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Header, Query
+
+logger = logging.getLogger(__name__)
 
 from backend.models.expense import ExpenseRequest
 from backend.services.auth.authorization import extract_user_id, verify_trip_access

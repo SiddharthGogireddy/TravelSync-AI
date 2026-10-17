@@ -109,6 +109,31 @@ def isolated_storage(tmp_path, monkeypatch):
     monkeypatch.setattr(template_store, "FILE", template_file)
     monkeypatch.setattr(expense_store, "FILE", expense_file)
 
+    test_users_db = tmp_path / "users.db"
+    test_trips_db = tmp_path / "trips.db"
+    test_chat_db = tmp_path / "chat.db"
+    test_activity_db = tmp_path / "activity.db"
+    test_memory_db = tmp_path / "memories.db"
+    test_memory_uploads = tmp_path / "memories_uploads"
+    test_memory_uploads.mkdir(parents=True, exist_ok=True)
+
+    monkeypatch.setenv("TRAVELSYNC_USERS_DB", str(test_users_db))
+    monkeypatch.setenv("TRAVELSYNC_TRIPS_DB", str(test_trips_db))
+    monkeypatch.setenv("TRAVELSYNC_CHAT_DB", str(test_chat_db))
+    monkeypatch.setenv("TRAVELSYNC_ACTIVITY_DB", str(test_activity_db))
+    monkeypatch.setenv("TRAVELSYNC_MEMORY_DB", str(test_memory_db))
+    monkeypatch.setenv("TRAVELSYNC_MEMORY_UPLOADS", str(test_memory_uploads))
+
+    import backend.services.storage.chat_store as chat_store
+    import backend.services.storage.activity_store as activity_store
+    import backend.services.storage.memory_store as memory_store
+    import backend.services.auth.user_store as user_store
+
+    chat_store.init_db(test_chat_db)
+    activity_store.init_db(test_activity_db)
+    memory_store.init_db(test_memory_db)
+    user_store.init_user_db(test_users_db)
+
     return {
         "trip_file": trip_file,
         "fav_file": fav_file,

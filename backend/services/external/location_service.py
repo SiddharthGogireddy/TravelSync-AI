@@ -10,8 +10,12 @@ logger = logging.getLogger(__name__)
 # Base URL can be overridden via environment variable for self-hosted Nominatim or proxy
 BASE_URL = os.getenv("NOMINATIM_BASE_URL", "https://nominatim.openstreetmap.org/search")
 
+NOMINATIM_USER_AGENT = os.getenv(
+    "NOMINATIM_USER_AGENT",
+    "TravelSyncAI/1.0 (https://travelsync.ai; contact@travelsync.ai)",
+)
 HEADERS = {
-    "User-Agent": "TravelSyncAI/1.0 (https://travelsync.ai; contact@travelsync.ai)"
+    "User-Agent": NOMINATIM_USER_AGENT,
 }
 
 # --- Cache Configuration ---

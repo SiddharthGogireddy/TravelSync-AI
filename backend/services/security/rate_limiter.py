@@ -1,3 +1,27 @@
+"""
+Rate Limiter Service & Middleware
+
+ARCHITECTURAL & MULTI-WORKER DEPLOYMENT SPECIFICATION:
+- In-Memory Sliding Window:
+  `SlidingWindowRateLimiter` maintains hit timestamps in-process using collections.deque and threading.Lock.
+  This provides zero-overhead, sub-millisecond limiting suitable for single-process deployments without
+  requiring an external Redis dependency.
+- Multi-Worker & Multi-Instance Deployments:
+  When running multiple Uvicorn worker processes (e.g. `uvicorn backend.app:app --workers 4`) or horizontally
+  scaled container replicas behind a load balancer, each worker process maintains an independent memory bucket.
+  In this scenario:
+    1. Effective limit is multiplied by the number of active workers unless sticky sessions are configured.
+    2. Strict global cluster-wide enforcement requires an external shared store (e.g., Redis sliding-window
+       token bucket) or offloading rate limiting to an edge reverse proxy / API gateway (NGINX `limit_req`,
+       Cloudflare WAF, or Envoy).
+- Geocoding & External Services (Nominatim):
+  OpenStreetMap Nominatim strictly prohibits more than 1 request per second to public endpoints.
+  The in-process rate limiter in `backend/services/external/location_service.py` protects against exceeding
+  this threshold within a single process. Multi-worker clusters querying public Nominatim without coordinated
+  queuing will violate this policy; production deployments MUST either route through a shared proxy or set
+  `NOMINATIM_BASE_URL` to an internal self-hosted Nominatim instance.
+"""
+
 import collections
 import logging
 import os
@@ -132,28 +156,76 @@ DEFAULT_RULES = [
 ]
 
 
+def is_trusted_proxy(client_host: Optional[str]) -> bool:
+    """
+    Determines whether a client socket host represents a trusted reverse proxy.
+    Only requests arriving from trusted proxies may supply client IP via X-Forwarded-For.
+    When TRUST_PROXY_HEADERS=true or the socket host is in TRUSTED_PROXIES, X-Forwarded-For is honored.
+    Direct clients attempting to spoof X-Forwarded-For are constrained to their socket host.
+    """
+    if os.getenv("TRUST_PROXY_HEADERS", "false").lower() in ("true", "1", "yes"):
+        return True
+
+    trusted_list = os.getenv("TRUSTED_PROXIES", "127.0.0.1,::1,localhost,testclient")
+    trusted_set = {p.strip().lower() for p in trusted_list.split(",") if p.strip()}
+
+    if client_host and str(client_host).strip().lower() in trusted_set:
+        return True
+
+    return False
+
+
 def extract_client_identifier(request: Request) -> str:
     """
-    Extracts client identifier, prioritizing verified user IDs if available,
-    falling back to X-Forwarded-For or remote socket host.
+    Extracts client identifier, prioritizing cryptographically verified user IDs
+    from valid Bearer JWT tokens, falling back strictly to client IP.
+
+    Security Rules:
+    1. Never trusts client-supplied 'X-User-ID' headers as proof of identity to partition limits.
+       Accepting unauthenticated 'X-User-ID' headers would allow attackers to forge headers
+       and evade IP rate limiting. Only cryptographically verified Bearer tokens (or matching
+       X-User-ID) are used for user keys.
+    2. 'X-Forwarded-For' is honored ONLY when the request arrives from a trusted proxy
+       (via TRUST_PROXY_HEADERS=true or TRUSTED_PROXIES). Direct untrusted clients cannot
+       spoof X-Forwarded-For to evade rate limits.
     """
-    # 1. Prefer authenticated User ID from request headers
-    user_id = request.headers.get("X-User-ID")
-    if user_id and str(user_id).strip():
-        return f"usr:{str(user_id).strip()}"
+    # 1. Prefer authenticated User ID from verified Bearer token
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header and str(auth_header).strip().lower().startswith("bearer "):
+        raw_token = str(auth_header).strip()[7:].strip()
+        if raw_token:
+            try:
+                from backend.services.auth.jwt_service import verify_access_token
+                claims = verify_access_token(raw_token)
+                sub = claims.get("sub")
+                if sub and str(sub).strip():
+                    clean_sub = str(sub).strip()
+                    declared_hdr = request.headers.get("x-user-id") or request.headers.get("X-User-ID")
+                    if declared_hdr and str(declared_hdr).strip() != clean_sub:
+                        # Mismatch between token and header (potential confused-deputy attack)
+                        pass
+                    else:
+                        return f"usr:{clean_sub}"
+            except Exception:
+                # Expired or invalid token: treat client as unauthenticated (fall back to IP)
+                pass
 
-    # 2. Forwarded client IP (e.g., behind reverse proxy)
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        client_ip = forwarded.split(",")[0].strip()
-        if client_ip:
-            return f"ip:{client_ip}"
+    # 2. Derive client IP, respecting X-Forwarded-For only from trusted proxies
+    socket_host = request.client.host.strip() if request.client and request.client.host else None
 
-    # 3. Socket client host
-    if request.client and request.client.host:
-        return f"ip:{request.client.host}"
+    if is_trusted_proxy(socket_host):
+        forwarded = request.headers.get("X-Forwarded-For") or request.headers.get("x-forwarded-for")
+        if forwarded:
+            client_ip = forwarded.split(",")[0].strip()
+            if client_ip:
+                return f"ip:{client_ip}"
+
+    # 3. Direct client connection or untrusted proxy: use remote socket host
+    if socket_host:
+        return f"ip:{socket_host}"
 
     return "ip:anonymous"
+
 
 
 def get_matching_rule(path: str) -> Optional[RateLimitRule]:

@@ -77,12 +77,42 @@ Format:
 
     try:
         itinerary = generate(prompt)
-
     except Exception as e:
-        print("Gemini error:", e)
+        itinerary = None
 
-        itinerary = {
-            "days": []
+    if not isinstance(itinerary, dict) or not itinerary.get("days"):
+        # Construct a reliable, structured baseline itinerary from already scheduled attractions
+        fallback_days = []
+        day_schedule = trip_info.get("day_schedule") or {}
+        num_days = int(trip_days) if isinstance(trip_days, (int, float)) and int(trip_days) > 0 else (len(day_schedule) or 1)
+        for d in range(1, num_days + 1):
+            scheduled_items = day_schedule.get(str(d), [])
+            activities = [
+                p.get("name", "Attraction")
+                for p in scheduled_items
+                if isinstance(p, dict) and p.get("category") != "Foods"
+            ]
+            food = [
+                p.get("name", "Dining")
+                for p in scheduled_items
+                if isinstance(p, dict) and p.get("category") == "Foods"
+            ]
+            fallback_days.append({
+                "day": d,
+                "title": f"Day {d}: {destination_title}",
+                "activities": activities if activities else [f"Sightseeing and exploring {destination_title}"],
+                "food": food if food else ["Local dining recommendations"],
+                "budget": "Included in trip total",
+            })
+        itinerary = {"days": fallback_days, "is_fallback": True}
+        result["ai_generation"] = {
+            "status": "fallback",
+            "message": "AI dynamic narrative is temporarily unavailable; baseline scheduled itinerary provided.",
+        }
+    else:
+        result["ai_generation"] = {
+            "status": "generated",
+            "message": "AI itinerary successfully generated.",
         }
 
     result["itinerary"] = itinerary
